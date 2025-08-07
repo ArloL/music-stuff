@@ -1,0 +1,21 @@
+[project]
+name = "beatunes-dbviewer"
+version = "0.1.0"
+description = "A dashboard to visualize song relations"
+readme = "README.md"
+requires-python = "==3.13.2"
+dependencies = [
+    "dash>=3.2.0",
+    "matplotlib>=3.10.5",
+    "networkx>=3.5",
+    "numpy>=2.3.2",
+    "pandas==2.2.3",
+    "plotly>=6.3.0",
+    "pyvis>=0.3.2",
+    "scikit-learn>=1.7.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==8.3.5",
+]
