@@ -373,6 +373,7 @@ def main():
 
     df = pd.read_csv('songs.csv')
     print(f"Loaded {len(df)} songs")
+    df = df.sort_values(by=['bpm'])
 
     # Find the longest playlist
     print("\nFinding longest playlist...")
