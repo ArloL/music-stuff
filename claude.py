@@ -2,7 +2,7 @@ import pandas as pd
 from collections import defaultdict
 import time
 
-def calculate_transition_score(song1, song2, key_relations, bpm_tolerance):
+def calculate_transition_score(song1, song2, key_type_relations, bpm_tolerance):
     """Calculate a weighted score for the transition between two songs"""
     # Check BPM difference (within 4 BPM)
     bpm_diff = song2['bpm'] - song1['bpm']  # Positive = going up, Negative = going down
@@ -36,7 +36,7 @@ def calculate_transition_score(song1, song2, key_relations, bpm_tolerance):
     }
 
     # Find the best matching transition type
-    for transition_type, transitions in key_relations.items():
+    for transition_type, transitions in key_type_relations.items():
         if song1_key in transitions:
             if song2_key in transitions[song1_key]:
                 key_score = max(key_score, transition_weights[transition_type])
@@ -52,7 +52,7 @@ def calculate_transition_score(song1, song2, key_relations, bpm_tolerance):
     total_score = (bpm_score * bpm_weight) + (key_score * key_weight)
     return total_score
 
-def build_compatibility_graph(df, key_relations):
+def build_compatibility_graph(df, key_type_relations):
     """Build a weighted graph of compatible song transitions"""
     graph = defaultdict(list)
     scores = {}  # Store transition scores
@@ -62,7 +62,7 @@ def build_compatibility_graph(df, key_relations):
         while True:
             for j, song2 in df.iterrows():
                 if i != j:
-                    score = calculate_transition_score(song1, song2, key_relations, bpm_tolerance)
+                    score = calculate_transition_score(song1, song2, key_type_relations, bpm_tolerance)
                     if score > 0:  # Only add compatible transitions
                         graph[i].append(j)
                         scores[(i, j)] = score
@@ -110,10 +110,10 @@ def find_best_weighted_path_dfs(graph, scores, start_node, max_time_seconds=300)
     dfs(start_node, [start_node], visited_set, 0)
     return best_path, best_score
 
-def find_longest_playlist(df, key_relations, max_time_seconds=300):
+def find_longest_playlist(df, key_type_relations, max_time_seconds=300):
     """Find the best weighted playlist"""
     print("Building compatibility graph...")
-    graph, scores = build_compatibility_graph(df, key_relations)
+    graph, scores = build_compatibility_graph(df, key_type_relations)
 
     print(f"Graph built with {sum(len(neighbors) for neighbors in graph.values())} connections")
 
@@ -138,11 +138,13 @@ def find_longest_playlist(df, key_relations, max_time_seconds=300):
             best_playlist = path
             best_score = score
             best_start_song = idx
-            print(f"New best playlist found: {len(path)} songs, score: {score:.1f} (starting with: {song['song_id']})")
+            print(f"New best playlist found: {len(path)} songs, score: {score:.1f} (starting with: {song['song_id']}):")
+            playlist_df = create_playlist_dataframe(df, best_playlist, key_type_relations)
+            print(playlist_df.to_string(index=False))
 
     return best_playlist, best_start_song
 
-def create_playlist_dataframe(df, playlist_indices, key_relations):
+def create_playlist_dataframe(df, playlist_indices, key_type_relations):
     """Create a DataFrame with the playlist in order, including transition scores"""
     if not playlist_indices:
         return pd.DataFrame()
@@ -161,12 +163,12 @@ def create_playlist_dataframe(df, playlist_indices, key_relations):
     for i in range(len(playlist_indices) - 1):
         current_song = df.loc[playlist_indices[i]]
         next_song = df.loc[playlist_indices[i + 1]]
-        score = calculate_transition_score(current_song, next_song, key_relations, 20)
+        score = calculate_transition_score(current_song, next_song, key_type_relations, 20)
         transition_scores.append(score)
 
         # Find the transition type used
         transition_type = "unknown"
-        for t_type, transitions in key_relations.items():
+        for t_type, transitions in key_type_relations.items():
             if current_song['key'] in transitions:
                 if next_song['key'] in transitions[current_song['key']]:
                     transition_type = t_type
