@@ -32,9 +32,6 @@ public interface SongRepository extends CrudRepository<Song, Long> {
 				SELECT * FROM SONGS s
 				WHERE
 				ID IN (SELECT PLAYLISTITEMS_ID FROM PLAYLISTS_SONGS ps LEFT JOIN PLAYLISTS p ON p.ID = ps.PLAYLISTS_ID WHERE p.NAME = :name)
-				AND GENRE IN ('Electronic', 'Ambient')
-				AND RATING >= 80
-				AND RATINGCOMPUTED = FALSE
 				AND COMMENTS != 'ignore'
 				AND COMMENTS NOT LIKE '%mixed%'
 				ORDER BY RATING DESC, EXACTBPM ASC
