@@ -1,6 +1,7 @@
 import pandas as pd
 from collections import defaultdict
 import time
+import sys
 
 def calculate_transition_score(song1, song2, key_type_relations, bpm_tolerance):
     """Calculate a weighted score for the transition between two songs"""
@@ -26,15 +27,14 @@ def calculate_transition_score(song1, song2, key_type_relations, bpm_tolerance):
     song2_key = song2['key']
     key_score = 0
 
-    # Define weights for different transition types (higher is better)
     transition_weights = {
-        "matching": 100,           # Best - harmonic matching
-        "boost": 90,               # Good - one step up
-        "boost boost": 80,         # Okay - two steps up
-        "boost boost boost": 50,   # Acceptable - three steps up
-        "drop": 40,                # Not bad - one step down
-        "drop drop": 30,           # Sure - why not
-        "drop drop drop": 20       # No other way out but to do this
+        "matching": 100,           # Perfect harmonic match
+        "boost": 90,               # Good energy increase
+        "boost boost": 80,         # Moderate energy jump
+        "boost boost boost": 50,   # Large energy jump
+        "drop": 70,                # Good for breakdowns
+        "drop drop": 30,           # Moderate energy drop
+        "drop drop drop": 20       # Large energy drop
     }
 
     # Find the best matching transition type
@@ -48,8 +48,8 @@ def calculate_transition_score(song1, song2, key_type_relations, bpm_tolerance):
 
     # Combined score (weighted average)
     # You can adjust these weights based on what's more important to you
-    bpm_weight = 0.6
-    key_weight = 0.4
+    bpm_weight = 0.5
+    key_weight = 0.5
 
     total_score = (bpm_score * bpm_weight) + (key_score * key_weight)
     return total_score
@@ -83,14 +83,43 @@ def build_compatibility_graph(df, key_type_relations):
                     if score > 0:  # Only add compatible transitions
                         graph[i].append(j)
                         scores[(i, j)] = score
-            if len(graph[i]) > 2 or bpm_tolerance > 20:
+            if len(graph[i]) > 1 or bpm_tolerance > 30:
                 break
             bpm_tolerance += 1
 
     return graph, scores
 
-def find_best_weighted_path_dfs(graph, scores, start_node, max_time_seconds=1200):
-    """Find the path with the best weighted score using DFS"""
+def find_best_path_greedy(graph, scores, start_node, df):
+    """Find a good path using greedy approach - faster and often better for small datasets"""
+    path = [start_node]
+    current_node = start_node
+    visited = {start_node}
+    total_score = 0
+
+    while True:
+        # Get all unvisited neighbors with their scores
+        candidates = []
+        for neighbor in graph[current_node]:
+            if neighbor not in visited:
+                score = scores[(current_node, neighbor)]
+                candidates.append((neighbor, score))
+
+        if not candidates:
+            break
+
+        # Choose the best scoring transition
+        candidates.sort(key=lambda x: x[1], reverse=True)
+        next_node, transition_score = candidates[0]
+
+        path.append(next_node)
+        visited.add(next_node)
+        total_score += transition_score
+        current_node = next_node
+
+    return path, total_score
+
+def find_best_path_dfs(graph, scores, start_node, max_time_seconds=60):
+    """Find the best path using DFS with improved scoring"""
     start_time = time.time()
     best_path = []
     best_score = 0
@@ -102,19 +131,19 @@ def find_best_weighted_path_dfs(graph, scores, start_node, max_time_seconds=1200
         if time.time() - start_time > max_time_seconds:
             return
 
-        # Update best path if current is better
-        # We'll use a combination of path length and total score
-        path_quality = current_score + (len(path) * 20)  # Bonus for longer paths
+        # Improved path quality: emphasize score over length
+        # Small length bonus to break ties
+        path_quality = current_score + (len(path) * 2)
 
         if path_quality > best_score:
             best_path = path.copy()
             best_score = path_quality
 
-        # Sort neighbors by score for better paths first
-        neighbors_with_scores = [(neighbor, scores.get((node, neighbor), 0)) for neighbor in graph[node]]
-        neighbors_with_scores.sort(key=lambda x: x[1], reverse=True)  # Best scores first
+        # Sort neighbors by score (best first)
+        neighbors_with_scores = [(neighbor, scores.get((node, neighbor), 0))
+                                for neighbor in graph[node]]
+        neighbors_with_scores.sort(key=lambda x: x[1], reverse=True)
 
-        # Explore neighbors
         for neighbor, transition_score in neighbors_with_scores:
             if neighbor not in visited_set:
                 visited_set.add(neighbor)
@@ -127,6 +156,7 @@ def find_best_weighted_path_dfs(graph, scores, start_node, max_time_seconds=1200
     dfs(start_node, [start_node], visited_set, 0)
     return best_path, best_score
 
+def find_longest_playlist(df, key_type_relations, max_time_seconds=300, use_greedy=True):
     """Find the best playlist using hybrid approach"""
     print("Validating song keys...")
     validate_keys(df, key_type_relations)
@@ -134,30 +164,39 @@ def find_best_weighted_path_dfs(graph, scores, start_node, max_time_seconds=1200
     print("Building compatibility graph...")
     graph, scores = build_compatibility_graph(df, key_type_relations)
 
-    print(f"Graph built with {sum(len(neighbors) for neighbors in graph.values())} connections")
+    connection_count = sum(len(neighbors) for neighbors in graph.values())
+    print(f"Graph built with {connection_count} connections")
+
+    if connection_count == 0:
+        print("No compatible transitions found!")
+        return [], None
 
     best_playlist = []
     best_score = 0
     best_start_song = None
 
-    # Try starting from each song (or a subset for very large datasets)
     total_songs = len(df)
-    songs_to_try = min(total_songs, 50)  # Limit starting points for large datasets
+    print(f"Trying all {total_songs} starting songs...")
 
-    print(f"Trying {songs_to_try} different starting songs...")
+    for i, (idx, song) in enumerate(df.iterrows()):
+        # Use greedy first for speed, then DFS for promising starts
+        greedy_path, greedy_score = find_best_path_greedy(graph, scores, idx, df)
 
-    for i, (idx, song) in enumerate(df.head(songs_to_try).iterrows()):
-        if i % 10 == 0:
-            print(f"Progress: {i+1}/{songs_to_try}")
+        path, score = greedy_path, greedy_score
 
-        # Find best weighted path starting from this song
-        path, score = find_best_weighted_path_dfs(graph, scores, idx, max_time_seconds//songs_to_try)
+        # If greedy found a decent path and we have time, try DFS
+        if use_greedy and len(greedy_path) >= 3 and i < 10:  # Only DFS on top 10 songs
+            dfs_path, dfs_score = find_best_path_dfs(graph, scores, idx,
+                                                    max_time_seconds // 10)
+            if dfs_score > greedy_score:
+                path, score = dfs_path, dfs_score
 
         if score > best_score:
             best_playlist = path
             best_score = score
             best_start_song = idx
-            print(f"New best playlist found: {len(path)} songs, score: {score:.1f} (starting with: {song['song_id']}):")
+            print(f"New best: {len(path)} songs, score: {score:.1f} "
+                  f"(avg: {score/max(len(path)-1, 1):.1f} per transition)")
             playlist_df = create_playlist_dataframe(df, best_playlist, key_type_relations)
             print(playlist_df.to_string(index=False))
 
@@ -181,7 +220,7 @@ def create_playlist_dataframe(df, playlist_indices, key_type_relations):
     for i in range(len(playlist_indices) - 1):
         current_song = df.loc[playlist_indices[i]]
         next_song = df.loc[playlist_indices[i + 1]]
-        score = calculate_transition_score(current_song, next_song, key_type_relations, 20)
+        score = calculate_transition_score(current_song, next_song, key_type_relations, 100)
         transition_scores.append(score)
 
         # Find the transition type used
@@ -204,7 +243,7 @@ def create_playlist_dataframe(df, playlist_indices, key_type_relations):
                'bpm_diff', 'transition_score', 'transition_type']
     return playlist_df[columns]
 
-def main(source_file = 'songs.csv', output_file = 'longest_playlist.csv'):
+def main(source_file, output_file):
     # Key mapping
     key_type_relations = {
         "drop drop drop": {
@@ -394,7 +433,7 @@ def main(source_file = 'songs.csv', output_file = 'longest_playlist.csv'):
     # Load and validate data
     try:
         df = pd.read_csv(source_file)
-        print(f"Loaded {len(df)} songs")
+        print(f"Loaded {len(df)} songs from {source_file}")
 
         # Check required columns
         required_columns = ['song_id', 'key', 'bpm']
@@ -412,7 +451,7 @@ def main(source_file = 'songs.csv', output_file = 'longest_playlist.csv'):
     print("\nFinding longest playlist...")
     start_time = time.time()
 
-    longest_playlist, best_start = find_longest_playlist(df, key_type_relations, max_time_seconds=1200)
+    longest_playlist, best_start = find_longest_playlist(df, key_type_relations, max_time_seconds=300)
 
     end_time = time.time()
     print(f"\nSearch completed in {end_time - start_time:.2f} seconds")
@@ -431,4 +470,6 @@ def main(source_file = 'songs.csv', output_file = 'longest_playlist.csv'):
         print("Check that your song keys are valid (1-24) and BPMs allow for transitions.")
 
 if __name__ == "__main__":
-    main()
+    source_file = sys.argv[1] if len(sys.argv) > 1 else "songs.csv"
+    output_file = sys.argv[2] if len(sys.argv) > 2 else "longest_playlist.csv"
+    main(source_file, output_file)

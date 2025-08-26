@@ -20,7 +20,10 @@ def get_audio_features(track_id):
         content[0]['spotify_id'] = track_id
         return content[0]
     return {
-        'spotify_id': track_id
+        'spotify_id': track_id,
+        'key': -1,
+        'tempo': -1,
+        'mode': -1
     }
 
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id="567ed2100ef746ff8bc4765c6fe21ac3",
@@ -30,12 +33,41 @@ sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id="567ed2100ef746ff8bc476
 
 # print(json.dumps(track, indent=1))
 
-results = sp.playlist_items('74eUXrePcNpIrEYaFBlmbw')
+critical_mass_selection = '74eUXrePcNpIrEYaFBlmbw'
+critical_mass_2025_08 = '6LOmsXgiO9FHvRKnlwbwxg'
+results = sp.playlist_items(critical_mass_selection)
 
 tracks = results['items']
 while results['next']:
     results = sp.next(results)
     tracks.extend(results['items'])
+
+spotify_to_beatunes_key_map = {
+    (-1, -1): -1, # no key detected
+    (0, 1): 10, # ??: ??
+    (0, 2): 24, # 7A: Pavla, Noura - Don't Owe Me a Thing
+    (0, 3): 14, # 2A: ??
+    (0, 4): 4, # 9A: DAMH - Black Night
+    (0, 5): 18, # 4A: Jamie xx - Sleep Sound
+    (0, 6): 8, # 11A: Youandewan - 1988 - Original Mix
+    (0, 7): 22, # 6A: Guy Gerber, &ME - What To Do - &ME Remix
+    (0, 8): 12, # ??: ??
+    (0, 9): 2, # 8A: Dorisburg - Emotion - Original
+    (0, 10): 16, # 3A: Leon Vynehall - Butterflies
+    (0, 11): 6, # 10A: Robag Wruhme als Die Dub Rolle - Lampetee
+    (1, 0): 1, # 8B: Axel Boman - Purple Drank
+    (1, 1): 15, # 3B: Todd Terje - Ragysh
+    (1, 2): 5, # 10B: Daniel Bortz - Wohin Willst Du?
+    (1, 3): 19, # ??: ??
+    (1, 4): 9, # ??: ??
+    (1, 5): 23, # ??: Albion, Oliver Lieb - Air - Oliver Lieb Remix
+    (1, 6): 13, # 2B: Luvless - Luvmaschine
+    (1, 7): 3, # ??: DJ Koze - I Want To Sleep
+    (1, 8): 17, # 4B: DJ Seinfeld - U
+    (1, 9): 7, # ??: Map.ache - Thank U Again
+    (1, 10): 21, # ??: Jeigo - Pearl Leaf
+    (1, 11): 11, # ??: ??
+}
 
 with open('songs_spotify.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
@@ -46,4 +78,7 @@ with open('songs_spotify.csv', 'w', newline='') as csvfile:
         artists = []
         for artist in track_details['artists']:
             artists.append(artist['name'])
-        writer.writerow([', '.join(artists) + " - " + track_details['name'], features['key'], features['tempo']])
+        writer.writerow([
+            ', '.join(artists) + " - " + track_details['name'],
+            spotify_to_beatunes_key_map[(features['mode'], features['key'])],
+            features['tempo']])
