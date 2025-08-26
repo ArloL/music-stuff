@@ -75,6 +75,7 @@ def build_compatibility_graph(df, key_type_relations):
     graph = defaultdict(list)
     scores = {}  # Store transition scores
 
+    reachable_songs = set()
     for i, song1 in df.iterrows():
         bpm_tolerance = 4
         while True:
@@ -83,10 +84,15 @@ def build_compatibility_graph(df, key_type_relations):
                     score = calculate_transition_score(song1, song2, key_type_relations, bpm_tolerance)
                     if score > 0:  # Only add compatible transitions
                         graph[i].append(j)
+                        reachable_songs.add(j)
                         scores[(i, j)] = score
             if len(graph[i]) > 1 or bpm_tolerance > 30:
                 break
             bpm_tolerance += 1
+
+    for i, song1 in df.iterrows():
+        if len(graph[i]) == 0 and not i in reachable_songs:
+            print(f"{song1['song_id']} is unreachable")
 
     return graph, scores
 
