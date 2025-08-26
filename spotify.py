@@ -6,8 +6,8 @@ from spotipy.oauth2 import SpotifyOAuth
 
 def get_audio_features(track_id):
     response = requests.request(
-        "GET",
-        "https://api.reccobeats.com/v1/audio-features",
+        'GET',
+        'https://api.reccobeats.com/v1/audio-features',
         headers={
             'Accept': 'application/json'
         },
@@ -21,15 +21,24 @@ def get_audio_features(track_id):
         return content[0]
     return {
         'spotify_id': track_id,
+        'id': '-1',
+        'acousticness': -1,
+        'danceability': -1,
+        'energy': -1,
+        'instrumentalness': -1,
         'key': -1,
+        'liveness': -1,
+        'loudness': -1,
+        'mode': -1,
+        'speechiness': -1,
         'tempo': -1,
-        'mode': -1
+        'valence': -1
     }
 
-sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id="567ed2100ef746ff8bc4765c6fe21ac3",
-                                               client_secret="9c2182d252b048bdb09ec8307842b455",
-                                               redirect_uri="http://127.0.0.1:50872",
-                                               scope="user-library-read"))
+sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id='567ed2100ef746ff8bc4765c6fe21ac3',
+                                               client_secret='9c2182d252b048bdb09ec8307842b455',
+                                               redirect_uri='http://127.0.0.1:50872',
+                                               scope='user-library-read'))
 
 # print(json.dumps(track, indent=1))
 
@@ -71,14 +80,40 @@ spotify_to_beatunes_key_map = {
 
 with open('songs_spotify.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
-    writer.writerow(['song_id', 'key', 'bpm'])
+    writer.writerow([
+        'song_id',
+        'key',
+        'bpm',
+        'id',
+        'spotify_id',
+        'acousticness',
+        'danceability',
+        'energy',
+        'instrumentalness',
+        'key',
+        'liveness',
+        'loudness',
+        'mode',
+        'speechiness',
+        'valence'])
+
     for track in tracks:
         track_details = track['track']
         features = get_audio_features(track_details['id'])
-        artists = []
-        for artist in track_details['artists']:
-            artists.append(artist['name'])
         writer.writerow([
-            ', '.join(artists) + " - " + track_details['name'],
+            f'{', '.join([d['name'] for d in track_details['artists']])} - {track_details['name']}',
             spotify_to_beatunes_key_map[(features['mode'], features['key'])],
-            features['tempo']])
+            features['tempo'],
+            features['id'],
+            features['spotify_id'],
+            features['acousticness'],
+            features['danceability'],
+            features['energy'],
+            features['instrumentalness'],
+            features['key'],
+            features['liveness'],
+            features['loudness'],
+            features['mode'],
+            features['speechiness'],
+            features['valence']
+        ])
