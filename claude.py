@@ -17,7 +17,7 @@ def calculate_transition_score(song1, song2, key_type_relations, bpm_tolerance):
     elif bpm_diff > 0:  # Going up in BPM
         bpm_score = 100 - abs_bpm_diff       # Slight penalty for going up
     else:  # Going down in BPM
-        bpm_score = 80 - (abs_bpm_diff * 5)  # Larger penalty for going down
+        bpm_score = 80 - (abs_bpm_diff * 10)  # Larger penalty for going down
 
     # Key transition scoring
     song1_key = song1['key']
@@ -29,10 +29,10 @@ def calculate_transition_score(song1, song2, key_type_relations, bpm_tolerance):
         "matching": 100,           # Best - harmonic matching
         "boost": 90,               # Good - one step up
         "boost boost": 80,         # Okay - two steps up
-        "boost boost boost": 70,   # Acceptable - three steps up
-        "drop": 60,                # Not bad - one step down
-        "drop drop": 50,           # Sure - why not
-        "drop drop drop": 40       # No other way out but to do this
+        "boost boost boost": 50,   # Acceptable - three steps up
+        "drop": 40,                # Not bad - one step down
+        "drop drop": 30,           # Sure - why not
+        "drop drop drop": 20       # No other way out but to do this
     }
 
     # Find the best matching transition type
@@ -72,7 +72,7 @@ def build_compatibility_graph(df, key_type_relations):
 
     return graph, scores
 
-def find_best_weighted_path_dfs(graph, scores, start_node, max_time_seconds=300):
+def find_best_weighted_path_dfs(graph, scores, start_node, max_time_seconds=1200):
     """Find the path with the best weighted score using DFS"""
     start_time = time.time()
     best_path = []
@@ -110,7 +110,7 @@ def find_best_weighted_path_dfs(graph, scores, start_node, max_time_seconds=300)
     dfs(start_node, [start_node], visited_set, 0)
     return best_path, best_score
 
-def find_longest_playlist(df, key_type_relations, max_time_seconds=300):
+def find_longest_playlist(df, key_type_relations, max_time_seconds=1200):
     """Find the best weighted playlist"""
     print("Building compatibility graph...")
     graph, scores = build_compatibility_graph(df, key_type_relations)
@@ -153,8 +153,7 @@ def create_playlist_dataframe(df, playlist_indices, key_type_relations):
     playlist_df['playlist_position'] = range(1, len(playlist_indices) + 1)
 
     # Add transition information
-    playlist_df['next_song'] = playlist_df['song_id'].shift(-1)
-    playlist_df['bpm_diff_to_next'] = playlist_df['bpm'].diff().shift(-1)
+    playlist_df['bpm_diff'] = playlist_df['bpm'].diff().shift(-1)
 
     # Calculate transition scores
     transition_scores = []
@@ -182,8 +181,8 @@ def create_playlist_dataframe(df, playlist_indices, key_type_relations):
     playlist_df['transition_score'] = transition_scores
     playlist_df['transition_type'] = transition_types
 
-    columns = ['playlist_position', 'song_id', 'key', 'bpm', 'next_song',
-               'bpm_diff_to_next', 'transition_score', 'transition_type']
+    columns = ['playlist_position', 'song_id', 'key', 'bpm',
+               'bpm_diff', 'transition_score', 'transition_type']
     return playlist_df[columns]
 
 def main():
@@ -373,7 +372,7 @@ def main():
         }
     }
 
-    df = pd.read_csv('songs.csv')
+    df = pd.read_csv('songs_spotify.csv')
     print(f"Loaded {len(df)} songs")
     df = df.sort_values(by=['bpm'])
 
@@ -381,7 +380,7 @@ def main():
     print("\nFinding longest playlist...")
     start_time = time.time()
 
-    longest_playlist, best_start = find_longest_playlist(df, key_type_relations, max_time_seconds=300)
+    longest_playlist, best_start = find_longest_playlist(df, key_type_relations, max_time_seconds=1200)
 
     end_time = time.time()
     print(f"\nSearch completed in {end_time - start_time:.2f} seconds")
@@ -403,7 +402,7 @@ def main():
         print(f"BPM range: {playlist_df['bpm'].min():.1f} - {playlist_df['bpm'].max():.1f}")
         print(f"Average BPM: {playlist_df['bpm'].mean():.1f}")
         if len(playlist_df) > 1:
-            max_bpm_diff = playlist_df['bpm_diff_to_next'].abs().max()
+            max_bpm_diff = playlist_df['bpm_diff'].abs().max()
             print(f"Max BPM transition: {max_bpm_diff:.1f}")
     else:
         print("No compatible playlist found!")

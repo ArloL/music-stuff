@@ -13,6 +13,7 @@ dependencies = [
     "plotly>=6.3.0",
     "pyvis>=0.3.2",
     "scikit-learn>=1.7.1",
+    "spotipy>=2.25.1",
 ]
 
 [dependency-groups]

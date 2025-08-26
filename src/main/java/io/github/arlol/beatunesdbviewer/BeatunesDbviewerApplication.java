@@ -40,7 +40,7 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 
-		LOG.info("{}", songRepository.findByNameContaining("Dermot"));
+		LOG.info("{}", songRepository.findByNameContaining("Far Nearer"));
 		LOG.info(
 				"{}",
 				songRepository
@@ -127,13 +127,12 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 		var butterflies = -8627883123988063491L;
 		var seinfeldU = -6589484468724957098L;
 		var dermot = -1019547102197982839L;
+		var thankUAgain = 5040407027980190316L;
+		var farNearer = -5934354521883931493L;
 
-		var song = songRepository.findById(dermot).orElseThrow();
+		var song = songRepository.findById(farNearer).orElseThrow();
 
-		stayHere(
-				songRepository::findRelevantSongsISelectedAndNeverPlayed,
-				song
-		);
+		stayHere(songRepository::findRelevantSongsISelected, song);
 	}
 
 	private void stayHere(
@@ -252,22 +251,22 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 	) {
 		var matching = fun.apply(
 				seed.exactbpm() - BPM_TOLERANCE,
-				seed.exactbpm(),
+				seed.exactbpm() + BPM_TOLERANCE,
 				MATCHING_KEYS_REVERSE.get(seed.tonalkey())
 		);
 		var boost = fun.apply(
 				seed.exactbpm() - BPM_TOLERANCE,
-				seed.exactbpm(),
+				seed.exactbpm() + BPM_TOLERANCE,
 				BOOST_KEYS_REVERSE.get(seed.tonalkey())
 		);
 		var boostBoost = fun.apply(
 				seed.exactbpm() - BPM_TOLERANCE,
-				seed.exactbpm(),
+				seed.exactbpm() + BPM_TOLERANCE,
 				BOOST_BOOST_KEYS_REVERSE.get(seed.tonalkey())
 		);
 		var boostBoostBoost = fun.apply(
 				seed.exactbpm() - BPM_TOLERANCE,
-				seed.exactbpm(),
+				seed.exactbpm() + BPM_TOLERANCE,
 				BOOST_BOOST_BOOST_KEYS_REVERSE.get(seed.tonalkey())
 		);
 		var drop = fun.apply(
