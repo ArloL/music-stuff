@@ -4,7 +4,7 @@ import time
 
 def calculate_transition_score(song1, song2, key_type_relations, bpm_tolerance):
     """Calculate a weighted score for the transition between two songs"""
-    # Check BPM difference (within 4 BPM)
+    # Check BPM difference
     bpm_diff = song2['bpm'] - song1['bpm']  # Positive = going up, Negative = going down
     abs_bpm_diff = abs(bpm_diff)
 
@@ -16,8 +16,10 @@ def calculate_transition_score(song1, song2, key_type_relations, bpm_tolerance):
         bpm_score = 100  # Perfect BPM match
     elif bpm_diff > 0:  # Going up in BPM
         bpm_score = 100 - abs_bpm_diff       # Slight penalty for going up
+    elif bpm_diff < -2:
+        bpm_score = 100 - abs_bpm_diff       # Slight penalty for going up
     else:  # Going down in BPM
-        bpm_score = 80 - (abs_bpm_diff * 10)  # Larger penalty for going down
+        bpm_score = 100 - (abs_bpm_diff * 5)  # Larger penalty for going down
 
     # Key transition scoring
     song1_key = song1['key']
@@ -51,6 +53,21 @@ def calculate_transition_score(song1, song2, key_type_relations, bpm_tolerance):
 
     total_score = (bpm_score * bpm_weight) + (key_score * key_weight)
     return total_score
+
+def validate_keys(df, key_type_relations):
+    """Validate that all song keys exist in the relations dictionary"""
+    all_valid_keys = set()
+    for transitions in key_type_relations.values():
+        all_valid_keys.update(transitions.keys())
+        for key_list in transitions.values():
+            all_valid_keys.update(key_list)
+
+    invalid_keys = set(df['key']) - all_valid_keys
+    if invalid_keys:
+        print(f"Warning: Found invalid keys in dataset: {invalid_keys}")
+        print("These songs will have no valid transitions")
+
+    return len(invalid_keys) == 0
 
 def build_compatibility_graph(df, key_type_relations):
     """Build a weighted graph of compatible song transitions"""
@@ -110,8 +127,10 @@ def find_best_weighted_path_dfs(graph, scores, start_node, max_time_seconds=1200
     dfs(start_node, [start_node], visited_set, 0)
     return best_path, best_score
 
-def find_longest_playlist(df, key_type_relations, max_time_seconds=1200):
-    """Find the best weighted playlist"""
+    """Find the best playlist using hybrid approach"""
+    print("Validating song keys...")
+    validate_keys(df, key_type_relations)
+
     print("Building compatibility graph...")
     graph, scores = build_compatibility_graph(df, key_type_relations)
 
@@ -155,7 +174,7 @@ def create_playlist_dataframe(df, playlist_indices, key_type_relations):
     # Add transition information
     playlist_df['bpm_diff'] = playlist_df['bpm'].diff().shift(-1)
 
-    # Calculate transition scores
+    # Calculate transition scores and types
     transition_scores = []
     transition_types = []
 
@@ -185,7 +204,7 @@ def create_playlist_dataframe(df, playlist_indices, key_type_relations):
                'bpm_diff', 'transition_score', 'transition_type']
     return playlist_df[columns]
 
-def main():
+def main(source_file = 'songs.csv', output_file = 'longest_playlist.csv'):
     # Key mapping
     key_type_relations = {
         "drop drop drop": {
@@ -372,11 +391,24 @@ def main():
         }
     }
 
-    df = pd.read_csv('songs_spotify.csv')
-    print(f"Loaded {len(df)} songs")
-    df = df.sort_values(by=['bpm'])
+    # Load and validate data
+    try:
+        df = pd.read_csv(source_file)
+        print(f"Loaded {len(df)} songs")
 
-    # Find the longest playlist
+        # Check required columns
+        required_columns = ['song_id', 'key', 'bpm']
+        missing = [col for col in required_columns if col not in df.columns]
+        if missing:
+            raise ValueError(f"Missing required columns: {missing}")
+
+        # Sort by BPM for better initial ordering
+        df = df.sort_values(by=['bpm']).reset_index(drop=True)
+
+    except Exception as e:
+        print(f"Error loading data: {e}")
+        return
+
     print("\nFinding longest playlist...")
     start_time = time.time()
 
@@ -392,20 +424,11 @@ def main():
         print(playlist_df.to_string(index=False))
 
         # Save to CSV
-        output_file = 'longest_playlist.csv'
         playlist_df.to_csv(output_file, index=False)
         print(f"\nPlaylist saved to {output_file}")
-
-        # Print some statistics
-        print(f"\nPlaylist Statistics:")
-        print(f"Total songs: {len(longest_playlist)}")
-        print(f"BPM range: {playlist_df['bpm'].min():.1f} - {playlist_df['bpm'].max():.1f}")
-        print(f"Average BPM: {playlist_df['bpm'].mean():.1f}")
-        if len(playlist_df) > 1:
-            max_bpm_diff = playlist_df['bpm_diff'].abs().max()
-            print(f"Max BPM transition: {max_bpm_diff:.1f}")
     else:
         print("No compatible playlist found!")
+        print("Check that your song keys are valid (1-24) and BPMs allow for transitions.")
 
 if __name__ == "__main__":
     main()
