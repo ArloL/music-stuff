@@ -2,6 +2,7 @@ import pandas as pd
 from collections import defaultdict
 import time
 import sys
+import os
 
 def calculate_transition_score(song1, song2, key_type_relations, bpm_tolerance):
     """Calculate a weighted score for the transition between two songs"""
@@ -243,7 +244,14 @@ def create_playlist_dataframe(df, playlist_indices, key_type_relations):
                'bpm_diff', 'transition_score', 'transition_type']
     return playlist_df[columns]
 
-def main(source_file, output_file):
+def add_suffix(filename, suffix, separator='_'):
+    if '.' in filename[1:] and not (filename.startswith('.') and filename[1:].find('.') == -1):
+        root, ext = os.path.splitext(filename)
+        return f"{root}{separator}{suffix}{ext}"
+    return f"{filename}{separator}{suffix}"
+
+def main(source_file):
+    output_file = add_suffix(source_file, "longest")
     # Key mapping
     key_type_relations = {
         "drop drop drop": {
@@ -471,5 +479,4 @@ def main(source_file, output_file):
 
 if __name__ == "__main__":
     source_file = sys.argv[1] if len(sys.argv) > 1 else "songs.csv"
-    output_file = sys.argv[2] if len(sys.argv) > 2 else "longest_playlist.csv"
-    main(source_file, output_file)
+    main(source_file)
