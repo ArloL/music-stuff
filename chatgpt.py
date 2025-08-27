@@ -1,6 +1,6 @@
 import pandas as pd
 import pulp
-from transitions import calculate_transition_score, build_compatibility_graph, validate_keys
+from transitions import calculate_transition_score, build_compatibility_graph, validate_keys, get_transition_type
 
 def main(source_file, min_songs, max_songs):
     # Load dataset
@@ -94,19 +94,22 @@ def main(source_file, min_songs, max_songs):
     start_nodes = [i for i in song_ids if i not in prev_map]
     if not start_nodes:
         print("No valid playlist found.")
-    else:
-        current = start_nodes[0]
+    for current in start_nodes:
         playlist = [songs.loc[current]]
         while current in next_map:
             current = next_map[current]
             playlist.append(songs.loc[current])
 
-        print("Best Playlist Order:")
-        for idx, song in enumerate(playlist, 1):
-            print(f"{idx}. {song.name}")
-
-        print("Total Score:", pulp.value(model.objective))
-
+        print("Playlist Order:")
+        for i in range(len(playlist)):
+            song = playlist[i]
+            if i + 2 > len(playlist):
+                print(f"{i + 1}. {song.name}")
+            else:
+                next_song = playlist[i + 1]
+                score = calculate_transition_score(song, next_song)
+                transition_type = get_transition_type(song, next_song)
+                print(f"{i + 1}. {song.name} {song['bpm']} {score} {transition_type}")
 
 if __name__ == "__main__":
     import argparse

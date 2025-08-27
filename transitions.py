@@ -187,12 +187,12 @@ ALLOWED_KEY_TRANSITIONS = {
 
 TRANSITIONS_WEIGHTS ={
     "matching": 100,           # Perfect harmonic match
-    "boost": 90,               # Good energy increase
-    "boost boost": 80,         # Moderate energy jump
+    "boost": 95,               # Good energy increase
+    "boost boost": 85,         # Moderate energy jump
     "boost boost boost": 50,   # Large energy jump
-    "drop": 70,                # Good for breakdowns
-    "drop drop": 30,           # Moderate energy drop
-    "drop drop drop": 20       # Large energy drop
+    "drop": 80,                # Good for breakdowns
+    "drop drop": 40,           # Moderate energy drop
+    "drop drop drop": 30       # Large energy drop
 }
 
 def calculate_transition_score(song1, song2, bpm_tolerance=20):
@@ -223,8 +223,8 @@ def calculate_transition_score(song1, song2, bpm_tolerance=20):
         return 0
     key_score = TRANSITIONS_WEIGHTS[transition_type]
 
-    bpm_weight = 0.5
-    key_weight = 0.5
+    bpm_weight = 0.6
+    key_weight = 0.4
 
     return (bpm_score * bpm_weight) + (key_score * key_weight)
 
