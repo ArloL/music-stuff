@@ -2,9 +2,10 @@ import spotipy
 import json
 import requests
 import csv
+from urllib.parse import urlparse
 from spotipy.oauth2 import SpotifyOAuth
 
-def get_audio_features(track_id):
+def get_audio_features(spotify_ids):
     response = requests.request(
         'GET',
         'https://api.reccobeats.com/v1/audio-features',
@@ -12,28 +13,19 @@ def get_audio_features(track_id):
             'Accept': 'application/json'
         },
         params={
-            'ids': track_id
+            'ids': spotify_ids
         })
-    json_response = json.loads(response.text)
-    content = json_response['content']
-    if len(content) > 0:
-        content[0]['spotify_id'] = track_id
-        return content[0]
-    return {
-        'spotify_id': track_id,
-        'id': '-1',
-        'acousticness': -1,
-        'danceability': -1,
-        'energy': -1,
-        'instrumentalness': -1,
-        'key': -1,
-        'liveness': -1,
-        'loudness': -1,
-        'mode': -1,
-        'speechiness': -1,
-        'tempo': -1,
-        'valence': -1
-    }
+    content = json.loads(response.text)['content']
+    features = {}
+    for feature in content:
+        spotify_id = urlparse(feature['href']).path.split("/")[-1]
+        feature['spotify_id'] = spotify_id
+        features[spotify_id] = feature
+
+    result = []
+    for spotify_id in spotify_ids:
+        result.append(features[spotify_id])
+    return result
 
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id='567ed2100ef746ff8bc4765c6fe21ac3',
                                                client_secret='9c2182d252b048bdb09ec8307842b455',
@@ -97,23 +89,23 @@ with open('songs_spotify.csv', 'w', newline='') as csvfile:
         'speechiness',
         'valence'])
 
-    for track in tracks:
+    features = get_audio_features([t['track']['id'] for t in tracks])
+    for i, track in enumerate(tracks):
         track_details = track['track']
-        features = get_audio_features(track_details['id'])
         writer.writerow([
             f'{', '.join([d['name'] for d in track_details['artists']])} - {track_details['name']}',
-            spotify_to_beatunes_key_map[(features['mode'], features['key'])],
-            features['tempo'],
-            features['id'],
-            features['spotify_id'],
-            features['acousticness'],
-            features['danceability'],
-            features['energy'],
-            features['instrumentalness'],
-            features['key'],
-            features['liveness'],
-            features['loudness'],
-            features['mode'],
-            features['speechiness'],
-            features['valence']
+            spotify_to_beatunes_key_map[(features[i]['mode'], features[i]['key'])],
+            features[i]['tempo'],
+            features[i]['id'],
+            features[i]['spotify_id'],
+            features[i]['acousticness'],
+            features[i]['danceability'],
+            features[i]['energy'],
+            features[i]['instrumentalness'],
+            features[i]['key'],
+            features[i]['liveness'],
+            features[i]['loudness'],
+            features[i]['mode'],
+            features[i]['speechiness'],
+            features[i]['valence']
         ])
