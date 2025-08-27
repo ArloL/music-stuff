@@ -1,35 +1,8 @@
 import pandas as pd
-from collections import defaultdict
 import time
 import sys
 import os
-from transitions import calculate_transition_score, validate_keys, get_transition_type
-
-def build_compatibility_graph(df):
-    """Build a weighted graph of compatible song transitions"""
-    graph = defaultdict(list)
-    scores = {}  # Store transition scores
-
-    reachable_songs = set()
-    for i, song1 in df.iterrows():
-        bpm_tolerance = 4
-        while True:
-            for j, song2 in df.iterrows():
-                if i != j:
-                    score = calculate_transition_score(song1, song2, bpm_tolerance)
-                    if score > 0:  # Only add compatible transitions
-                        graph[i].append(j)
-                        reachable_songs.add(j)
-                        scores[(i, j)] = score
-            if len(graph[i]) > 1 or bpm_tolerance > 30:
-                break
-            bpm_tolerance += 1
-
-    for i, song1 in df.iterrows():
-        if len(graph[i]) == 0 and not i in reachable_songs:
-            print(f"{song1['song_id']} is unreachable")
-
-    return graph, scores
+from transitions import calculate_transition_score, validate_keys, get_transition_type, build_compatibility_graph
 
 def find_best_path_greedy(graph, scores, start_node, df):
     """Find a good path using greedy approach - faster and often better for small datasets"""

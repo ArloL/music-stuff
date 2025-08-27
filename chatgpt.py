@@ -14,8 +14,6 @@ def main(source_file):
     print("Building compatibility graph...")
     graph, scores = build_compatibility_graph(songs)
 
-    print("done")
-
     connection_count = sum(len(neighbors) for neighbors in graph.values())
     print(f"Graph built with {connection_count} connections")
 
