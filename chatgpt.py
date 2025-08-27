@@ -1,6 +1,6 @@
 import pandas as pd
 import pulp
-from transitions import calculate_transition_score
+from transitions import calculate_transition_score, build_compatibility_graph, validate_keys
 import sys
 
 def main(source_file):
@@ -8,11 +8,20 @@ def main(source_file):
     songs = pd.read_csv(source_file).set_index('song_id')
     song_ids = songs.index.tolist()
 
-    # Build score matrix
-    scores = {
-        (i, j): calculate_transition_score(songs.loc[i], songs.loc[j])
-        for i in song_ids for j in song_ids if i != j
-    }
+    print("Validating song keys...")
+    validate_keys(songs)
+
+    print("Building compatibility graph...")
+    graph, scores = build_compatibility_graph(songs)
+
+    print("done")
+
+    connection_count = sum(len(neighbors) for neighbors in graph.values())
+    print(f"Graph built with {connection_count} connections")
+
+    if connection_count == 0:
+        print("No compatible transitions found!")
+        return
 
     # ILP Model
     model = pulp.LpProblem("BestPlaylist", pulp.LpMaximize)
