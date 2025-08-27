@@ -3,15 +3,16 @@ playlist_position,song_id,key,bpm,bpm_diff,transition_score,transition_type
 2,"Maribou State, Pedestrian, Axel Boman - The Clown - Axel Boman Remix",1,115.998,2.0019999999999953,73.999,boost boost boost
 3,DJ Koze - My Grandmotha,15,118.0,-0.6749999999999972,83.3125,drop
 4,Tell - I Lost 200€ in a Club,13,117.325,2.688999999999993,73.6555,boost boost boost
-5,Jimpster - Porchlight and Rocking Chairs - Kink Remix,3,120.014,-1.0060000000000002,92.485,boost
-6,"COMA, Robag Wruhme - Lora - Robag's Fandara Qualv NB",5,119.008,1.9930000000000092,84.0035,drop
-7,DJ Koze - I Want To Sleep,3,121.001,-0.9849999999999994,82.5375,drop
-8,DAMH - Black Night,4,120.016,3.962999999999994,83.0185,drop
-9,"Martyn, Four Tet - Glassbeadgames - 8 Hours at Fabric Dub",2,123.979,3.0319999999999965,73.48400000000001,boost boost boost
-10,Ross from Friends - Epiphany,6,127.011,-4.003999999999991,92.998,boost
-11,Youandewan - 1988 - Original Mix,8,123.007,0.01099999999999568,74.9945,boost boost boost
-12,"The Cyclist, Robag Wruhme - Pressing Matters - Robag's Pinvoldex Sull Nb",22,123.018,-2.0220000000000056,98.989,matching
-13,Lawrence - Glow,22,120.996,2.0020000000000095,88.999,boost boost
-14,Panthera Krause - Heppy,16,122.998,3.0,93.5,boost
-15,Andre Lodemann - Where Are You Now?,15,125.998,2.9810000000000088,63.509499999999996,drop drop
-16,Jeigo - Pearl Leaf,21,128.979,,,
+5,Jimpster - Porchlight and Rocking Chairs - Kink Remix,3,120.014,0.987000000000009,99.50649999999999,matching
+6,DJ Koze - I Want To Sleep,3,121.001,-1.9930000000000092,90.01749999999998,boost
+7,"COMA, Robag Wruhme - Lora - Robag's Fandara Qualv NB",5,119.008,3.9990000000000094,98.00049999999999,matching
+8,Youandewan - 1988 - Original Mix,8,123.007,1.9829999999999899,99.0085,matching
+9,Ada - Faith,8,124.99,2.021000000000001,83.98949999999999,drop
+10,Ross from Friends - Epiphany,6,127.011,-3.0319999999999965,58.484,drop drop drop
+11,"Martyn, Four Tet - Glassbeadgames - 8 Hours at Fabric Dub",2,123.979,-3.962999999999994,93.0185,boost
+12,DAMH - Black Night,4,120.016,0.9799999999999898,89.51,boost boost
+13,Lawrence - Glow,22,120.996,2.0220000000000056,98.989,matching
+14,"The Cyclist, Robag Wruhme - Pressing Matters - Robag's Pinvoldex Sull Nb",22,123.018,-0.01999999999999602,89.95000000000002,boost boost
+15,Panthera Krause - Heppy,16,122.998,3.0,93.5,boost
+16,Andre Lodemann - Where Are You Now?,15,125.998,2.9810000000000088,63.509499999999996,drop drop
+17,Jeigo - Pearl Leaf,21,128.979,,,
