@@ -1,9 +1,8 @@
 import pandas as pd
 import pulp
 from transitions import calculate_transition_score, build_compatibility_graph, validate_keys
-import sys
 
-def main(source_file):
+def main(source_file, min_songs, max_songs):
     # Load dataset
     songs = pd.read_csv(source_file).set_index('song_id')
     song_ids = songs.index.tolist()
@@ -28,7 +27,37 @@ def main(source_file):
     x = pulp.LpVariable.dicts("x", scores.keys(), lowBound=0, upBound=1, cat=pulp.LpBinary)
 
     # Objective: maximize total transition score
-    model += pulp.lpSum(scores[i, j] * x[i, j] for (i, j) in scores)
+    lambda_len = 0.01  # tune this weight
+    model += pulp.lpSum(scores[i, j] * x[i, j] for (i, j) in scores) \
+         + lambda_len * pulp.lpSum(x[i, j] for (i, j) in scores)
+
+    # AFTER defining x[i,j] variables AND before solving:
+    # 1. Add start/end node constraints to enforce EXACTLY ONE PATH
+    s = pulp.LpVariable.dicts("start", song_ids, cat=pulp.LpBinary)
+    t = pulp.LpVariable.dicts("end", song_ids, cat=pulp.LpBinary)
+
+    for i in song_ids:
+        out_degree = pulp.lpSum(x[i, j] for j in song_ids if (i, j) in x)
+        in_degree = pulp.lpSum(x[j, i] for j in song_ids if (j, i) in x)
+
+        # Start node: out=1, in=0
+        model += s[i] <= out_degree
+        model += s[i] <= 1 - in_degree
+        model += s[i] >= out_degree - in_degree
+
+        # End node: out=0, in=1
+        model += t[i] <= 1 - out_degree
+        model += t[i] <= in_degree
+        model += t[i] >= in_degree - out_degree
+
+    # Enforce exactly ONE start and ONE end node (single path)
+    model += pulp.lpSum(s[i] for i in song_ids) == 1
+    model += pulp.lpSum(t[i] for i in song_ids) == 1
+
+    # Link path length to edges: total_songs = total_edges + 1
+    total_songs = pulp.lpSum(s[i] for i in song_ids) + pulp.lpSum(x[i, j] for (i, j) in x)
+    model += total_songs >= min_songs
+    model += total_songs <= max_songs
 
     # Constraints:
     # 1. Each song has at most one outgoing edge
@@ -50,7 +79,9 @@ def main(source_file):
                 model += u[i] - u[j] + n * x[i, j] <= n - 1
 
     # Solve
-    model.solve(pulp.PULP_CBC_CMD(msg=False))
+    status = model.solve(pulp.PULP_CBC_CMD(msg=False, timeLimit=60))
+
+    print(f"Model status: {pulp.LpStatus[status]}")
 
     # Extract chosen edges
     playlist_edges = {(i, j) for (i, j) in scores if pulp.value(x[i, j]) == 1}
@@ -76,6 +107,14 @@ def main(source_file):
 
         print("Total Score:", pulp.value(model.objective))
 
+
 if __name__ == "__main__":
-    source_file = sys.argv[1] if len(sys.argv) > 1 else "songs.csv"
-    main(source_file)
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Generate optimal music playlist")
+    parser.add_argument("source_file", nargs="?", default="songs.csv", help="CSV file with song data")
+    parser.add_argument("--min-songs", type=int, default=10, help="Minimum playlist length")
+    parser.add_argument("--max-songs", type=int, default=25, help="Maximum playlist length")
+
+    args = parser.parse_args()
+    main(args.source_file, args.min_songs, args.max_songs)
