@@ -65,14 +65,14 @@ def main(source_file):
         print("No valid playlist found.")
     else:
         current = start_nodes[0]
-        playlist = [current]
+        playlist = [songs.loc[current]]
         while current in next_map:
             current = next_map[current]
-            playlist.append(current)
+            playlist.append(songs.loc[current])
 
         print("Best Playlist Order:")
         for idx, song in enumerate(playlist, 1):
-            print(f"{idx}. {song}")
+            print(f"{idx}. {song.name}")
 
         print("Total Score:", pulp.value(model.objective))
 
