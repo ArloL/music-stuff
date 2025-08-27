@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 ALLOWED_KEY_TRANSITIONS = {
     "drop drop drop": {
         11: [7],
@@ -246,3 +248,29 @@ def get_transition_type(song1, song2):
             if song2['key'] in transitions[song1['key']]:
                 return transition_type
     return 'incompatible'
+
+def build_compatibility_graph(df):
+    """Build a weighted graph of compatible song transitions"""
+    graph = defaultdict(list)
+    scores = {}  # Store transition scores
+
+    reachable_songs = set()
+    for i, song1 in df.iterrows():
+        bpm_tolerance = 4
+        while True:
+            for j, song2 in df.iterrows():
+                if i != j:
+                    score = calculate_transition_score(song1, song2, bpm_tolerance)
+                    if score > 0:  # Only add compatible transitions
+                        graph[i].append(j)
+                        reachable_songs.add(j)
+                        scores[(i, j)] = score
+            if len(graph[i]) > 1 or bpm_tolerance > 30:
+                break
+            bpm_tolerance += 1
+
+    for i, song1 in df.iterrows():
+        if len(graph[i]) == 0 and not i in reachable_songs:
+            print(f"{i} is unreachable")
+
+    return graph, scores
