@@ -3,74 +3,9 @@ from collections import defaultdict
 import time
 import sys
 import os
+from transitions import calculate_transition_score, validate_keys, get_transition_type
 
-def calculate_transition_score(song1, song2, key_type_relations, bpm_tolerance):
-    """Calculate a weighted score for the transition between two songs"""
-    # Check BPM difference
-    bpm_diff = song2['bpm'] - song1['bpm']  # Positive = going up, Negative = going down
-    abs_bpm_diff = abs(bpm_diff)
-
-    if abs_bpm_diff > bpm_tolerance:
-        return 0  # Incompatible transition
-
-    # BPM scoring (higher is better)
-    if abs_bpm_diff == 0:
-        bpm_score = 100  # Perfect BPM match
-    elif bpm_diff > 0:  # Going up in BPM
-        bpm_score = 100 - abs_bpm_diff       # Slight penalty for going up
-    elif bpm_diff < -2:
-        bpm_score = 100 - abs_bpm_diff       # Slight penalty for going up
-    else:  # Going down in BPM
-        bpm_score = 100 - (abs_bpm_diff * 5)  # Larger penalty for going down
-
-    # Key transition scoring
-    song1_key = song1['key']
-    song2_key = song2['key']
-    key_score = 0
-
-    transition_weights = {
-        "matching": 100,           # Perfect harmonic match
-        "boost": 90,               # Good energy increase
-        "boost boost": 80,         # Moderate energy jump
-        "boost boost boost": 50,   # Large energy jump
-        "drop": 70,                # Good for breakdowns
-        "drop drop": 30,           # Moderate energy drop
-        "drop drop drop": 20       # Large energy drop
-    }
-
-    # Find the best matching transition type
-    for transition_type, transitions in key_type_relations.items():
-        if song1_key in transitions:
-            if song2_key in transitions[song1_key]:
-                key_score = max(key_score, transition_weights[transition_type])
-
-    if key_score == 0:
-        return 0  # No valid key transition found
-
-    # Combined score (weighted average)
-    # You can adjust these weights based on what's more important to you
-    bpm_weight = 0.5
-    key_weight = 0.5
-
-    total_score = (bpm_score * bpm_weight) + (key_score * key_weight)
-    return total_score
-
-def validate_keys(df, key_type_relations):
-    """Validate that all song keys exist in the relations dictionary"""
-    all_valid_keys = set()
-    for transitions in key_type_relations.values():
-        all_valid_keys.update(transitions.keys())
-        for key_list in transitions.values():
-            all_valid_keys.update(key_list)
-
-    invalid_keys = set(df['key']) - all_valid_keys
-    if invalid_keys:
-        print(f"Warning: Found invalid keys in dataset: {invalid_keys}")
-        print("These songs will have no valid transitions")
-
-    return len(invalid_keys) == 0
-
-def build_compatibility_graph(df, key_type_relations):
+def build_compatibility_graph(df):
     """Build a weighted graph of compatible song transitions"""
     graph = defaultdict(list)
     scores = {}  # Store transition scores
@@ -81,7 +16,7 @@ def build_compatibility_graph(df, key_type_relations):
         while True:
             for j, song2 in df.iterrows():
                 if i != j:
-                    score = calculate_transition_score(song1, song2, key_type_relations, bpm_tolerance)
+                    score = calculate_transition_score(song1, song2, bpm_tolerance)
                     if score > 0:  # Only add compatible transitions
                         graph[i].append(j)
                         reachable_songs.add(j)
@@ -163,13 +98,13 @@ def find_best_path_dfs(graph, scores, start_node, max_time_seconds=60):
     dfs(start_node, [start_node], visited_set, 0)
     return best_path, best_score
 
-def find_longest_playlist(df, key_type_relations, max_time_seconds=300, use_greedy=True):
+def find_longest_playlist(df, max_time_seconds=300, use_greedy=True):
     """Find the best playlist using hybrid approach"""
     print("Validating song keys...")
-    validate_keys(df, key_type_relations)
+    validate_keys(df)
 
     print("Building compatibility graph...")
-    graph, scores = build_compatibility_graph(df, key_type_relations)
+    graph, scores = build_compatibility_graph(df)
 
     connection_count = sum(len(neighbors) for neighbors in graph.values())
     print(f"Graph built with {connection_count} connections")
@@ -204,12 +139,12 @@ def find_longest_playlist(df, key_type_relations, max_time_seconds=300, use_gree
             best_start_song = idx
             print(f"New best: {len(path)} songs, score: {score:.1f} "
                   f"(avg: {score/max(len(path)-1, 1):.1f} per transition)")
-            playlist_df = create_playlist_dataframe(df, best_playlist, key_type_relations)
+            playlist_df = create_playlist_dataframe(df, best_playlist)
             print(playlist_df.to_string(index=False))
 
     return best_playlist, best_start_song
 
-def create_playlist_dataframe(df, playlist_indices, key_type_relations):
+def create_playlist_dataframe(df, playlist_indices):
     """Create a DataFrame with the playlist in order, including transition scores"""
     if not playlist_indices:
         return pd.DataFrame()
@@ -227,16 +162,9 @@ def create_playlist_dataframe(df, playlist_indices, key_type_relations):
     for i in range(len(playlist_indices) - 1):
         current_song = df.loc[playlist_indices[i]]
         next_song = df.loc[playlist_indices[i + 1]]
-        score = calculate_transition_score(current_song, next_song, key_type_relations, 100)
+        score = calculate_transition_score(current_song, next_song)
         transition_scores.append(score)
-
-        # Find the transition type used
-        transition_type = "unknown"
-        for t_type, transitions in key_type_relations.items():
-            if current_song['key'] in transitions:
-                if next_song['key'] in transitions[current_song['key']]:
-                    transition_type = t_type
-                    break
+        transition_type = get_transition_type(current_song, next_song)
         transition_types.append(transition_type)
 
     # Add the last row (no transition)
@@ -258,191 +186,6 @@ def add_suffix(filename, suffix, separator='_'):
 
 def main(source_file):
     output_file = add_suffix(source_file, "longest")
-    # Key mapping
-    key_type_relations = {
-        "drop drop drop": {
-            11: [7],
-            13: [9],
-            15: [11],
-            17: [13],
-            19: [15],
-            21: [17],
-            23: [19],
-            1: [21],
-            3: [23],
-            5: [1],
-            7: [3],
-            9: [5],
-            12: [8],
-            14: [10],
-            16: [12],
-            18: [14],
-            20: [16],
-            22: [18],
-            24: [20],
-            2: [22],
-            4: [24],
-            6: [2],
-            8: [4],
-            10: [6]
-        },
-        "drop drop": {
-            11: [17],
-            13: [19],
-            15: [21],
-            17: [23],
-            19: [1],
-            21: [3],
-            23: [5],
-            1: [7],
-            3: [9],
-            5: [11],
-            7: [13],
-            9: [15],
-            12: [18],
-            14: [20],
-            16: [22],
-            18: [24],
-            20: [2],
-            22: [4],
-            24: [6],
-            2: [8],
-            4: [10],
-            6: [12],
-            8: [14],
-            10: [16]
-        },
-        "drop" :{
-			11: [12, 9],
-			13: [14, 11],
-			15: [16, 13],
-			17: [18, 15],
-			19: [20, 17],
-			21: [22, 19],
-			23: [24, 21],
-			1: [2, 23],
-			3: [4, 1],
-			5: [6, 3],
-			7: [8, 5],
-			9: [10, 7],
-			12: [10],
-			14: [12],
-			16: [14],
-			18: [16],
-			20: [18],
-			22: [20],
-			24: [22],
-			2: [24],
-			4: [2],
-			6: [4],
-			8: [6],
-			10: [8]
-        },
-        "matching": {
-            11: [11, 14],
-            13: [13, 16],
-            15: [15, 18],
-            17: [17, 20],
-            19: [19, 22],
-            21: [21, 24],
-            23: [23, 2],
-            1: [1, 4],
-            3: [3, 6],
-            5: [5, 8],
-            7: [7, 10],
-            9: [9, 12],
-            12: [12, 9],
-            14: [14, 11],
-            16: [16, 13],
-            18: [18, 15],
-            20: [20, 17],
-            22: [22, 19],
-            24: [24, 21],
-            2: [2, 23],
-            4: [4, 1],
-            6: [6, 3],
-            8: [8, 5],
-            10: [10, 7]
-        },
-        "boost": {
-            11: [13],
-            13: [15],
-            15: [17],
-            17: [19],
-            19: [21],
-            21: [23],
-            23: [1],
-            1: [3],
-            3: [5],
-            5: [7],
-            7: [9],
-            9: [11],
-            12: [11, 14],
-            14: [13, 16],
-            16: [15, 18],
-            18: [17, 20],
-            20: [19, 22],
-            22: [21, 24],
-            24: [23, 2],
-            2: [1, 4],
-            4: [3, 6],
-            6: [5, 8],
-            8: [7, 10],
-            10: [9, 12]
-        },
-        "boost boost": {
-            11: [5],
-            13: [7],
-            15: [9],
-            17: [11],
-            19: [13],
-            21: [15],
-            23: [17],
-            1: [19],
-            3: [21],
-            5: [23],
-            7: [1],
-            9: [3],
-            12: [6],
-            14: [8],
-            16: [10],
-            18: [12],
-            20: [14],
-            22: [16],
-            24: [18],
-            2: [20],
-            4: [22],
-            6: [24],
-            8: [2],
-            10: [4]
-        },
-        "boost boost boost": {
-            11: [15, 1],
-            13: [17, 3],
-            15: [19, 5],
-            17: [21, 7],
-            19: [23, 9],
-            21: [1, 11],
-            23: [3, 13],
-            1: [5, 15],
-            3: [7, 17],
-            5: [9, 19],
-            7: [11, 21],
-            9: [13, 23],
-            12: [16, 2],
-            14: [18, 4],
-            16: [20, 6],
-            18: [22, 8],
-            20: [24, 10],
-            22: [2, 12],
-            24: [4, 14],
-            2: [6, 16],
-            4: [8, 18],
-            6: [10, 20],
-            8: [12, 22],
-            10: [14, 24]
-        }
-    }
 
     # Load and validate data
     try:
@@ -465,14 +208,14 @@ def main(source_file):
     print("\nFinding longest playlist...")
     start_time = time.time()
 
-    longest_playlist, best_start = find_longest_playlist(df, key_type_relations, max_time_seconds=300)
+    longest_playlist, best_start = find_longest_playlist(df, max_time_seconds=300)
 
     end_time = time.time()
     print(f"\nSearch completed in {end_time - start_time:.2f} seconds")
 
     if longest_playlist:
         print(f"\nLongest playlist found: {len(longest_playlist)} songs")
-        playlist_df = create_playlist_dataframe(df, longest_playlist, key_type_relations)
+        playlist_df = create_playlist_dataframe(df, longest_playlist)
         print("\nPlaylist:")
         print(playlist_df.to_string(index=False))
 

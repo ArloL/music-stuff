@@ -21,3 +21,4 @@
 
 *.db
 .cache
+__pycache__

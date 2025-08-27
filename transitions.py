@@ -1,4 +1,4 @@
-KEY_TRANSITIONS = {
+ALLOWED_KEY_TRANSITIONS = {
     "drop drop drop": {
         11: [7],
         13: [9],
@@ -182,3 +182,67 @@ KEY_TRANSITIONS = {
         10: [14, 24]
     }
 }
+
+TRANSITIONS_WEIGHTS ={
+    "matching": 100,           # Perfect harmonic match
+    "boost": 90,               # Good energy increase
+    "boost boost": 80,         # Moderate energy jump
+    "boost boost boost": 50,   # Large energy jump
+    "drop": 70,                # Good for breakdowns
+    "drop drop": 30,           # Moderate energy drop
+    "drop drop drop": 20       # Large energy drop
+}
+
+def calculate_transition_score(song1, song2, bpm_tolerance=20):
+    """Calculate a weighted score for the transition between two songs"""
+
+    bpm_diff = song2['bpm'] - song1['bpm']
+    abs_bpm_diff = abs(bpm_diff)
+
+    if abs_bpm_diff > bpm_tolerance:
+        return 0
+
+    if abs_bpm_diff == 0:
+        # perfect match
+        bpm_score = 100
+    elif bpm_diff > 0:
+        # going up; slight penalty
+        bpm_score = 100 - abs_bpm_diff
+    elif bpm_diff < -2:
+        # going down a little, slight penalty
+        bpm_score = 100 - abs_bpm_diff
+    else:
+        # going down a lot, larger penalty
+        bpm_score = 100 - (abs_bpm_diff * 5)
+
+    transition_type = get_transition_type(song1, song2)
+    # No valid key transition found
+    if transition_type == 'incompatible':
+        return 0
+    key_score = TRANSITIONS_WEIGHTS[transition_type]
+
+    bpm_weight = 0.5
+    key_weight = 0.5
+
+    return (bpm_score * bpm_weight) + (key_score * key_weight)
+
+
+def validate_keys(df):
+    """Validate that all song keys exist in the relations dictionary"""
+    all_valid_keys = set()
+    for transitions in ALLOWED_KEY_TRANSITIONS.values():
+        all_valid_keys.update(transitions.keys())
+
+    invalid_keys = set(df['key']) - all_valid_keys
+    if invalid_keys:
+        print(f"Warning: Found invalid keys in dataset: {invalid_keys}")
+        print("These songs will have no valid transitions")
+
+    return len(invalid_keys) == 0
+
+def get_transition_type(song1, song2):
+    for transition_type, transitions in ALLOWED_KEY_TRANSITIONS.items():
+        if song1['key'] in transitions:
+            if song2['key'] in transitions[song1['key']]:
+                return transition_type
+    return 'incompatible'
