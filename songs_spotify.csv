@@ -1,4 +1,4 @@
-song_id,key,bpm,id,spotify_id,acousticness,danceability,energy,instrumentalness,key,liveness,loudness,mode,speechiness,valence
+song_id,key,bpm,id,spotify_id,acousticness,danceability,energy,instrumentalness,spotify_key,liveness,loudness,mode,speechiness,valence
 Nicolas Jaar - Can't See What Is Burning There,5,107.004,a07872f3-71de-464c-9e6f-a3bc96ab0a63,4LTt3LIHKYhD2D1Mgfg2s1,0.352,0.806,0.495,0.836,2,0.155,-10.892,1,0.0344,0.195
 "Maribou State, Pedestrian, Axel Boman - The Clown - Axel Boman Remix",1,115.998,3cb3ff44-bcbf-4f5f-9bf8-d3e72ec14e55,06vNFYTxJUZUBw7TotVGhe,0.456,0.785,0.739,0.817,0,0.109,-13.234,1,0.0457,0.478
 DJ Koze - My Grandmotha,15,118,4ebcc98b-e3d9-4544-8cde-f369e3c334b2,6KedVnZ73zi29R3SbQAaeA,0.124,0.352,0.375,0.304,1,0.287,-14.924,1,0.0434,0.059

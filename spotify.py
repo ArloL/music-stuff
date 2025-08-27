@@ -82,7 +82,7 @@ with open('songs_spotify.csv', 'w', newline='') as csvfile:
         'danceability',
         'energy',
         'instrumentalness',
-        'key',
+        'spotify_key',
         'liveness',
         'loudness',
         'mode',
