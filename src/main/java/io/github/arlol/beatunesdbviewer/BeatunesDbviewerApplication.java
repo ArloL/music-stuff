@@ -29,7 +29,7 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 
 	private static final Logger LOG = LoggerFactory
 			.getLogger(BeatunesDbviewerApplication.class);
-	public static final int BPM_TOLERANCE = 4;
+	public static final int BPM_TOLERANCE = 12;
 
 	public static void main(String[] args) {
 		SpringApplication.run(BeatunesDbviewerApplication.class, args);
@@ -41,7 +41,7 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 
-		LOG.info("{}", songRepository.findByNameContaining("Far Nearer"));
+		LOG.info("{}", songRepository.findByNameContaining("My Grandmotha"));
 		LOG.info(
 				"{}",
 				songRepository
@@ -52,10 +52,6 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 		writePlaylistToFile(
 				"songs-critical-mass-selection.csv",
 				"Critical Mass Selection"
-		);
-		writePlaylistToFile(
-				"songs-critical-mass-halde-copy.csv",
-				"Critical Mass Halde copy"
 		);
 
 		var glokTimeOfNight = -2730468551274967094L;
@@ -124,10 +120,11 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 		var dermot = -1019547102197982839L;
 		var thankUAgain = 5040407027980190316L;
 		var farNearer = -5934354521883931493L;
+		var myGrandmotha = 6938194054655273143L;
 
-		var song = songRepository.findById(farNearer).orElseThrow();
+		var song = songRepository.findById(myGrandmotha).orElseThrow();
 
-		stayHere(songRepository::findRelevantSongsISelected, song);
+		howToGetHere(songRepository::findRelevantSongsISelected, song);
 	}
 
 	private void writePlaylistToFile(String filename, String playlist)
