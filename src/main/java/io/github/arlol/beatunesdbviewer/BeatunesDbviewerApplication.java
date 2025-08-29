@@ -1,5 +1,6 @@
 package io.github.arlol.beatunesdbviewer;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -47,21 +48,15 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 						.findAllPlayedSongsInPlaylist("Critical Mass Selection")
 		);
 
-		CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
-				.setHeader("song_id", "key", "bpm")
-				.build();
-
-		try (var writer = Files.newBufferedWriter(Path.of("songs.csv"));
-				var printer = new CSVPrinter(writer, csvFormat)) {
-			for (Song song : songRepository
-					.findAllSongsInPlaylist("Critical Mass Selection")) {
-				printer.printRecord(
-						song.artist() + " - " + song.name(),
-						song.tonalkey(),
-						song.exactbpm()
-				);
-			}
-		}
+		writePlaylistToFile("songs.csv", "Critical Mass Next");
+		writePlaylistToFile(
+				"songs-critical-mass-selection.csv",
+				"Critical Mass Selection"
+		);
+		writePlaylistToFile(
+				"songs-critical-mass-halde-copy.csv",
+				"Critical Mass Halde copy"
+		);
 
 		var glokTimeOfNight = -2730468551274967094L;
 		var dontEatTheHomies = 7045391083672295624L;
@@ -133,6 +128,24 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 		var song = songRepository.findById(farNearer).orElseThrow();
 
 		stayHere(songRepository::findRelevantSongsISelected, song);
+	}
+
+	private void writePlaylistToFile(String filename, String playlist)
+			throws IOException {
+		CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
+				.setHeader("song_id", "key", "bpm")
+				.build();
+
+		try (var writer = Files.newBufferedWriter(Path.of(filename));
+				var printer = new CSVPrinter(writer, csvFormat)) {
+			for (Song song : songRepository.findAllSongsInPlaylist(playlist)) {
+				printer.printRecord(
+						song.artist() + " - " + song.name(),
+						song.tonalkey(),
+						song.exactbpm()
+				);
+			}
+		}
 	}
 
 	private void stayHere(
