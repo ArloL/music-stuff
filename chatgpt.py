@@ -26,57 +26,48 @@ def main(source_file, min_songs, max_songs):
     # Decision variables: x[i,j] = 1 if transition i->j is used
     x = pulp.LpVariable.dicts("x", scores.keys(), lowBound=0, upBound=1, cat=pulp.LpBinary)
 
-    # Objective: maximize total transition score
-    lambda_len = 0.01  # tune this weight
-    model += pulp.lpSum(scores[i, j] * x[i, j] for (i, j) in scores) \
-         + lambda_len * pulp.lpSum(x[i, j] for (i, j) in scores)
+    # -------------------
+    # Simplified constraints
+    # -------------------
 
-    # AFTER defining x[i,j] variables AND before solving:
-    # 1. Add start/end node constraints to enforce EXACTLY ONE PATH
-    s = pulp.LpVariable.dicts("start", song_ids, cat=pulp.LpBinary)
-    t = pulp.LpVariable.dicts("end", song_ids, cat=pulp.LpBinary)
+    # Degree balances
+    outdeg = {i: pulp.lpSum(x[i,j] for j in song_ids if (i,j) in x) for i in song_ids}
+    indeg  = {i: pulp.lpSum(x[j,i] for j in song_ids if (j,i) in x) for i in song_ids}
+
+    # Each song has at most one predecessor and one successor
+    for i in song_ids:
+        model += outdeg[i] <= 1
+        model += indeg[i] <= 1
+
+    # Explicit start/end indicators
+    is_start = pulp.LpVariable.dicts("is_start", song_ids, 0, 1, cat="Binary")
+    is_end   = pulp.LpVariable.dicts("is_end", song_ids, 0, 1, cat="Binary")
 
     for i in song_ids:
-        out_degree = pulp.lpSum(x[i, j] for j in song_ids if (i, j) in x)
-        in_degree = pulp.lpSum(x[j, i] for j in song_ids if (j, i) in x)
+        model += outdeg[i] - indeg[i] == is_start[i] - is_end[i]
 
-        # Start node: out=1, in=0
-        model += s[i] <= out_degree
-        model += s[i] <= 1 - in_degree
-        model += s[i] >= out_degree - in_degree
+    model += pulp.lpSum(is_start[i] for i in song_ids) == 1
+    model += pulp.lpSum(is_end[i] for i in song_ids) == 1
 
-        # End node: out=0, in=1
-        model += t[i] <= 1 - out_degree
-        model += t[i] <= in_degree
-        model += t[i] >= in_degree - out_degree
+    # Flow variables for subtour elimination
+    f = pulp.LpVariable.dicts("f", scores.keys(), lowBound=0, upBound=len(song_ids)-1, cat="Integer")
 
-    # Enforce exactly ONE start and ONE end node (single path)
-    model += pulp.lpSum(s[i] for i in song_ids) == 1
-    model += pulp.lpSum(t[i] for i in song_ids) == 1
+    # Flow conservation: each visited node (except start) consumes 1 unit of flow
+    for i in song_ids:
+        inflow  = pulp.lpSum(f[j,i] for j in song_ids if (j,i) in f)
+        outflow = pulp.lpSum(f[i,j] for j in song_ids if (i,j) in f)
 
-    # Link path length to edges: total_songs = total_edges + 1
-    total_songs = pulp.lpSum(s[i] for i in song_ids) + pulp.lpSum(x[i, j] for (i, j) in x)
+        # Start node: injects (total_songs - 1) units
+        model += inflow - outflow == indeg[i] - is_start[i] * (max_songs - 1)
+
+    # Capacity: flow only if edge is used
+    for (i,j) in f:
+        model += f[i,j] <= (len(song_ids)-1) * x[i,j]
+
+    # Playlist length bounds
+    total_songs = pulp.lpSum(x[i,j] for (i,j) in x) + 1
     model += total_songs >= min_songs
     model += total_songs <= max_songs
-
-    # Constraints:
-    # 1. Each song has at most one outgoing edge
-    for i in song_ids:
-        model += pulp.lpSum(x[i, j] for j in song_ids if (i, j) in x) <= 1
-
-    # 2. Each song has at most one incoming edge
-    for j in song_ids:
-        model += pulp.lpSum(x[i, j] for i in song_ids if (i, j) in x) <= 1
-
-    # MTZ variables: u[i] = position of song i in the playlist
-    u = pulp.LpVariable.dicts("u", song_ids, lowBound=0, upBound=len(song_ids), cat=pulp.LpInteger)
-
-    # Subtour elimination constraints (Miller–Tucker–Zemlin)
-    n = len(song_ids)
-    for i in song_ids:
-        for j in song_ids:
-            if i != j and (i, j) in x:
-                model += u[i] - u[j] + n * x[i, j] <= n - 1
 
     # Solve
     status = model.solve(pulp.PULP_CBC_CMD(msg=False, timeLimit=60))
