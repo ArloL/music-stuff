@@ -26,6 +26,8 @@ def main(source_file, min_songs, max_songs):
     # Decision variables: x[i,j] = 1 if transition i->j is used
     x = pulp.LpVariable.dicts("x", scores.keys(), lowBound=0, upBound=1, cat=pulp.LpBinary)
 
+    model += pulp.lpSum(scores[i,j] * x[i,j] for (i,j) in scores)
+
     # -------------------
     # Simplified constraints
     # -------------------
