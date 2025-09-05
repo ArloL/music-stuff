@@ -1,5 +1,6 @@
 import pandas as pd
 import pulp
+from collections import defaultdict
 from transitions import calculate_transition_score, build_compatibility_graph, validate_keys, get_transition_type
 
 def main(source_file, min_songs, max_songs):
@@ -20,21 +21,67 @@ def main(source_file, min_songs, max_songs):
         print("No compatible transitions found!")
         return
 
+    print(scores)
+
     # ILP Model
-    model = pulp.LpProblem("BestPlaylist", pulp.LpMaximize)
+    m = pulp.LpProblem("BestPlaylist", pulp.LpMaximize)
 
-    # Decision variables: x[i,j] = 1 if transition i->j is used
-    x = pulp.LpVariable.dicts("x", scores.keys(), lowBound=0, upBound=1, cat=pulp.LpBinary)
+    E = [(i, j) for (i, j) in scores if i != j]
+    out_arcs = defaultdict(list)
+    in_arcs = defaultdict(list)
+    for (i, j) in E:
+        out_arcs[i].append((i, j))
+        in_arcs[j].append((i, j))
 
-    model += pulp.lpSum(scores[i,j] * x[i,j] for (i,j) in scores)
+    x = pulp.LpVariable.dicts("x", E, lowBound=0, upBound=1, cat=pulp.LpBinary)
+    y = pulp.LpVariable.dicts("y", song_ids, lowBound=0, upBound=1, cat=pulp.LpBinary)
+    s = pulp.LpVariable.dicts("s", song_ids, lowBound=0, upBound=1, cat=pulp.LpBinary)
+    t = pulp.LpVariable.dicts("t", song_ids, lowBound=0, upBound=1, cat=pulp.LpBinary)
+
+    bigN = len(song_ids)
+    u = pulp.LpVariable.dicts("u", song_ids, lowBound=0, upBound=bigN, cat=pulp.LpInteger)
+
+    # Objective
+    m += pulp.lpSum(scores[(i, j)] * x[(i, j)] for (i, j) in E)
+
+    # Degree bounds + flow balance
+    for i in song_ids:
+        m += pulp.lpSum(x[e] for e in out_arcs[i]) <= 1
+        m += pulp.lpSum(x[e] for e in in_arcs[i]) <= 1
+        m += (pulp.lpSum(x[e] for e in out_arcs[i]) -
+            pulp.lpSum(x[e] for e in in_arcs[i]) ==
+            s[i] - t[i])
+
+    # Path start/end constraints
+    m += pulp.lpSum(s[i] for i in song_ids) == pulp.lpSum(t[i] for i in song_ids)
+    m += pulp.lpSum(s[i] for i in song_ids) <= 1
+    m += pulp.lpSum(t[i] for i in song_ids) <= 1
+
+    # Node usage consistency
+    for i in song_ids:
+        m += (pulp.lpSum(x[e] for e in out_arcs[i]) +
+            pulp.lpSum(x[e] for e in in_arcs[i]) ==
+            2 * y[i] - s[i] - t[i])
+        m += u[i] <= bigN * y[i]
+        m += u[i] >= y[i]
+
+    # MTZ subtour elimination
+    M = bigN
+    for (i, j) in E:
+        m += u[j] >= u[i] + 1 - M * (1 - x[(i, j)])
 
     # Solve
-    status = model.solve(pulp.PULP_CBC_CMD(msg=False, timeLimit=60))
+    status = m.solve(pulp.PULP_CBC_CMD(msg=False, timeLimit=60))
 
     print(f"Model status: {pulp.LpStatus[status]}")
 
+    print("Selected transitions:")
+    for (i,j) in scores:
+        if x[i,j].varValue == 1:
+            print(f"{i} -> {j}: {scores[(i,j)]}")
+
     # Extract chosen edges
-    playlist_edges = {(i, j) for (i, j) in scores if pulp.value(x[i, j]) == 1}
+    playlist_edges = {(i, j) for (i, j) in scores if pulp.value(x[(i, j)]) == 1}
 
     # Build adjacency map
     next_map = {i: j for (i, j) in playlist_edges}
@@ -54,12 +101,12 @@ def main(source_file, min_songs, max_songs):
         for i in range(len(playlist)):
             song = playlist[i]
             if i + 2 > len(playlist):
-                print(f"{i + 1}. {song.name}")
+                print(f"{i + 1}. {song['artist']} - {song['name']}")
             else:
                 next_song = playlist[i + 1]
                 score = calculate_transition_score(song, next_song)
                 transition_type = get_transition_type(song, next_song)
-                print(f"{i + 1}. {song.name} {song['bpm']} {score} {transition_type}")
+                print(f"{i + 1}. {song['artist']} - {song['name']} {song['bpm']} {score} {transition_type}")
 
 if __name__ == "__main__":
     import argparse
