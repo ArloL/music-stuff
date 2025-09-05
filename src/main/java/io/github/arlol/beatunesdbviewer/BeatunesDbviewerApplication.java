@@ -47,7 +47,7 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 				songRepository.findAllPlayedSongsInPlaylist("Would Play")
 		);
 
-		writePlaylistToFile("songs.csv", "Would Play");
+		writePlaylistToFile("songs.csv", "Critical Mass Next");
 
 		var glokTimeOfNight = -2730468551274967094L;
 		var dontEatTheHomies = 7045391083672295624L;

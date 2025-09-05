@@ -4,7 +4,7 @@ from transitions import calculate_transition_score, build_compatibility_graph, v
 
 def main(source_file, min_songs, max_songs):
     # Load dataset
-    songs = pd.read_csv(source_file).set_index('song_id')
+    songs = pd.read_csv(source_file).set_index('apple_music_id')
     song_ids = songs.index.tolist()
 
     print("Validating song keys...")
@@ -27,49 +27,6 @@ def main(source_file, min_songs, max_songs):
     x = pulp.LpVariable.dicts("x", scores.keys(), lowBound=0, upBound=1, cat=pulp.LpBinary)
 
     model += pulp.lpSum(scores[i,j] * x[i,j] for (i,j) in scores)
-
-    # -------------------
-    # Simplified constraints
-    # -------------------
-
-    # Degree balances
-    outdeg = {i: pulp.lpSum(x[i,j] for j in song_ids if (i,j) in x) for i in song_ids}
-    indeg  = {i: pulp.lpSum(x[j,i] for j in song_ids if (j,i) in x) for i in song_ids}
-
-    # Each song has at most one predecessor and one successor
-    for i in song_ids:
-        model += outdeg[i] <= 1
-        model += indeg[i] <= 1
-
-    # Explicit start/end indicators
-    is_start = pulp.LpVariable.dicts("is_start", song_ids, 0, 1, cat="Binary")
-    is_end   = pulp.LpVariable.dicts("is_end", song_ids, 0, 1, cat="Binary")
-
-    for i in song_ids:
-        model += outdeg[i] - indeg[i] == is_start[i] - is_end[i]
-
-    model += pulp.lpSum(is_start[i] for i in song_ids) == 1
-    model += pulp.lpSum(is_end[i] for i in song_ids) == 1
-
-    # Flow variables for subtour elimination
-    f = pulp.LpVariable.dicts("f", scores.keys(), lowBound=0, upBound=len(song_ids)-1, cat="Integer")
-
-    # Flow conservation: each visited node (except start) consumes 1 unit of flow
-    for i in song_ids:
-        inflow  = pulp.lpSum(f[j,i] for j in song_ids if (j,i) in f)
-        outflow = pulp.lpSum(f[i,j] for j in song_ids if (i,j) in f)
-
-        # Start node: injects (total_songs - 1) units
-        model += inflow - outflow == indeg[i] - is_start[i] * (max_songs - 1)
-
-    # Capacity: flow only if edge is used
-    for (i,j) in f:
-        model += f[i,j] <= (len(song_ids)-1) * x[i,j]
-
-    # Playlist length bounds
-    total_songs = pulp.lpSum(x[i,j] for (i,j) in x) + 1
-    model += total_songs >= min_songs
-    model += total_songs <= max_songs
 
     # Solve
     status = model.solve(pulp.PULP_CBC_CMD(msg=False, timeLimit=60))
