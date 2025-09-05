@@ -27,16 +27,16 @@ public interface SongRepository extends CrudRepository<Song, Long> {
 			Collection<Integer> tonalKeys
 	);
 
-	@Query(
-		"""
-				SELECT * FROM SONGS s
-				WHERE
-				ID IN (SELECT PLAYLISTITEMS_ID FROM PLAYLISTS_SONGS ps LEFT JOIN PLAYLISTS p ON p.ID = ps.PLAYLISTS_ID WHERE p.NAME = :name)
-				AND COMMENTS != 'ignore'
-				AND COMMENTS NOT LIKE '%mixed%'
-				ORDER BY RATING DESC, EXACTBPM ASC
-				"""
-	)
+	@Query("""
+			SELECT s.* FROM PLAYLISTS_SONGS ps
+			LEFT JOIN SONGS s ON ps.PLAYLISTITEMS_ID = s.ID
+			LEFT JOIN PLAYLISTS p ON p.ID = ps.PLAYLISTS_ID
+			WHERE
+			p.NAME = :name
+			AND s.COMMENTS != 'ignore'
+			AND s.COMMENTS NOT LIKE '%mixed%'
+			ORDER BY ps.INDEXCOLUMN
+			""")
 	Iterable<Song> findAllSongsInPlaylist(String name);
 
 	@Query(
