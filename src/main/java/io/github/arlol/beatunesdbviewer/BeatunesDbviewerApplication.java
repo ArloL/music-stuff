@@ -125,7 +125,7 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 	private void writePlaylistToFile(String filename, String playlist)
 			throws IOException {
 		CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
-				.setHeader("song_id", "key", "bpm")
+				.setHeader("song_id", "key", "bpm", "apple_music_id")
 				.build();
 
 		try (var writer = Files.newBufferedWriter(Path.of(filename));
@@ -134,7 +134,8 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 				printer.printRecord(
 						song.artist() + " - " + song.name(),
 						song.tonalkey(),
-						song.exactbpm()
+						song.exactbpm(),
+						song.id()
 				);
 			}
 		}
