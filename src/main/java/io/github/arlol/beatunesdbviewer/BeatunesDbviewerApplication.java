@@ -41,11 +41,7 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 
-		LOG.info("{}", songRepository.findByNameContaining("My Grandmotha"));
-		LOG.info(
-				"{}",
-				songRepository.findAllPlayedSongsInPlaylist("Would Play")
-		);
+		LOG.info("{}", songRepository.findByNameContaining("Tozai"));
 
 		writePlaylistToFile("songs.csv", "Critical Mass Next");
 
@@ -116,10 +112,15 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 		var thankUAgain = 5040407027980190316L;
 		var farNearer = -5934354521883931493L;
 		var myGrandmotha = 6938194054655273143L;
+		var cantSeeWhatIsBurningThere = -1379143393858240004L;
+		var tozai = -7606924123403588199L;
 
-		var song = songRepository.findById(myGrandmotha).orElseThrow();
+		var song = songRepository.findById(tozai).orElseThrow();
 
-		howToGetHere(songRepository::findRelevantSongsISelected, song);
+		howToGetHere(
+				songRepository::findRelevantSongsISelectedAndNeverPlayed,
+				song
+		);
 	}
 
 	private void writePlaylistToFile(String filename, String playlist)
