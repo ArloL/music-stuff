@@ -22,8 +22,6 @@ def main(source_file, min_songs, max_songs):
         print("No compatible transitions found!")
         return
 
-    print(scores)
-
     # ILP Model
     prob = pulp.LpProblem("BestPlaylist", pulp.LpMaximize)
 
@@ -57,11 +55,6 @@ def main(source_file, min_songs, max_songs):
     status = prob.solve(pulp.PULP_CBC_CMD(msg=False, timeLimit=60))
 
     print(f"Model status: {pulp.LpStatus[status]}")
-
-    print("Selected transitions:")
-    for (i,j) in scores:
-        if x[i,j].varValue == 1:
-            print(f"{i} -> {j}: {scores[(i,j)]}")
 
     # Extract chosen edges
     playlist_edges = {(i, j) for (i, j) in scores if pulp.value(x[(i, j)]) == 1}
