@@ -7,6 +7,7 @@ def main(source_file, min_songs, max_songs):
     # Load dataset
     songs = pd.read_csv(source_file).set_index('apple_music_id')
     song_ids = songs.index.tolist()
+    n_songs=len(song_ids)
 
     print("Validating song keys...")
     validate_keys(songs)
@@ -24,54 +25,36 @@ def main(source_file, min_songs, max_songs):
     print(scores)
 
     # ILP Model
-    m = pulp.LpProblem("BestPlaylist", pulp.LpMaximize)
+    prob = pulp.LpProblem("BestPlaylist", pulp.LpMaximize)
 
-    E = [(i, j) for (i, j) in scores if i != j]
-    out_arcs = defaultdict(list)
-    in_arcs = defaultdict(list)
-    for (i, j) in E:
-        out_arcs[i].append((i, j))
-        in_arcs[j].append((i, j))
+    # Decision variables: x[i,j] = 1 if song i transitions to song j
+    x = pulp.LpVariable.dicts("x", scores.keys(), cat=pulp.LpBinary)
 
-    x = pulp.LpVariable.dicts("x", E, lowBound=0, upBound=1, cat=pulp.LpBinary)
-    y = pulp.LpVariable.dicts("y", song_ids, lowBound=0, upBound=1, cat=pulp.LpBinary)
-    s = pulp.LpVariable.dicts("s", song_ids, lowBound=0, upBound=1, cat=pulp.LpBinary)
-    t = pulp.LpVariable.dicts("t", song_ids, lowBound=0, upBound=1, cat=pulp.LpBinary)
+    # Position variables for MTZ subtour elimination: u[i] = position of song i in path
+    u = pulp.LpVariable.dicts("u", song_ids, lowBound=0, upBound=n_songs-1, cat=pulp.LpInteger)
 
-    bigN = len(song_ids)
-    u = pulp.LpVariable.dicts("u", song_ids, lowBound=0, upBound=bigN, cat=pulp.LpInteger)
+    # Objective: maximize sum of transition scores
+    prob += pulp.lpSum(scores[i,j] * x[i,j] for (i,j) in scores.keys())
 
-    # Objective
-    m += pulp.lpSum(scores[(i, j)] * x[(i, j)] for (i, j) in E)
+    # Flow conservation constraints
+    for node in song_ids:
+        # Out-degree <= 1 (each song can transition to at most one other)
+        out_edges = [(i,j) for (i,j) in scores.keys() if i == node]
+        if out_edges:
+            prob += pulp.lpSum(x[i,j] for (i,j) in out_edges) <= 1
 
-    # Degree bounds + flow balance
-    for i in song_ids:
-        m += pulp.lpSum(x[e] for e in out_arcs[i]) <= 1
-        m += pulp.lpSum(x[e] for e in in_arcs[i]) <= 1
-        m += (pulp.lpSum(x[e] for e in out_arcs[i]) -
-            pulp.lpSum(x[e] for e in in_arcs[i]) ==
-            s[i] - t[i])
+        # In-degree <= 1 (each song can be transitioned to by at most one other)
+        in_edges = [(i,j) for (i,j) in scores.keys() if j == node]
+        if in_edges:
+            prob += pulp.lpSum(x[i,j] for (i,j) in in_edges) <= 1
 
-    # Path start/end constraints
-    m += pulp.lpSum(s[i] for i in song_ids) == pulp.lpSum(t[i] for i in song_ids)
-    m += pulp.lpSum(s[i] for i in song_ids) <= 1
-    m += pulp.lpSum(t[i] for i in song_ids) <= 1
-
-    # Node usage consistency
-    for i in song_ids:
-        m += (pulp.lpSum(x[e] for e in out_arcs[i]) +
-            pulp.lpSum(x[e] for e in in_arcs[i]) ==
-            2 * y[i] - s[i] - t[i])
-        m += u[i] <= bigN * y[i]
-        m += u[i] >= y[i]
-
-    # MTZ subtour elimination
-    M = bigN
-    for (i, j) in E:
-        m += u[j] >= u[i] + 1 - M * (1 - x[(i, j)])
+    # MTZ subtour elimination constraints
+    # If x[i,j] = 1, then u[j] >= u[i] + 1 (ensures proper ordering)
+    for (i, j) in scores.keys():
+        prob += u[j] >= u[i] + 1 - n_songs * (1 - x[i,j])
 
     # Solve
-    status = m.solve(pulp.PULP_CBC_CMD(msg=False, timeLimit=60))
+    status = prob.solve(pulp.PULP_CBC_CMD(msg=False, timeLimit=60))
 
     print(f"Model status: {pulp.LpStatus[status]}")
 
