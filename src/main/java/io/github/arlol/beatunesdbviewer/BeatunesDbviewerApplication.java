@@ -44,15 +44,10 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 		LOG.info("{}", songRepository.findByNameContaining("My Grandmotha"));
 		LOG.info(
 				"{}",
-				songRepository
-						.findAllPlayedSongsInPlaylist("Critical Mass Selection")
+				songRepository.findAllPlayedSongsInPlaylist("Would Play")
 		);
 
-		writePlaylistToFile("songs.csv", "Critical Mass Next");
-		writePlaylistToFile(
-				"songs-critical-mass-selection.csv",
-				"Critical Mass Selection"
-		);
+		writePlaylistToFile("songs.csv", "Would Play");
 
 		var glokTimeOfNight = -2730468551274967094L;
 		var dontEatTheHomies = 7045391083672295624L;
