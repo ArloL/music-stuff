@@ -43,7 +43,7 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 
 		LOG.info("{}", songRepository.findByNameContaining("Tozai"));
 
-		writePlaylistToFile("songs.csv", "Critical Mass Next");
+		writePlaylistToFile("songs-would-play.csv", "Would Play");
 
 		var glokTimeOfNight = -2730468551274967094L;
 		var dontEatTheHomies = 7045391083672295624L;
