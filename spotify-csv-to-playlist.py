@@ -8,7 +8,7 @@ from spotipy.oauth2 import SpotifyOAuth
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id='567ed2100ef746ff8bc4765c6fe21ac3',
                                                client_secret='9c2182d252b048bdb09ec8307842b455',
                                                redirect_uri='http://127.0.0.1:50872',
-                                               scope='user-library-read,playlist-modify-private'))
+                                               scope='user-library-read,playlist-modify-public'))
 spotify_mapping = pd.read_csv("spotify-mapping.csv").set_index('apple_music_id')
 
 def find_spotify_id_for_artist_name(artist, name):
@@ -35,7 +35,7 @@ while results['next']:
     results = sp.next(results)
     tracks.extend(results['items'])
 
-df = pd.read_csv("songs.csv")
+df = pd.read_csv("songs-would-play.csv")
 
 for i, song in df.iterrows():
     spotify_id = find_spotify_id_for_song(song)
