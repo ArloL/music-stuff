@@ -7,7 +7,7 @@ def main(source_file, min_songs, max_songs):
     # Load dataset
     songs = pd.read_csv(source_file).set_index('apple_music_id')
     song_ids = songs.index.tolist()
-    n_songs=len(song_ids)
+    n_songs = len(song_ids)
 
     print("Validating song keys...")
     validate_keys(songs)
