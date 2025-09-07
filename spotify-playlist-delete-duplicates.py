@@ -21,12 +21,11 @@ while results['next']:
     tracks.extend(results['items'])
 
 track_ids = set()
-items = [ { "uri":"4iV5W9uYEdYUVa79Axb7Rh", "positions":[2] }, { "uri":"1301WleyT98MSxVHPZCA6M", "positions":[7] } ]
 
 for i, track in enumerate(tracks):
     track_id = track['track']['id']
     if (track_id in track_ids):
-        print(f'{i} {track_id}')
+        print(f'Removing {i} {track_id}')
         sp.playlist_remove_specific_occurrences_of_items(playlist_id, [{'uri':track_id, 'positions':[i]}])
     track_ids.add(track_id)
 
