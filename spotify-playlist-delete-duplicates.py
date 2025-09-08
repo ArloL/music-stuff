@@ -3,14 +3,10 @@ import json
 import requests
 import csv
 from urllib.parse import urlparse
-from spotipy.oauth2 import SpotifyOAuth
-from spotify import user_playlist_by_name, all_playlist_items
+from spotify import get_sp, user_playlist_by_name, all_playlist_items
 
 def main(playlist_name):
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id='567ed2100ef746ff8bc4765c6fe21ac3',
-                                                client_secret='9c2182d252b048bdb09ec8307842b455',
-                                                redirect_uri='http://127.0.0.1:50872',
-                                                scope='user-library-modify,playlist-read-private,playlist-modify-private,playlist-modify-public'))
+    sp = get_sp()
 
     playlist_id = user_playlist_by_name(sp, playlist_name)['id']
 

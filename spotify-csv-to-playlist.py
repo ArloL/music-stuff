@@ -1,14 +1,10 @@
-import spotipy
 import json
 import requests
 import pandas as pd
 from urllib.parse import urlparse
-from spotipy.oauth2 import SpotifyOAuth
+from spotify import get_sp
 
-sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id='567ed2100ef746ff8bc4765c6fe21ac3',
-                                               client_secret='9c2182d252b048bdb09ec8307842b455',
-                                               redirect_uri='http://127.0.0.1:50872',
-                                               scope='user-library-read,playlist-modify-public'))
+sp = get_sp()
 spotify_mapping = pd.read_csv("spotify-mapping.csv").set_index('apple_music_id')
 
 def find_spotify_id_for_artist_name(artist, name):

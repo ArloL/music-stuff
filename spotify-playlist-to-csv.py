@@ -3,7 +3,7 @@ import json
 import requests
 import csv
 from urllib.parse import urlparse
-from spotipy.oauth2 import SpotifyOAuth
+from spotify import get_sp
 
 def get_audio_features(spotify_ids):
     response = requests.request(
@@ -27,10 +27,7 @@ def get_audio_features(spotify_ids):
         result.append(features[spotify_id])
     return result
 
-sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id='567ed2100ef746ff8bc4765c6fe21ac3',
-                                               client_secret='9c2182d252b048bdb09ec8307842b455',
-                                               redirect_uri='http://127.0.0.1:50872',
-                                               scope='user-library-read'))
+sp = get_sp()
 
 # print(json.dumps(track, indent=1))
 
