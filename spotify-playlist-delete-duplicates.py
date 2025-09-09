@@ -14,12 +14,18 @@ def main(playlist_name):
 
     track_ids = set()
 
+    items_to_delete = set()
+
     for i, track in enumerate(tracks):
         track_id = track['track']['id']
         if (track_id in track_ids):
             print(f'Removing {i} {track_id}')
-            sp.playlist_remove_specific_occurrences_of_items(playlist['id'], [{'uri':track_id, 'positions':[i]}], snapshot_id=playlist['snapshot_id'])
+            items_to_delete.add(track_id)
         track_ids.add(track_id)
+
+    if len(items_to_delete) > 0:
+        sp.playlist_remove_all_occurrences_of_items(playlist['id'], items_to_delete)
+        sp.playlist_add_items(playlist['id'], items_to_delete)
 
 if __name__ == '__main__':
     import argparse
