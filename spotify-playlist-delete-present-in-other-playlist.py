@@ -10,17 +10,22 @@ def main(delete_playlist_name, source_playlist_name):
     sp = get_sp()
 
 
-    delete_playlist_id = user_playlist_by_name(sp, delete_playlist_name)['id']
+    delete_playlist = user_playlist_by_name(sp, delete_playlist_name)
     source_playlist_id = user_playlist_by_name(sp, source_playlist_name)['id']
 
-    delete_tracks = all_playlist_items(sp, delete_playlist_id)
+    delete_tracks = all_playlist_items(sp, delete_playlist['id'])
     source_tracks = all_playlist_items(sp, source_playlist_id)
+
+    items_to_delete = []
 
     for i, track in enumerate(delete_tracks):
         track_id = track['track']['id']
         if any(t['track']['id'] == track_id for t in source_tracks):
             print(f'Removing {i} {track_id}')
-            sp.playlist_remove_specific_occurrences_of_items(delete_playlist_id, [{'uri':track_id, 'positions':[i]}])
+            items_to_delete.append({'uri':track_id, 'positions':[i]})
+
+    if len(items_to_delete) > 0:
+        sp.playlist_remove_specific_occurrences_of_items(delete_playlist['id'], items_to_delete, snapshot_id=delete_playlist['snapshot_id'])
 
 if __name__ == '__main__':
     import argparse
