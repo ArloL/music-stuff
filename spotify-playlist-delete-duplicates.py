@@ -8,9 +8,9 @@ from spotify import get_sp, user_playlist_by_name, all_playlist_items
 def main(playlist_name):
     sp = get_sp()
 
-    playlist_id = user_playlist_by_name(sp, playlist_name)['id']
+    playlist = user_playlist_by_name(sp, playlist_name)
 
-    tracks = all_playlist_items(sp, playlist_id)
+    tracks = all_playlist_items(sp, playlist['id'])
 
     track_ids = set()
 
@@ -18,7 +18,7 @@ def main(playlist_name):
         track_id = track['track']['id']
         if (track_id in track_ids):
             print(f'Removing {i} {track_id}')
-            sp.playlist_remove_specific_occurrences_of_items(playlist_id, [{'uri':track_id, 'positions':[i]}])
+            sp.playlist_remove_specific_occurrences_of_items(playlist['id'], [{'uri':track_id, 'positions':[i]}], snapshot_id=playlist['snapshot_id'])
         track_ids.add(track_id)
 
 if __name__ == '__main__':
