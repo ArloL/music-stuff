@@ -22,10 +22,10 @@ def main(delete_playlist_name, source_playlist_name):
         track_id = track['track']['id']
         if any(t['track']['id'] == track_id for t in source_tracks):
             print(f'Removing {i} {track_id}')
-            items_to_delete.append({'uri':track_id, 'positions':[i]})
+            items_to_delete.append(track_id)
 
     if len(items_to_delete) > 0:
-        sp.playlist_remove_specific_occurrences_of_items(delete_playlist['id'], items_to_delete, snapshot_id=delete_playlist['snapshot_id'])
+        sp.playlist_remove_all_occurrences_of_items(delete_playlist['id'], items_to_delete)
 
 if __name__ == '__main__':
     import argparse
