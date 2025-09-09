@@ -14,17 +14,16 @@ def main(playlist_name):
 
     track_ids = {}
 
-    i = 0
-    while i < len(tracks):
-        track_id = tracks[i]['track']['id']
+    position = 0
+    for track in tracks:
+        track_id = track['track']['id']
         if track_id in track_ids:
-            print(f'Removing {i} {track_id}')
+            print(f'Removing {position} {track_id}')
             sp.playlist_remove_all_occurrences_of_items(playlist['id'], [track_id])
             sp.playlist_add_items(playlist['id'], [track_id], position=track_ids[track_id])
-            tracks = all_playlist_items(sp, playlist['id'])
         else:
-            track_ids[track_id] = i
-            i += 1
+            track_ids[track_id] = position
+            position += 1
 
 if __name__ == '__main__':
     import argparse
