@@ -24,8 +24,10 @@ def main(delete_playlist_name, source_playlist_name):
             print(f'Removing {i} {track_id}')
             items_to_delete.append(track_id)
 
-    if len(items_to_delete) > 0:
-        sp.playlist_remove_all_occurrences_of_items(delete_playlist['id'], items_to_delete)
+    for i in range(0, len(items_to_delete), 100):
+        sp.playlist_remove_all_occurrences_of_items(
+            delete_playlist['id'], items_to_delete[i:i+100]
+        )
 
 if __name__ == '__main__':
     import argparse
