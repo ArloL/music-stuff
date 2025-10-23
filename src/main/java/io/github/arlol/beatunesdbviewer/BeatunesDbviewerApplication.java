@@ -45,6 +45,10 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 
 		writePlaylistToFile("songs-would-play.csv", "Would Play");
 		writePlaylistToFile(
+				"songs-would-play-and-didnt.csv",
+				"Would Play And Didnt"
+		);
+		writePlaylistToFile(
 				"songs-critical-mass-next.csv",
 				"Critical Mass Next"
 		);
