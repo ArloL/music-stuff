@@ -1,11 +1,17 @@
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+from pathlib import Path
 
 def get_sp():
-    return spotipy.Spotify(auth_manager=SpotifyOAuth(client_id='567ed2100ef746ff8bc4765c6fe21ac3',
-                                                client_secret='',
-                                                redirect_uri='http://127.0.0.1:50872',
-                                                scope='user-library-modify,playlist-read-private,playlist-modify-private,playlist-modify-public'))
+    client_id = Path('secrets/spotify-client-id.secret').read_text().rstrip()
+    client_secret = Path('secrets/spotify-client-secret.secret').read_text().rstrip()
+    auth_manager = SpotifyOAuth(
+        client_id=client_id,
+        client_secret=client_secret,
+        redirect_uri='http://127.0.0.1:50872',
+        scope='user-library-modify,playlist-read-private,playlist-modify-private,playlist-modify-public'
+    )
+    return spotipy.Spotify(auth_manager=auth_manager)
 
 def all_items(sp, results):
     items = results['items']
