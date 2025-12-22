@@ -3,7 +3,7 @@ from spotipy.oauth2 import SpotifyOAuth
 
 def get_sp():
     return spotipy.Spotify(auth_manager=SpotifyOAuth(client_id='567ed2100ef746ff8bc4765c6fe21ac3',
-                                                client_secret='9c2182d252b048bdb09ec8307842b455',
+                                                client_secret='',
                                                 redirect_uri='http://127.0.0.1:50872',
                                                 scope='user-library-modify,playlist-read-private,playlist-modify-private,playlist-modify-public'))
 
