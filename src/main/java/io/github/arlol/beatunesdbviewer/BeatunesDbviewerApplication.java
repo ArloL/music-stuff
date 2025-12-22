@@ -588,7 +588,7 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 	);
 
 	Collection<Integer> getMatchingTonalKeys(Song song) {
-		if (song.tonalkey() % 2 == 1) {
+		if (song.tonalkey() % 2 != 0) {
 			return List.of(song.tonalkey(), rangeCheck(song.tonalkey() + 3));
 		} else {
 			return List.of(song.tonalkey(), rangeCheck(song.tonalkey() - 3));
@@ -596,7 +596,7 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 	}
 
 	Collection<Integer> getBoostTonalKeys(Song song) {
-		if (song.tonalkey() % 2 == 1) {
+		if (song.tonalkey() % 2 != 0) {
 			return List.of(rangeCheck(song.tonalkey() + 2));
 		} else {
 			return List.of(
@@ -618,7 +618,7 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 	}
 
 	Collection<Integer> getDropTonalKeys(Song song) {
-		if (song.tonalkey() % 2 == 1) {
+		if (song.tonalkey() % 2 != 0) {
 			return List.of(
 					rangeCheck(song.tonalkey() + 1),
 					rangeCheck(song.tonalkey() - 2)
@@ -637,7 +637,7 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 	}
 
 	Collection<Integer> getMoodChangeTonalKeys(Song song) {
-		if (song.tonalkey() % 2 == 1) {
+		if (song.tonalkey() % 2 != 0) {
 			return List.of(rangeCheck(song.tonalkey() - 5));
 		} else {
 			return List.of(rangeCheck(song.tonalkey() + 5));
