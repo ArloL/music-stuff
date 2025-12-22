@@ -5,19 +5,19 @@ description = "A dashboard to visualize song relations"
 readme = "README.md"
 requires-python = "==3.14.2"
 dependencies = [
-    "dash>=3.2.0",
-    "matplotlib>=3.10.5",
-    "networkx>=3.5",
-    "numpy>=2.3.2",
-    "pandas==2.2.3",
-    "plotly>=6.3.0",
-    "pulp>=3.2.2",
-    "pyvis>=0.3.2",
-    "scikit-learn>=1.7.1",
-    "spotipy>=2.25.1",
+    "dash==3.3.0",
+    "matplotlib==3.10.8",
+    "networkx==3.6.1",
+    "numpy==2.4.0",
+    "pandas==2.3.3",
+    "plotly==6.5.0",
+    "pulp==3.3.0",
+    "pyvis==0.3.2",
+    "scikit-learn==1.8.0",
+    "spotipy==2.25.2",
 ]
 
 [dependency-groups]
 dev = [
-    "pytest==8.3.5",
+    "pytest==9.0.2",
 ]
