@@ -151,7 +151,7 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 		}
 	}
 
-	private void stayHere(
+	void stayHere(
 			TriFunction<Double, Double, Collection<Integer>, Iterable<Song>> fun,
 			Song seed
 	) {
@@ -206,7 +206,7 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 		System.out.println(print("Mood Change", moodChange));
 	}
 
-	private void whereToGo(
+	void whereToGo(
 			TriFunction<Double, Double, Collection<Integer>, Iterable<Song>> fun,
 			Song seed
 	) {
