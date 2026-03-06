@@ -8,13 +8,14 @@ dependencies = [
     "dash==3.3.0",
     "matplotlib==3.10.8",
     "networkx==3.6.1",
-    "numpy==2.4.0",
+    "numpy==2.4.2",
     "pandas==2.3.3",
     "plotly==6.5.0",
     "pulp==3.3.0",
     "pyvis==0.3.2",
     "scikit-learn==1.8.0",
     "spotipy==2.25.2",
+    "essentia==2.1b6.dev234",
 ]
 
 [dependency-groups]
