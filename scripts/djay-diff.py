@@ -23,6 +23,7 @@ Cross-reference key:
   These represent the same value in different bases.
 """
 
+import csv
 import re
 import sys
 import argparse
