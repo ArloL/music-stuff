@@ -33,11 +33,29 @@ import argparse
 import ctypes
 import ctypes.util
 from pathlib import Path
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 
 SOURCE_DB = Path.home() / "Music/djay/djay Media Library.djayMediaLibrary/MediaLibrary.db"
+
+DJAY_KEY_INDEX_TO_OPEN_KEY = {
+    0: "1d",  1: "1m",
+    2: "8d",  3: "8m",
+    4: "3d",  5: "3m",
+    6: "10d", 7: "10m",
+    8: "5d",  9: "5m",
+    10: "12d", 11: "12m",
+    12: "7d", 13: "7m",
+    14: "2d", 15: "2m",
+    16: "9d", 17: "9m",
+    18: "4d", 19: "4m",
+    20: "11d", 21: "11m",
+    22: "6d", 23: "6m",
+}
 DB_PATH = Path(__file__).parent / "djay-MediaLibrary.db"
 OUTPUT_PATH = Path(__file__).parent / "songs-djay-diff.csv"
+KEY_CACHE_PATH = Path(__file__).parent / "essentia-key-cache.csv"
 
 _libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
 _libc.clonefile.restype = ctypes.c_int
@@ -100,7 +118,8 @@ def load_music_metadata(folder_name: str | None = None) -> dict[int, dict]:
                         if (seen.has(id)) continue;
                         seen.add(id);
                         result.push({{ id, name: t.name() || "", artist: t.artist() || "",
-                                       comment: t.comment() || "", bpm: t.bpm() || 0 }});
+                                       comment: t.comment() || "", bpm: t.bpm() || 0,
+                                       location: t.location() ? t.location().toString() : "" }});
                     }}
                 }} catch (e) {{}}
             }}
@@ -114,7 +133,8 @@ def load_music_metadata(folder_name: str | None = None) -> dict[int, dict]:
                 try {
                     result.push({ id: t.persistentID(), name: t.name() || "",
                                   artist: t.artist() || "", comment: t.comment() || "",
-                                  bpm: t.bpm() || 0 });
+                                  bpm: t.bpm() || 0,
+                                  location: t.location() ? t.location().toString() : "" });
                 } catch (e) {}
             }
             JSON.stringify(result);
@@ -129,8 +149,79 @@ def load_music_metadata(folder_name: str | None = None) -> dict[int, dict]:
                 "artist": rec["artist"],
                 "comment": rec["comment"],
                 "bpm": rec["bpm"] or "",
+                "location": rec["location"],
             }
     return metadata
+
+
+# ---------------------------------------------------------------------------
+# Audio key detection — essentia
+# ---------------------------------------------------------------------------
+
+# pip install essentia  (or: brew install essentia on macOS)
+# Maps essentia key names to Open Key numbers for major (d) and minor (m)
+_ESSENTIA_MAJOR_TO_OPEN_KEY: dict[str, str] = {
+    "C": "1d",  "G": "2d",  "D": "3d",  "A": "4d",
+    "E": "5d",  "B": "6d",  "F#": "7d", "C#": "8d",
+    "G#": "9d", "D#": "10d","A#": "11d","F": "12d",
+}
+_ESSENTIA_MINOR_TO_OPEN_KEY: dict[str, str] = {
+    "A": "1m",  "E": "2m",  "B": "3m",  "F#": "4m",
+    "C#": "5m", "G#": "6m", "D#": "7m", "A#": "8m",
+    "F": "9m",  "C": "10m", "G": "11m", "D": "12m",
+}
+
+
+def _location_to_path(location: str) -> Path | None:
+    if not location:
+        return None
+    if location.startswith("file://"):
+        return Path(url2pathname(urlparse(location).path))
+    return Path(location)
+
+
+def load_key_cache() -> dict[str, str]:
+    """Load location -> essentia_key from the cache CSV."""
+    if not KEY_CACHE_PATH.exists():
+        return {}
+    with open(KEY_CACHE_PATH, newline="", encoding="utf-8") as f:
+        return {row["location"]: row["essentia_key"] for row in csv.DictReader(f)}
+
+
+def append_key_cache(location: str, essentia_key: str) -> None:
+    """Append a single result to the cache CSV."""
+    write_header = not KEY_CACHE_PATH.exists()
+    with open(KEY_CACHE_PATH, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["location", "essentia_key"])
+        if write_header:
+            writer.writeheader()
+        writer.writerow({"location": location, "essentia_key": essentia_key})
+
+
+def detect_key_essentia(location: str) -> str:
+    """
+    Detect musical key using essentia's KeyExtractor.
+    Returns an Open Key string like "Key 3m", or "" on failure.
+    Install: pip install essentia
+    """
+    try:
+        import essentia.standard as es  # type: ignore
+    except ImportError:
+        return ""
+
+    path = _location_to_path(location)
+    if path is None or not path.exists():
+        return ""
+    try:
+        audio = es.MonoLoader(filename=str(path))()
+        key, scale, _ = es.KeyExtractor()(audio)
+        if scale == "major":
+            open_key = _ESSENTIA_MAJOR_TO_OPEN_KEY.get(key, "")
+        else:
+            open_key = _ESSENTIA_MINOR_TO_OPEN_KEY.get(key, "")
+        return f"Key {open_key}" if open_key else ""
+    except Exception:
+        return ""
 
 
 # ---------------------------------------------------------------------------
@@ -149,6 +240,26 @@ def extract_persistent_ids(data: bytes) -> list[int]:
             value -= (1 << 64)
         result.append(value)
     return result
+
+
+def _key_diff(djay_key: str, comment_key: str) -> str:
+    """
+    Compute the difference between two Open Key strings (e.g. "Key 3m", "Key 12d").
+    Returns the signed circular distance (-6..+6) of the key numbers, with a '*'
+    appended if the modes (d/m) differ. Returns "" if either value is missing.
+    """
+    _pat = re.compile(r"Key\s+(\d+)([dm])", re.IGNORECASE)
+    m1 = _pat.fullmatch(djay_key.strip()) if djay_key else None
+    m2 = _pat.fullmatch(comment_key.strip()) if comment_key else None
+    if not m1 or not m2:
+        return ""
+    n1, mode1 = int(m1.group(1)), m1.group(2).lower()
+    n2, mode2 = int(m2.group(1)), m2.group(2).lower()
+    diff = (n2 - n1) % 12
+    if diff > 6:
+        diff -= 12
+    mode_flag = "*" if mode1 != mode2 else ""
+    return f"{diff:+d}{mode_flag}"
 
 
 # ---------------------------------------------------------------------------
@@ -215,9 +326,14 @@ def main():
 
 
     # --- Write CSV ---
-    fieldnames = ["apple_music_id", "artist", "name", "key", "bpm", "djay_bpm", "djay_manual_bpm", "apple_music_bpm", "djay_am_bpm_diff", "key_index", "comment"]
+    fieldnames = ["apple_music_id", "artist", "name", "key", "bpm", "djay_bpm", "djay_manual_bpm", "apple_music_bpm", "djay_am_bpm_diff", "open_key", "essentia_key", "comment", "key_diff"]
+
+    key_cache = load_key_cache()
+    print(f"  Key cache: {len(key_cache)} entries loaded from {KEY_CACHE_PATH.name}")
 
     csv_rows = []
+    total = sum(1 for pid in music_meta if pid in djay_index)
+    done = 0
     for pid, meta in music_meta.items():
         djay_data = djay_index.get(pid)
         if djay_data is None:
@@ -226,6 +342,17 @@ def main():
         djay_bpm = djay_data["manual_bpm"] or djay_data["bpm"]
         music_bpm = meta["bpm"]
         bpm_diff = round(djay_bpm - music_bpm, 2) if djay_bpm != "" and music_bpm != "" else ""
+        djay_open_key = ("Key " + DJAY_KEY_INDEX_TO_OPEN_KEY[djay_data["key_index"]]) if djay_data["key_index"] in DJAY_KEY_INDEX_TO_OPEN_KEY else ""
+
+        done += 1
+        location = meta["location"]
+        if location in key_cache:
+            essentia_key = key_cache[location]
+        else:
+            print(f"  Analysing key [{done}/{total}] {meta['artist']} - {meta['name']} ...", end="\r")
+            essentia_key = detect_key_essentia(location)
+            key_cache[location] = essentia_key
+            append_key_cache(location, essentia_key)
 
         csv_rows.append({
             "apple_music_id": pid,
@@ -236,11 +363,14 @@ def main():
             "djay_manual_bpm": djay_data["manual_bpm"],
             "apple_music_bpm": music_bpm,
             "djay_am_bpm_diff": bpm_diff,
-            "key_index": djay_data["key_index"],
+            "open_key": djay_open_key,
+            "essentia_key": essentia_key,
             "comment": meta["comment"],
+            "key_diff": _key_diff(djay_open_key, meta["comment"]),
         })
+    print()
 
-    csv_rows.sort(key=lambda r: abs(r["djay_am_bpm_diff"]) if r["djay_am_bpm_diff"] != "" else float("inf"), reverse=True)
+    csv_rows.sort(key=lambda r: abs(int(r["key_diff"].rstrip("*"))) if r["key_diff"] not in ("", "+0") else 0, reverse=True)
 
     written = 0
     with open(OUTPUT_PATH, "w", newline="", encoding="utf-8") as f:
