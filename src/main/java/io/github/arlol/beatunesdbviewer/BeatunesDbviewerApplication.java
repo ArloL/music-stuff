@@ -13,6 +13,7 @@ import java.util.Map;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.lang3.function.TriFunction;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +40,7 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 	SongRepository songRepository;
 
 	@Override
-	public void run(ApplicationArguments args) throws Exception {
+	public void run(@NonNull ApplicationArguments args) throws Exception {
 
 		LOG.info("{}", songRepository.findByNameContaining("Tozai"));
 
@@ -135,7 +136,7 @@ public class BeatunesDbviewerApplication implements ApplicationRunner {
 			throws IOException {
 		CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
 				.setHeader("apple_music_id", "artist", "name", "key", "bpm")
-				.build();
+				.get();
 
 		try (var writer = Files.newBufferedWriter(Path.of(filename));
 				var printer = new CSVPrinter(writer, csvFormat)) {
