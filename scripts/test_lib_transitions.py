@@ -1,5 +1,5 @@
 import pytest
-from transitions import calculate_transition_score, get_transition_type
+from lib_transitions import calculate_transition_score, get_transition_type
 
 def test_get_transition_type_incompatible():
     assert get_transition_type({'key':0}, {'key': 0}) == 'incompatible'

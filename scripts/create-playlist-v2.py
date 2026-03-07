@@ -2,7 +2,7 @@ import pandas as pd
 import time
 import sys
 import os
-from transitions import calculate_transition_score, validate_keys, get_transition_type, build_compatibility_graph
+from lib_transitions import calculate_transition_score, validate_keys, get_transition_type, build_compatibility_graph
 
 def find_best_path_greedy(graph, scores, start_node, df):
     """Find a good path using greedy approach - faster and often better for small datasets"""
