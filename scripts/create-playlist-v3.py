@@ -96,7 +96,7 @@ def create_playlist_dataframe(df, playlist_indices):
     playlist_df['transition_score'] = transition_scores
     playlist_df['transition_type'] = transition_types
 
-    columns = ['playlist_position', 'song_id', 'key', 'bpm',
+    columns = ['playlist_position', 'apple_music_id', 'key', 'bpm',
                'bpm_diff', 'transition_score', 'transition_type']
     return playlist_df[columns]
 
@@ -115,7 +115,7 @@ def main(source_file, min_length, max_length, time_limit, start_song):
         df = pd.read_csv(source_file)
         print(f"Loaded {len(df)} songs from {source_file}")
 
-        required_columns = ['song_id', 'key', 'bpm']
+        required_columns = ['apple_music_id', 'key', 'bpm']
         missing = [col for col in required_columns if col not in df.columns]
         if missing:
             raise ValueError(f"Missing required columns: {missing}")
@@ -139,7 +139,7 @@ def main(source_file, min_length, max_length, time_limit, start_song):
 
     # Determine start nodes
     if start_song is not None:
-        matches = df.index[df['song_id'] == start_song].tolist()
+        matches = df.index[df['apple_music_id'] == start_song].tolist()
         if not matches:
             print(f"Error: song_id '{start_song}' not found in {source_file}")
             return
