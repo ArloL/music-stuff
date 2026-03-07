@@ -25,6 +25,7 @@ Cross-reference key:
 
 import sqlite3
 import csv
+import os
 import sys
 import re
 import subprocess
@@ -32,6 +33,7 @@ import json
 import argparse
 import ctypes
 import ctypes.util
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import url2pathname
@@ -176,6 +178,12 @@ _ESSENTIA_MINOR_TO_OPEN_KEY: dict[str, str] = {
 }
 
 
+ESSENTIA_PROFILES = ["edma", "edmm", "bgate", "braw", "shaath", "temperley", "noland"]
+
+# profile results type: profile -> (open_key, strength)
+KeyProfileResults = dict[str, tuple[str, float]]
+
+
 def _location_to_path(location: str) -> Path | None:
     if not location:
         return None
@@ -184,52 +192,90 @@ def _location_to_path(location: str) -> Path | None:
     return Path(location)
 
 
-def load_key_cache() -> dict[int, str]:
-    """Load apple_music_id -> essentia_key from the cache CSV."""
+def load_key_cache() -> dict[int, KeyProfileResults]:
+    """Load apple_music_id -> {profile: (open_key, strength)} from the cache CSV.
+    Loads all profile columns present in the file, regardless of current ESSENTIA_PROFILES."""
     if not KEY_CACHE_PATH.exists():
         return {}
     with open(KEY_CACHE_PATH, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
-        if reader.fieldnames and "apple_music_id" in reader.fieldnames:
-            return {int(row["apple_music_id"]): row["essentia_key"] for row in reader}
+        if not reader.fieldnames or "apple_music_id" not in reader.fieldnames:
+            return {}
+        all_profiles = [
+            col[:-4] for col in reader.fieldnames if col.endswith("_key") and col != "apple_music_id"
+        ]
+        result: dict[int, KeyProfileResults] = {}
+        for row in reader:
+            pid = int(row["apple_music_id"])
+            result[pid] = {
+                p: (row[f"{p}_key"], float(row.get(f"{p}_strength") or 0.0))
+                for p in all_profiles
+            }
+        return result
+
+
+def write_key_cache(cache: dict[int, KeyProfileResults]) -> None:
+    """Write the cache CSV sorted by apple_music_id, preserving all profiles in the data."""
+    all_profiles: list[str] = []
+    seen: set[str] = set()
+    for profile_results in cache.values():
+        for p in profile_results:
+            if p not in seen:
+                all_profiles.append(p)
+                seen.add(p)
+    fieldnames = ["apple_music_id"] + [f"{p}_{s}" for p in all_profiles for s in ("key", "strength")]
+    with open(KEY_CACHE_PATH, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for pid in sorted(cache):
+            row: dict = {"apple_music_id": pid}
+            for p in all_profiles:
+                open_key, strength = cache[pid].get(p, ("", 0.0))
+                row[f"{p}_key"] = open_key
+                row[f"{p}_strength"] = strength
+            writer.writerow(row)
+
+
+def detect_key_essentia(location: str, profiles: list[str]) -> KeyProfileResults:
+    """
+    Detect musical key using the given essentia KeyExtractor profiles.
+    Returns dict mapping profile name -> (open_key, strength).
+    """
+    if not profiles:
         return {}
-
-
-def append_key_cache(apple_music_id: int, essentia_key: str) -> None:
-    """Append a single result to the cache CSV."""
-    write_header = not KEY_CACHE_PATH.exists()
-    with open(KEY_CACHE_PATH, "a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["apple_music_id", "essentia_key"])
-        if write_header:
-            writer.writeheader()
-        writer.writerow({"apple_music_id": apple_music_id, "essentia_key": essentia_key})
-
-
-
-def detect_key_essentia(location: str) -> str:
-    """
-    Detect musical key using essentia's KeyExtractor.
-    Returns an Open Key string like "Key 3m", or "" on failure.
-    Install: pip install essentia
-    """
     try:
         import essentia.standard as es  # type: ignore
     except ImportError:
-        return ""
+        return {}
 
     path = _location_to_path(location)
     if path is None or not path.exists():
-        return ""
+        return {}
+
     try:
         audio = es.MonoLoader(filename=str(path))()
-        key, scale, _ = es.KeyExtractor()(audio)
-        if scale == "major":
-            open_key = _ESSENTIA_MAJOR_TO_OPEN_KEY.get(key, "")
-        else:
-            open_key = _ESSENTIA_MINOR_TO_OPEN_KEY.get(key, "")
-        return f"Key {open_key}" if open_key else ""
     except Exception:
-        return ""
+        return {}
+
+    results: KeyProfileResults = {}
+    for profile in profiles:
+        try:
+            key, scale, strength = es.KeyExtractor(profileType=profile)(audio)
+            mapping = _ESSENTIA_MAJOR_TO_OPEN_KEY if scale == "major" else _ESSENTIA_MINOR_TO_OPEN_KEY
+            open_key = mapping.get(key, "")
+            results[profile] = (f"Key {open_key}" if open_key else "", round(float(strength), 4))
+        except Exception:
+            results[profile] = ("", 0.0)
+    return results
+
+
+def _consensus_key(profile_results: KeyProfileResults) -> str:
+    """Strength-weighted majority vote across profiles. Returns the winning open key."""
+    votes: dict[str, float] = {}
+    for open_key, strength in profile_results.values():
+        if open_key:
+            votes[open_key] = votes.get(open_key, 0.0) + strength
+    return max(votes, key=lambda k: votes[k]) if votes else ""
 
 
 # ---------------------------------------------------------------------------
@@ -250,24 +296,36 @@ def extract_persistent_ids(data: bytes) -> list[int]:
     return result
 
 
-def _key_diff(djay_key: str, comment_key: str) -> str:
+_KEY_PAT = re.compile(r"Key\s+(\d+)([dm])", re.IGNORECASE)
+
+
+def _parse_open_key(s: str) -> tuple[int, str] | None:
+    m = _KEY_PAT.fullmatch(s.strip()) if s else None
+    return (int(m.group(1)), m.group(2).lower()) if m else None
+
+
+def _key_diff(djay_key: str, essentia_key: str, comment_key: str) -> str:
     """
-    Compute the difference between two Open Key strings (e.g. "Key 3m", "Key 12d").
-    Returns the signed circular distance (-6..+6) of the key numbers, with a '*'
-    appended if the modes (d/m) differ. Returns "" if either value is missing.
+    Return the sum of absolute pairwise circular distances among open_key,
+    essentia_key, and comment as a plain integer string.
+    - All three agree → 0
+    - Two agree, one differs by d → 2d
+    - All three disagree → d12 + d13 + d23 (scores higher than two-agree for same spread)
+    Returns "" if fewer than two keys are present.
     """
-    _pat = re.compile(r"Key\s+(\d+)([dm])", re.IGNORECASE)
-    m1 = _pat.fullmatch(djay_key.strip()) if djay_key else None
-    m2 = _pat.fullmatch(comment_key.strip()) if comment_key else None
-    if not m1 or not m2:
+    available = [v for v in (_parse_open_key(k) for k in (djay_key, essentia_key, comment_key)) if v is not None]
+    if len(available) < 2:
         return ""
-    n1, mode1 = int(m1.group(1)), m1.group(2).lower()
-    n2, mode2 = int(m2.group(1)), m2.group(2).lower()
-    diff = (n2 - n1) % 12
-    if diff > 6:
-        diff -= 12
-    mode_flag = "*" if mode1 != mode2 else ""
-    return f"{diff:+d}{mode_flag}"
+
+    total = 0
+    for i in range(len(available)):
+        for j in range(i + 1, len(available)):
+            n1, n2 = available[i][0], available[j][0]
+            diff = (n2 - n1) % 12
+            if diff > 6:
+                diff -= 12
+            total += abs(diff)
+    return str(total)
 
 
 # ---------------------------------------------------------------------------
@@ -339,9 +397,23 @@ def main():
     key_cache = load_key_cache()
     print(f"  Key cache: {len(key_cache)} entries loaded from {KEY_CACHE_PATH.name}")
 
-    csv_rows = []
-    total = sum(1 for pid in music_meta if pid in djay_index)
+    # --- Phase 1: parallel key analysis for tracks with missing profiles ---
     done = 0
+    with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
+        futures = {
+            executor.submit(detect_key_essentia, meta["location"], [p for p in ESSENTIA_PROFILES if p not in key_cache.get(pid, {})]): pid
+            for pid, meta in music_meta.items()
+            if pid in djay_index
+        }
+        for future in as_completed(futures):
+            pid = futures[future]
+            key_cache.setdefault(pid, {}).update(future.result())
+            done += 1
+            print(f"  Analysing keys [{done}/{len(futures)}]", end="\r")
+    print()
+
+    # --- Phase 2: build CSV rows ---
+    csv_rows = []
     for pid, meta in music_meta.items():
         djay_data = djay_index.get(pid)
         if djay_data is None:
@@ -351,15 +423,7 @@ def main():
         music_bpm = meta["bpm"]
         bpm_diff = round(djay_bpm - music_bpm, 2) if djay_bpm != "" and music_bpm != "" else ""
         djay_open_key = ("Key " + DJAY_KEY_INDEX_TO_OPEN_KEY[djay_data["key_index"]]) if djay_data["key_index"] in DJAY_KEY_INDEX_TO_OPEN_KEY else ""
-
-        done += 1
-        if pid in key_cache:
-            essentia_key = key_cache[pid]
-        else:
-            print(f"  Analysing key [{done}/{total}] {meta['artist']} - {meta['name']} ...", end="\r")
-            essentia_key = detect_key_essentia(meta["location"])
-            key_cache[pid] = essentia_key
-            append_key_cache(pid, essentia_key)
+        essentia_key = _consensus_key(key_cache.get(pid, {}))
 
         csv_rows.append({
             "apple_music_id": pid,
@@ -373,11 +437,10 @@ def main():
             "open_key": djay_open_key,
             "essentia_key": essentia_key,
             "comment": meta["comment"],
-            "key_diff": _key_diff(djay_open_key, meta["comment"]),
+            "key_diff": _key_diff(djay_open_key, essentia_key, meta["comment"]),
         })
-    print()
 
-    csv_rows.sort(key=lambda r: abs(int(r["key_diff"].rstrip("*"))) if r["key_diff"] not in ("", "+0") else 0, reverse=True)
+    csv_rows.sort(key=lambda r: int(r["key_diff"]) if r["key_diff"] != "" else 0, reverse=True)
 
     written = 0
     with open(OUTPUT_PATH, "w", newline="", encoding="utf-8") as f:
@@ -387,6 +450,7 @@ def main():
             writer.writerow(row)
             written += 1
 
+    write_key_cache(key_cache)
     print(f"  Wrote {written} tracks.")
     print(f"Exported to {OUTPUT_PATH}")
 
