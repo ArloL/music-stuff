@@ -28,9 +28,9 @@ import sys
 import argparse
 from pathlib import Path
 
-from apple_music import load_music_metadata
-from djay import load_djay_index
-from essentia import analyse_keys, consensus_key
+from lib_apple_music import load_music_metadata
+from lib_djay import load_djay_index
+from lib_essentia import analyse_keys, consensus_key
 
 OUTPUT_PATH = Path(__file__).parent / "songs-djay-diff.csv"
 

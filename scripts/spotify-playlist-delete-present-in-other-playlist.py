@@ -4,7 +4,7 @@ import requests
 import csv
 from urllib.parse import urlparse
 from spotipy.oauth2 import SpotifyOAuth
-from spotify import get_sp, user_playlist_by_name, all_playlist_items
+from lib_spotify import get_sp, user_playlist_by_name, all_playlist_items
 
 def main(delete_playlist_name, source_playlist_name):
     sp = get_sp()
