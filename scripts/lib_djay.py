@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 SOURCE_DB = Path.home() / "Music/djay/djay Media Library.djayMediaLibrary/MediaLibrary.db"
-DB_PATH = Path(__file__).parent / "djay-MediaLibrary.db"
+DB_PATH = Path(__file__).parent / "tmp/djay-MediaLibrary.db"
 
 DJAY_KEY_INDEX_TO_OPEN_KEY = {
     0: "1d",  1: "1m",

@@ -1,7 +1,7 @@
 import pandas as pd
 import pulp
 from collections import defaultdict
-from transitions import calculate_transition_score, build_compatibility_graph, validate_keys, get_transition_type
+from lib_transitions import calculate_transition_score, build_compatibility_graph, validate_keys, get_transition_type
 
 def main(source_file, min_songs, max_songs):
     # Load dataset

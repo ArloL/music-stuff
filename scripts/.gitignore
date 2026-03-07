@@ -1,0 +1,7 @@
+# Add custom entries after this line to be preserved during automated updates
+
+*.db
+djay-MediaLibrary.*
+.cache
+__pycache__
+tmp

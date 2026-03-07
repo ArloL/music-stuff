@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 from urllib.request import url2pathname
 
 
-KEY_CACHE_PATH = Path(__file__).parent / "essentia-key-cache.csv"
+KEY_CACHE_PATH = Path(__file__).parent / "lib_essentia_key_cache.csv"
 
 ESSENTIA_PROFILES = ["edma", "edmm", "bgate", "braw", "shaath", "temperley", "noland"]
 
