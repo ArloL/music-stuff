@@ -96,7 +96,7 @@ def create_playlist_dataframe(df, playlist_indices):
     playlist_df['transition_score'] = transition_scores
     playlist_df['transition_type'] = transition_types
 
-    columns = ['playlist_position', 'apple_music_id', 'key', 'bpm',
+    columns = ['playlist_position', 'apple_music_id', 'artist', 'name', 'key', 'bpm',
                'bpm_diff', 'transition_score', 'transition_type']
     return playlist_df[columns]
 
