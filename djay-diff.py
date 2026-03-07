@@ -159,16 +159,20 @@ def load_music_metadata(folder_name: str | None = None) -> dict[int, dict]:
 # ---------------------------------------------------------------------------
 
 # pip install essentia  (or: brew install essentia on macOS)
-# Maps essentia key names to Open Key numbers for major (d) and minor (m)
+# Maps essentia key names to Open Key numbers for major (d) and minor (m).
+# Includes both sharp and flat spellings since KeyExtractor may return either.
 _ESSENTIA_MAJOR_TO_OPEN_KEY: dict[str, str] = {
-    "C": "1d",  "G": "2d",  "D": "3d",  "A": "4d",
-    "E": "5d",  "B": "6d",  "F#": "7d", "C#": "8d",
-    "G#": "9d", "D#": "10d","A#": "11d","F": "12d",
+    "C": "1d",  "G": "2d",  "D": "3d",   "A": "4d",
+    "E": "5d",  "B": "6d",  "F#": "7d",  "Gb": "7d",
+    "C#": "8d", "Db": "8d", "G#": "9d",  "Ab": "9d",
+    "D#": "10d","Eb": "10d","A#": "11d", "Bb": "11d",
+    "F": "12d",
 }
 _ESSENTIA_MINOR_TO_OPEN_KEY: dict[str, str] = {
-    "A": "1m",  "E": "2m",  "B": "3m",  "F#": "4m",
-    "C#": "5m", "G#": "6m", "D#": "7m", "A#": "8m",
-    "F": "9m",  "C": "10m", "G": "11m", "D": "12m",
+    "A": "1m",  "E": "2m",  "B": "3m",   "F#": "4m",  "Gb": "4m",
+    "C#": "5m", "Db": "5m", "G#": "6m",  "Ab": "6m",
+    "D#": "7m", "Eb": "7m", "A#": "8m",  "Bb": "8m",
+    "F": "9m",  "C": "10m", "G": "11m",  "D": "12m",
 }
 
 
