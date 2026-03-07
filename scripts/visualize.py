@@ -37,11 +37,11 @@ def build_network(df, selected_relations, max_connections=3):
 
     # Add all songs as nodes
     for _, row in df.iterrows():
-        G.add_node(row['song_id'], key=row['key'], bpm=row['bpm'])
+        G.add_node(row['apple_music_id'], key=row['key'], bpm=row['bpm'])
 
     # Build edges with per-song BPM tolerance
     for _, source_row in df.iterrows():
-        source_id = source_row['song_id']
+        source_id = source_row['apple_music_id']
         source_key = source_row['key']
         source_bpm = source_row['bpm']
 
@@ -57,7 +57,7 @@ def build_network(df, selected_relations, max_connections=3):
         for bpm_tolerance in range(4, 21):
             potential_targets = df[
                 (df['key'].isin(compatible_keys)) &
-                (df['song_id'] != source_id) &
+                (df['apple_music_id'] != source_id) &
                 (abs(df['bpm'] - source_bpm) <= bpm_tolerance)
             ].copy()
 
@@ -65,7 +65,7 @@ def build_network(df, selected_relations, max_connections=3):
                 # Sort by BPM difference and take best matches
                 potential_targets['bpm_diff'] = abs(potential_targets['bpm'] - source_bpm)
                 potential_targets = potential_targets.sort_values('bpm_diff').head(max_connections)
-                connections = potential_targets[['song_id', 'bpm_diff']].values.tolist()
+                connections = potential_targets[['apple_music_id', 'bpm_diff']].values.tolist()
                 break
 
         # Add edges

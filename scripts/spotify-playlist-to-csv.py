@@ -70,7 +70,7 @@ spotify_to_beatunes_key_map = {
 with open('songs_spotify.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow([
-        'song_id',
+        'apple_music_id',
         'key',
         'bpm',
         'id',
