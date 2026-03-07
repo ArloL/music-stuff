@@ -180,22 +180,26 @@ def _location_to_path(location: str) -> Path | None:
     return Path(location)
 
 
-def load_key_cache() -> dict[str, str]:
-    """Load location -> essentia_key from the cache CSV."""
+def load_key_cache() -> dict[int, str]:
+    """Load apple_music_id -> essentia_key from the cache CSV."""
     if not KEY_CACHE_PATH.exists():
         return {}
     with open(KEY_CACHE_PATH, newline="", encoding="utf-8") as f:
-        return {row["location"]: row["essentia_key"] for row in csv.DictReader(f)}
+        reader = csv.DictReader(f)
+        if reader.fieldnames and "apple_music_id" in reader.fieldnames:
+            return {int(row["apple_music_id"]): row["essentia_key"] for row in reader}
+        return {}
 
 
-def append_key_cache(location: str, essentia_key: str) -> None:
+def append_key_cache(apple_music_id: int, essentia_key: str) -> None:
     """Append a single result to the cache CSV."""
     write_header = not KEY_CACHE_PATH.exists()
     with open(KEY_CACHE_PATH, "a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["location", "essentia_key"])
+        writer = csv.DictWriter(f, fieldnames=["apple_music_id", "essentia_key"])
         if write_header:
             writer.writeheader()
-        writer.writerow({"location": location, "essentia_key": essentia_key})
+        writer.writerow({"apple_music_id": apple_music_id, "essentia_key": essentia_key})
+
 
 
 def detect_key_essentia(location: str) -> str:
@@ -345,14 +349,13 @@ def main():
         djay_open_key = ("Key " + DJAY_KEY_INDEX_TO_OPEN_KEY[djay_data["key_index"]]) if djay_data["key_index"] in DJAY_KEY_INDEX_TO_OPEN_KEY else ""
 
         done += 1
-        location = meta["location"]
-        if location in key_cache:
-            essentia_key = key_cache[location]
+        if pid in key_cache:
+            essentia_key = key_cache[pid]
         else:
             print(f"  Analysing key [{done}/{total}] {meta['artist']} - {meta['name']} ...", end="\r")
-            essentia_key = detect_key_essentia(location)
-            key_cache[location] = essentia_key
-            append_key_cache(location, essentia_key)
+            essentia_key = detect_key_essentia(meta["location"])
+            key_cache[pid] = essentia_key
+            append_key_cache(pid, essentia_key)
 
         csv_rows.append({
             "apple_music_id": pid,
