@@ -2,7 +2,7 @@ import json
 import requests
 import pandas as pd
 from urllib.parse import urlparse
-from spotify import get_sp
+from lib_spotify import get_sp
 
 sp = get_sp()
 spotify_mapping = pd.read_csv("spotify-mapping.csv").set_index('apple_music_id')

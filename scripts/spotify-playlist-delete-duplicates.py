@@ -3,7 +3,7 @@ import json
 import requests
 import csv
 from urllib.parse import urlparse
-from spotify import get_sp, user_playlist_by_name, all_playlist_items
+from lib_spotify import get_sp, user_playlist_by_name, all_playlist_items
 
 def main(playlist_name):
     sp = get_sp()
