@@ -29,7 +29,7 @@ import sys
 import argparse
 from pathlib import Path
 
-from lib_apple_music import find_tracks_by_folder, find_all_tracks
+from lib_apple_music import find_tracks_by_folder_name, find_all_tracks
 from lib_djay import load_djay_index
 from lib_essentia import analyse, consensus_key
 
@@ -80,7 +80,7 @@ def main():
     # --- Load Music metadata ---
     desc = f"folder '{args.folder}'" if args.folder else "all tracks"
     print(f"Loading Apple Music metadata for {desc}...")
-    tracks = find_tracks_by_folder(args.folder) if args.folder else find_all_tracks()
+    tracks = find_tracks_by_folder_name(args.folder) if args.folder else find_all_tracks()
     print(f"  Loaded metadata for {len(tracks)} tracks.")
 
     # --- Query djay ---
