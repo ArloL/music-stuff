@@ -86,6 +86,7 @@ def main():
     # --- Query djay ---
     print("Querying djay MediaLibrary.db...")
     djay_index = load_djay_index(tracks)
+    print(f"  Loaded metadata for {len(djay_index)} tracks.")
 
     # --- Write CSV ---
     fieldnames = ["apple_music_id", "artist", "name", "key", "bpm", "djay_bpm", "djay_manual_bpm", "apple_music_bpm", "djay_am_bpm_diff", "open_key", "essentia_key", "comment", "key_diff"]
@@ -96,7 +97,7 @@ def main():
     # --- Phase 2: build CSV rows ---
     csv_rows = []
     for track in tracks:
-        pid = track["id"]
+        pid = track["persistentID"]
         djay_data = djay_index.get(pid)
         if djay_data is None:
             continue
