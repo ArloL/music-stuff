@@ -31,7 +31,7 @@ from pathlib import Path
 
 from lib_apple_music import find_tracks_by_folder, find_all_tracks
 from lib_djay import load_djay_index
-from lib_essentia import analyse_keys, consensus_key
+from lib_essentia import analyse, consensus_key
 
 OUTPUT_PATH = Path(__file__).parent / "songs-djay-diff.csv"
 
@@ -91,7 +91,7 @@ def main():
     fieldnames = ["apple_music_id", "artist", "name", "key", "bpm", "djay_bpm", "djay_manual_bpm", "apple_music_bpm", "djay_am_bpm_diff", "open_key", "essentia_key", "comment", "key_diff"]
 
     # --- Phase 1: parallel key analysis for tracks with missing profiles ---
-    key_cache = analyse_keys(tracks)
+    key_cache = analyse(tracks)
 
     # --- Phase 2: build CSV rows ---
     csv_rows = []

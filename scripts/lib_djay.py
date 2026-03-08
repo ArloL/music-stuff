@@ -28,7 +28,7 @@ _libc.clonefile.restype = ctypes.c_int
 _libc.clonefile.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint32]
 
 
-def clonefile(src: Path, dst: Path) -> None:
+def _clonefile(src: Path, dst: Path) -> None:
     """APFS copy-on-write clone via clonefile(2). Destination must not exist."""
     dst.unlink(missing_ok=True)
     ret = _libc.clonefile(str(src).encode(), str(dst).encode(), 0)
@@ -36,21 +36,21 @@ def clonefile(src: Path, dst: Path) -> None:
         raise OSError(ctypes.get_errno(), f"clonefile({src} -> {dst})")
 
 
-def clone_db() -> None:
+def _clone_db() -> None:
     """Clone the live djay MediaLibrary.db (and WAL/SHM files) to DB_PATH."""
     if not SOURCE_DB.exists():
         raise FileNotFoundError(f"djay database not found: {SOURCE_DB}")
-    clonefile(SOURCE_DB, DB_PATH)
+    _clonefile(SOURCE_DB, DB_PATH)
     for suffix in ("-wal", "-shm"):
         src = Path(str(SOURCE_DB) + suffix)
         if src.exists():
-            clonefile(src, Path(str(DB_PATH) + suffix))
+            _clonefile(src, Path(str(DB_PATH) + suffix))
 
 
 _APPLE_ID_RE = re.compile(rb'\x08com\.apple\.(?:iTunes|Music):(-?\d+)\x00')
 
 
-def extract_persistent_ids(data: bytes) -> list[int]:
+def _extract_persistent_ids(data: bytes) -> list[int]:
     """Extract Apple Music persistent IDs (signed 64-bit) from a TSAF blob."""
     result = []
     for m in _APPLE_ID_RE.finditer(data):
@@ -66,7 +66,7 @@ def load_djay_index(tracks: list[dict]) -> dict[int, dict]:
     Clone the live djay MediaLibrary.db then query it, returning a dict mapping
     persistent_id -> {bpm, manual_bpm, open_key} for tracks present in tracks.
     """
-    clone_db()
+    _clone_db()
     con = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
     con.row_factory = sqlite3.Row
     rows = con.execute("""
@@ -86,10 +86,10 @@ def load_djay_index(tracks: list[dict]) -> dict[int, dict]:
     """).fetchall()
     con.close()
 
-    music_ids = {track["id"] for rec in tracks}
+    music_ids = {track["id"] for track in tracks}
     djay_index: dict[int, dict] = {}
     for row in rows:
-        for pid in extract_persistent_ids(bytes(row["location_blob"])):
+        for pid in _extract_persistent_ids(bytes(row["location_blob"])):
             if pid in djay_index or pid not in music_ids:
                 continue
             key_index = row["keySignatureIndex"]

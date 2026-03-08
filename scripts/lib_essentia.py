@@ -6,12 +6,9 @@ from urllib.parse import urlparse
 from urllib.request import url2pathname
 
 
-KEY_CACHE_PATH = Path(__file__).parent / "lib_essentia_key_cache.csv"
+ESSENTIA_CACHE_PATH = Path(__file__).parent / "lib_essentia_cache.csv"
 
 ESSENTIA_PROFILES = ["edma", "edmm", "bgate", "braw", "shaath", "temperley", "noland"]
-
-# profile results type: profile -> (open_key, strength)
-KeyProfileResults = dict[str, tuple[str, float]]
 
 # pip install essentia  (or: brew install essentia on macOS)
 # Maps essentia key names to Open Key numbers for major (d) and minor (m).
@@ -39,57 +36,45 @@ def _location_to_path(location: str) -> Path | None:
     return Path(location)
 
 
-def load_key_cache() -> dict[int, KeyProfileResults]:
-    """Load apple_music_id -> {profile: (open_key, strength)} from the cache CSV.
-    Loads all profile columns present in the file, regardless of current ESSENTIA_PROFILES."""
-    if not KEY_CACHE_PATH.exists():
+def _coerce(v: str):
+    try:
+        return float(v)
+    except (ValueError, TypeError):
+        return v
+
+
+def _load_essentia_cache() -> dict[int, dict]:
+    """Load apple_music_id -> flat dict of {bpm, profile_key, profile_strength, ...}."""
+    if not ESSENTIA_CACHE_PATH.exists():
         return {}
-    with open(KEY_CACHE_PATH, newline="", encoding="utf-8") as f:
+    with open(ESSENTIA_CACHE_PATH, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         if not reader.fieldnames or "apple_music_id" not in reader.fieldnames:
             return {}
-        all_profiles = [
-            col[:-4] for col in reader.fieldnames if col.endswith("_key") and col != "apple_music_id"
-        ]
-        result: dict[int, KeyProfileResults] = {}
-        for row in reader:
-            pid = int(row["apple_music_id"])
-            result[pid] = {
-                p: (row[f"{p}_key"], float(row.get(f"{p}_strength") or 0.0))
-                for p in all_profiles
-            }
-        return result
+        return {
+            int(row["apple_music_id"]): {k: _coerce(v) for k, v in row.items() if k != "apple_music_id"}
+            for row in reader
+        }
 
 
-def write_key_cache(cache: dict[int, KeyProfileResults]) -> None:
-    """Write the cache CSV sorted by apple_music_id, preserving all profiles in the data."""
-    all_profiles: list[str] = []
+def _write_essentia_cache(cache: dict[int, dict]) -> None:
+    """Write the cache CSV sorted by apple_music_id."""
+    fieldnames = ["apple_music_id"]
     seen: set[str] = set()
-    for profile_results in cache.values():
-        for p in profile_results:
-            if p not in seen:
-                all_profiles.append(p)
-                seen.add(p)
-    fieldnames = ["apple_music_id"] + [f"{p}_{s}" for p in all_profiles for s in ("key", "strength")]
-    with open(KEY_CACHE_PATH, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+    for entry in cache.values():
+        for k in entry:
+            if k not in seen:
+                fieldnames.append(k)
+                seen.add(k)
+    with open(ESSENTIA_CACHE_PATH, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
         for pid in sorted(cache):
-            row: dict = {"apple_music_id": pid}
-            for p in all_profiles:
-                open_key, strength = cache[pid].get(p, ("", 0.0))
-                row[f"{p}_key"] = open_key
-                row[f"{p}_strength"] = strength
-            writer.writerow(row)
+            writer.writerow({"apple_music_id": pid, **cache[pid]})
 
 
-def detect_key_essentia(location: str, profiles: list[str]) -> KeyProfileResults:
-    """
-    Detect musical key using the given essentia KeyExtractor profiles.
-    Returns dict mapping profile name -> (open_key, strength).
-    """
-    if not profiles:
-        return {}
+def _detect_essentia(location: str, profiles: list[str], do_bpm: bool) -> dict:
+    """Analyse a single track: key profiles and/or BPM. Loads audio once."""
     try:
         import essentia.standard as es  # type: ignore
     except ImportError:
@@ -104,42 +89,57 @@ def detect_key_essentia(location: str, profiles: list[str]) -> KeyProfileResults
     except Exception:
         return {}
 
-    results: KeyProfileResults = {}
+    result = {}
     for profile in profiles:
         try:
             key, scale, strength = es.KeyExtractor(profileType=profile)(audio)
             mapping = _ESSENTIA_MAJOR_TO_OPEN_KEY if scale == "major" else _ESSENTIA_MINOR_TO_OPEN_KEY
             open_key = mapping.get(key, "")
-            results[profile] = (f"Key {open_key}" if open_key else "", round(float(strength), 4))
+            result[f"{profile}_key"] = f"Key {open_key}" if open_key else ""
+            result[f"{profile}_strength"] = round(float(strength), 4)
         except Exception:
-            results[profile] = ("", 0.0)
-    return results
+            result[f"{profile}_key"] = ""
+            result[f"{profile}_strength"] = 0.0
+
+    if do_bpm:
+        try:
+            bpm, _, _, _, _ = es.RhythmExtractor2013(method="multifeature")(audio)
+            result["bpm"] = round(float(bpm), 2)
+        except Exception:
+            result["bpm"] = ""
+
+    return result
 
 
-def analyse_keys(tracks: list[dict]) -> dict[int, KeyProfileResults]:
-    """Load the key cache, run parallel essentia analysis for missing profiles, save and return the updated cache."""
-    key_cache = load_key_cache()
-    print(f"  Key cache: {len(key_cache)} entries loaded from {KEY_CACHE_PATH.name}")
+def analyse(tracks: list[dict]) -> dict[int, dict]:
+    """Load the essentia cache, run parallel key+BPM analysis for missing data, save and return."""
+    cache = _load_essentia_cache()
+    print(f"  Essentia cache: {len(cache)} entries loaded from {ESSENTIA_CACHE_PATH.name}")
     done = 0
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
-        futures = {
-            executor.submit(detect_key_essentia, track["location"], [p for p in ESSENTIA_PROFILES if p not in key_cache.get(track["id"], {})]): track["id"]
-            for track in tracks
-        }
+        futures = {}
+        for track in tracks:
+            entry = cache.get(track["id"], {})
+            missing_profiles = [p for p in ESSENTIA_PROFILES if f"{p}_key" not in entry]
+            missing_bpm = "bpm" not in entry
+            if missing_profiles or missing_bpm:
+                futures[executor.submit(_detect_essentia, track["location"], missing_profiles, missing_bpm)] = track["id"]
         for future in as_completed(futures):
             pid = futures[future]
-            key_cache.setdefault(pid, {}).update(future.result())
+            cache.setdefault(pid, {}).update(future.result())
             done += 1
-            print(f"  Analysing keys [{done}/{len(futures)}]", end="\r")
+            print(f"  Analysing [{done}/{len(futures)}]", end="\r")
     print()
-    write_key_cache(key_cache)
-    return key_cache
+    _write_essentia_cache(cache)
+    return cache
 
 
-def consensus_key(profile_results: KeyProfileResults) -> str:
+def consensus_key(entry: dict) -> str:
     """Strength-weighted majority vote across profiles. Returns the winning open key."""
     votes: dict[str, float] = {}
-    for open_key, strength in profile_results.values():
+    for p in ESSENTIA_PROFILES:
+        open_key = entry.get(f"{p}_key", "")
+        strength = entry.get(f"{p}_strength", 0.0)
         if open_key:
             votes[open_key] = votes.get(open_key, 0.0) + strength
     return max(votes, key=lambda k: votes[k]) if votes else ""
