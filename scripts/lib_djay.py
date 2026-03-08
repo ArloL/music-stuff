@@ -61,7 +61,7 @@ def _extract_persistent_ids(data: bytes) -> list[int]:
     return result
 
 
-def load_djay_index(tracks: list[dict]) -> dict[int, dict]:
+def load_djay_index() -> dict[int, dict]:
     """
     Clone the live djay MediaLibrary.db then query it, returning a dict mapping
     persistent_id -> {bpm, manual_bpm, open_key} for tracks present in tracks.
@@ -86,11 +86,10 @@ def load_djay_index(tracks: list[dict]) -> dict[int, dict]:
     """).fetchall()
     con.close()
 
-    music_ids = {track["persistentID"] for track in tracks}
     djay_index: dict[int, dict] = {}
     for row in rows:
         for pid in _extract_persistent_ids(bytes(row["location_blob"])):
-            if pid in djay_index or pid not in music_ids:
+            if pid in djay_index:
                 continue
             key_index = row["keySignatureIndex"]
             djay_index[pid] = {
