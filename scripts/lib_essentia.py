@@ -94,8 +94,11 @@ def _detect_essentia(location: str, profiles: list[str], do_bpm: bool) -> dict:
         result[f"{profile}_strength"] = round(float(strength), 4)
 
     if do_bpm:
-        bpm, _, _, _, _ = es.RhythmExtractor2013(method="multifeature")(audio)
-        result["bpm"] = round(float(bpm), 2)
+        bpm_r, _, confidence_r, _, _ = es.RhythmExtractor2013(method="multifeature")(audio)
+        bpm_p = es.PercivalBpmEstimator()(audio)
+        result["bpm_rhythm"] = round(float(bpm_r), 2)
+        result["bpm_rhythm_confidence"] = round(float(confidence_r), 4)
+        result["bpm_percival"] = round(float(bpm_p), 2)
 
     return result
 
@@ -110,17 +113,60 @@ def analyse(tracks: list[dict]) -> dict[int, dict]:
         for track in tracks:
             entry = cache.get(track["persistentID"], {})
             missing_profiles = [p for p in ESSENTIA_PROFILES if f"{p}_key" not in entry]
-            missing_bpm = "bpm" not in entry
+            missing_bpm = "bpm_rhythm" not in entry or "bpm_rhythm_confidence" not in entry or "bpm_percival" not in entry
             if missing_profiles or missing_bpm:
                 futures[executor.submit(_detect_essentia, track["location"], missing_profiles, missing_bpm)] = track["persistentID"]
         for future in as_completed(futures):
             pid = futures[future]
-            cache.setdefault(pid, {}).update(future.result())
+            cache.setdefault(int(pid), {}).update(future.result())
             done += 1
             print(f"  Analysing [{done}/{len(futures)}]", end="\r")
+            _write_essentia_cache(cache)
     print()
-    _write_essentia_cache(cache)
     return cache
+
+
+_BPM_RANGE = (60.0, 200.0)
+
+
+def _normalise_bpm(bpm: float) -> float:
+    """Fold a BPM value into _BPM_RANGE by halving or doubling."""
+    lo, hi = _BPM_RANGE
+    while bpm > hi:
+        bpm /= 2
+    while bpm < lo:
+        bpm *= 2
+    return bpm
+
+
+def consensus_bpm(entry: dict) -> float:
+    """Consensus BPM from RhythmExtractor2013 and PercivalBpmEstimator.
+
+    Both estimates are normalised to _BPM_RANGE to resolve octave errors.
+    If they agree within 5 % after normalisation, they are averaged; otherwise
+    the estimate already in range is preferred, falling back to rhythm.
+    """
+    r = float(entry.get("bpm_rhythm") or 0.0)
+    p = float(entry.get("bpm_percival") or 0.0)
+    if not r and not p:
+        return 0.0
+    if not r:
+        return round(_normalise_bpm(p), 2)
+    if not p:
+        return round(_normalise_bpm(r), 2)
+
+    rn, pn = _normalise_bpm(r), _normalise_bpm(p)
+    mid = (rn + pn) / 2
+    if abs(rn - pn) / mid < 0.05:
+        return round(mid, 2)
+
+    r_in = _BPM_RANGE[0] <= r <= _BPM_RANGE[1]
+    p_in = _BPM_RANGE[0] <= p <= _BPM_RANGE[1]
+    if r_in and not p_in:
+        return round(r, 2)
+    if p_in and not r_in:
+        return round(p, 2)
+    return round(rn, 2)  # both needed folding — prefer rhythm after normalisation
 
 
 def consensus_key(entry: dict) -> str:
