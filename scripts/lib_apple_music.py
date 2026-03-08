@@ -19,16 +19,16 @@ def _run_jxa(call: str):
     return json.loads(result.stdout)
 
 
-def find_playlists() -> list[dict]:
-    return _run_jxa("findPlaylists()")
+def find_playlist_by_name(playlist_name: str) -> list[dict]:
+    return _run_jxa(f"findPlaylistByName({json.dumps(playlist_name)})")
 
 
-def find_tracks_by_playlist(playlist_name: str) -> list[dict]:
-    return _run_jxa(f"findTracksByPlaylist({json.dumps(playlist_name)})")
+def find_tracks_by_folder_name(folder_name: str) -> list[dict]:
+    return _run_jxa(f"findTracksByFolderName({json.dumps(folder_name)})")
 
 
-def find_tracks_by_folder(folder_name: str) -> list[dict]:
-    return _run_jxa(f"findTracksByFolder({json.dumps(folder_name)})")
+def find_tracks_by_playlist_name(playlist_name: str) -> list[dict]:
+    return _run_jxa(f"findTracksByPlaylistName({json.dumps(playlist_name)})")
 
 
 def find_all_tracks() -> list[dict]:

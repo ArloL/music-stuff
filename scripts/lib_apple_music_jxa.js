@@ -1,31 +1,61 @@
+function _mapPlaylist(playlist) {
+    var parent = null;
+    var parents = [];
+    try {
+        parent = _mapPlaylist(playlist.parent());
+        parents = [parent, ...parent.parents];
+    } catch (e) {
+        // ignore
+    }
+    return {
+        parent,
+        parents,
+        self: playlist,
+        ...playlist.properties(),
+    };
+}
+
 function findPlaylists() {
-    return Application("Music").playlists.properties();
+    const music = Application("Music");
+    return music.playlists().map(_mapPlaylist);
 }
 
 function findPlaylistByName(name) {
-    return Application("Music").playlists.whose({ name: { _equals: name } })[0];
+    const music = Application("Music");
+    const playlists = music.playlists.whose({ name: { _equals: name } });
+    if (playlists.length > 1) {
+        throw new Error("More than one playlist named " + name);
+    }
+    return _mapPlaylist(playlists[0]);
 }
 
-function findTracksByFolder(folderName) {
-    const music = Application("Music");
-    const folderID = findPlaylistByName(folderName).id();
+function findPlaylistsByFolderName(folderName) {
+    const folder = findPlaylistByName(folderName);
+    return findPlaylists()
+        .filter((playlist) => {
+            return playlist.parents.some((parent) => parent.id === folder.id);
+        });
+}
+
+function findTracksByFolderName(folderName) {
     const seen = new Set();
     const result = [];
-    for (const pl of music.playlists()) {
-        if (!pl.parent || pl.parent().id() !== folderID) continue;
-        for (const p of pl.tracks.properties()) {
-            if (seen.has(p.id)) continue;
-            seen.add(p.id);
-            result.push(p);
+    const playlists = findPlaylistsByFolderName(folderName);
+    for (const playlist of playlists) {
+        for (const track of playlist.self.tracks.properties()) {
+            if (seen.has(track.id)) continue;
+            seen.add(track.id);
+            result.push(track);
         }
     }
     return result;
 }
 
-function findTracksByPlaylist(playlistName) {
-    return findPlaylistByName(playlistName).tracks.properties();
+function findTracksByPlaylistName(playlistName) {
+    return findPlaylistByName(playlistName).self.tracks.properties();
 }
 
 function findAllTracks() {
-    return Application("Music").libraryPlaylists[0].tracks.properties();
+    const music = Application("Music");
+    return music.libraryPlaylists[0].tracks.properties();
 }
