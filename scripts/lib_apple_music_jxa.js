@@ -1,3 +1,20 @@
+function hexIdToInt(hexId) {
+    try {
+        const value = BigInt(`0x${hexId}`);
+        return value >= (1n << 63n) ? value - (1n << 64n) : value;
+    } catch {
+        return null;
+    }
+}
+
+function _mapTrackProperties(trackProperties) {
+    return {
+        ...trackProperties,
+        persistentID: hexIdToInt(trackProperties.persistentID).toString(),
+        location: trackProperties.location.toString(),
+    }
+}
+
 function _mapPlaylist(playlist) {
     var parent = null;
     var parents = [];
@@ -43,19 +60,27 @@ function findTracksByFolderName(folderName) {
     const playlists = findPlaylistsByFolderName(folderName);
     for (const playlist of playlists) {
         for (const track of playlist.self.tracks.properties()) {
-            if (seen.has(track.id)) continue;
-            seen.add(track.id);
-            result.push(track);
+            if (seen.has(track.persistentID)) continue;
+            seen.add(track.persistentID);
+            result.push(_mapTrackProperties(track));
         }
     }
     return result;
 }
 
 function findTracksByPlaylistName(playlistName) {
-    return findPlaylistByName(playlistName).self.tracks.properties();
+    return findPlaylistByName(playlistName)
+        .self
+        .tracks
+        .properties()
+        .map(_mapTrackProperties);
 }
 
 function findAllTracks() {
     const music = Application("Music");
-    return music.libraryPlaylists[0].tracks.properties();
+    return music
+        .libraryPlaylists[0]
+        .tracks
+        .properties()
+        .map(_mapTrackProperties);
 }

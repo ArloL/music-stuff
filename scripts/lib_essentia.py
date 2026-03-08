@@ -5,6 +5,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import url2pathname
 
+import essentia.standard as es
+
 
 ESSENTIA_CACHE_PATH = Path(__file__).parent / "lib_essentia_cache.csv"
 
@@ -75,38 +77,25 @@ def _write_essentia_cache(cache: dict[int, dict]) -> None:
 
 def _detect_essentia(location: str, profiles: list[str], do_bpm: bool) -> dict:
     """Analyse a single track: key profiles and/or BPM. Loads audio once."""
-    try:
-        import essentia.standard as es  # type: ignore
-    except ImportError:
-        return {}
-
     path = _location_to_path(location)
-    if path is None or not path.exists():
-        return {}
+    if path is None:
+        raise ValueError(f"No location for track: {location!r}")
+    if not path.exists():
+        raise FileNotFoundError(f"Audio file not found: {path}")
 
-    try:
-        audio = es.MonoLoader(filename=str(path))()
-    except Exception:
-        return {}
+    audio = es.MonoLoader(filename=str(path))()
 
     result = {}
     for profile in profiles:
-        try:
-            key, scale, strength = es.KeyExtractor(profileType=profile)(audio)
-            mapping = _ESSENTIA_MAJOR_TO_OPEN_KEY if scale == "major" else _ESSENTIA_MINOR_TO_OPEN_KEY
-            open_key = mapping.get(key, "")
-            result[f"{profile}_key"] = f"Key {open_key}" if open_key else ""
-            result[f"{profile}_strength"] = round(float(strength), 4)
-        except Exception:
-            result[f"{profile}_key"] = ""
-            result[f"{profile}_strength"] = 0.0
+        key, scale, strength = es.KeyExtractor(profileType=profile)(audio)
+        mapping = _ESSENTIA_MAJOR_TO_OPEN_KEY if scale == "major" else _ESSENTIA_MINOR_TO_OPEN_KEY
+        open_key = mapping.get(key, "")
+        result[f"{profile}_key"] = f"Key {open_key}" if open_key else ""
+        result[f"{profile}_strength"] = round(float(strength), 4)
 
     if do_bpm:
-        try:
-            bpm, _, _, _, _ = es.RhythmExtractor2013(method="multifeature")(audio)
-            result["bpm"] = round(float(bpm), 2)
-        except Exception:
-            result["bpm"] = ""
+        bpm, _, _, _, _ = es.RhythmExtractor2013(method="multifeature")(audio)
+        result["bpm"] = round(float(bpm), 2)
 
     return result
 
@@ -119,11 +108,11 @@ def analyse(tracks: list[dict]) -> dict[int, dict]:
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
         futures = {}
         for track in tracks:
-            entry = cache.get(track["id"], {})
+            entry = cache.get(track["persistentID"], {})
             missing_profiles = [p for p in ESSENTIA_PROFILES if f"{p}_key" not in entry]
             missing_bpm = "bpm" not in entry
             if missing_profiles or missing_bpm:
-                futures[executor.submit(_detect_essentia, track["location"], missing_profiles, missing_bpm)] = track["id"]
+                futures[executor.submit(_detect_essentia, track["location"], missing_profiles, missing_bpm)] = track["persistentID"]
         for future in as_completed(futures):
             pid = futures[future]
             cache.setdefault(pid, {}).update(future.result())

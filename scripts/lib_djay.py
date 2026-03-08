@@ -86,7 +86,7 @@ def load_djay_index(tracks: list[dict]) -> dict[int, dict]:
     """).fetchall()
     con.close()
 
-    music_ids = {track["id"] for track in tracks}
+    music_ids = {track["persistentID"] for track in tracks}
     djay_index: dict[int, dict] = {}
     for row in rows:
         for pid in _extract_persistent_ids(bytes(row["location_blob"])):
