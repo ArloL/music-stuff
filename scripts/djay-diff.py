@@ -97,7 +97,7 @@ def main():
     # --- Phase 2: build CSV rows ---
     csv_rows = []
     for track in tracks:
-        pid = track["persistentID"]
+        pid = int(track["persistentID"])
         djay_data = djay_index.get(pid)
         if djay_data is None:
             continue
