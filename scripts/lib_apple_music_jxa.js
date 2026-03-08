@@ -7,6 +7,12 @@ function hexIdToInt(hexId) {
     }
 }
 
+function intToHexId(idStr) {
+    let value = BigInt(idStr);
+    if (value < 0n) value += (1n << 64n);
+    return value.toString(16).toUpperCase().padStart(16, '0');
+}
+
 function _mapTrackProperties(trackProperties) {
     return {
         ...trackProperties,
@@ -74,6 +80,14 @@ function findTracksByPlaylistName(playlistName) {
         .tracks
         .properties()
         .map(_mapTrackProperties);
+}
+
+function findTrackById(idStr) {
+    const hexId = intToHexId(idStr);
+    const music = Application("Music");
+    const tracks = music.libraryPlaylists[0].tracks.whose({ persistentID: { _equals: hexId } });
+    if (tracks.length === 0) return null;
+    return _mapTrackProperties(tracks[0].properties());
 }
 
 function findAllTracks() {

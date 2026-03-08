@@ -106,8 +106,6 @@ def _detect_essentia(location: str, profiles: list[str], do_bpm: bool) -> dict:
 def analyse(tracks: list[dict]) -> dict[int, dict]:
     """Load the essentia cache, run parallel key+BPM analysis for missing data, save and return."""
     cache = _load_essentia_cache()
-    print(f"  Essentia cache: {len(cache)} entries loaded from {ESSENTIA_CACHE_PATH.name}")
-    done = 0
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
         futures = {}
         for track in tracks:
@@ -117,13 +115,15 @@ def analyse(tracks: list[dict]) -> dict[int, dict]:
             missing_bpm = "bpm_rhythm" not in entry or "bpm_rhythm_confidence" not in entry or "bpm_percival" not in entry
             if missing_profiles or missing_bpm:
                 futures[executor.submit(_detect_essentia, track["location"], missing_profiles, missing_bpm)] = pid
+        done = 0
         for future in as_completed(futures):
             pid = futures[future]
             cache.setdefault(int(pid), {}).update(future.result())
             done += 1
             print(f"  Analysing [{done}/{len(futures)}]", end="\r")
             _write_essentia_cache(cache)
-    print()
+        if futures:
+            print()
     return cache
 
 

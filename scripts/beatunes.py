@@ -12,7 +12,7 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-from lib_apple_music import find_tracks_by_playlist_name, find_all_tracks
+from lib_apple_music import find_tracks_by_playlist_name, find_track_by_id
 from lib_essentia import analyse, consensus_key, consensus_bpm
 from lib_transitions import ALLOWED_KEY_TRANSITIONS
 
@@ -220,11 +220,11 @@ def main() -> None:
     write_playlist_to_file("songs-critical-mass-next.csv", "Critical Mass Next")
 
     print("\nLooking up seed song...")
-    all_raw = find_all_tracks()
-    all_tracks = [_enrich(t, analyse(all_raw)) for t in all_raw]
-    seed = next((t for t in all_tracks if t["id"] == args.seed), None)
-    if seed is None:
+    raw_seed = find_track_by_id(args.seed)
+    if raw_seed is None:
         raise SystemExit(f"Seed song with ID {args.seed} not found in library.")
+    cache = analyse([raw_seed])
+    seed = _enrich(raw_seed, cache)
     print(f"  {seed.get('artist', '')} – {seed.get('name', '')}")
 
     how_to_get_here(seed)
