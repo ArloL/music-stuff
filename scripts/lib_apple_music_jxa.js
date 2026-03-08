@@ -85,7 +85,7 @@ function findTracksByPlaylistName(playlistName) {
 function findTrackById(idStr) {
     const hexId = intToHexId(idStr);
     const music = Application("Music");
-    const tracks = music.libraryPlaylists[0].tracks.whose({ persistentID: { _equals: hexId } });
+    const tracks = music.tracks.whose({ persistentID: { _equals: hexId } });
     if (tracks.length === 0) return null;
     return _mapTrackProperties(tracks[0].properties());
 }
@@ -93,7 +93,6 @@ function findTrackById(idStr) {
 function findAllTracks() {
     const music = Application("Music");
     return music
-        .libraryPlaylists[0]
         .tracks
         .properties()
         .map(_mapTrackProperties);

@@ -1,7 +1,7 @@
 import json
 import pytest
 from unittest.mock import patch, MagicMock
-from lib_apple_music import find_playlist_by_name, find_tracks_by_playlist_name, find_tracks_by_folder_name, find_track_by_id
+from lib_apple_music import find_playlist_by_name, find_tracks_by_playlist_name, find_tracks_by_folder_name, find_track_by_id, find_all_tracks
 
 
 def test_run_jxa_raises_on_nonzero_returncode():
@@ -45,6 +45,18 @@ def test_find_tracks_by_playlist_name():
     assert "comment" in track
     assert "bpm" in track
     assert "location" in track
+
+
+def test_find_all_tracks():
+    result = find_all_tracks()
+    assert len(result) > 0
+    track = result[0]
+    assert "name" in track
+    assert "artist" in track
+    assert "comment" in track
+    assert "bpm" in track
+    assert "location" in track
+    assert "persistentID" in track
 
 
 def test_find_track_by_id_returns_correct_track():
