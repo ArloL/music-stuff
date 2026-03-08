@@ -116,15 +116,15 @@ def detect_key_essentia(location: str, profiles: list[str]) -> KeyProfileResults
     return results
 
 
-def analyse_keys(music_meta: dict) -> dict[int, KeyProfileResults]:
+def analyse_keys(tracks: list[dict]) -> dict[int, KeyProfileResults]:
     """Load the key cache, run parallel essentia analysis for missing profiles, save and return the updated cache."""
     key_cache = load_key_cache()
     print(f"  Key cache: {len(key_cache)} entries loaded from {KEY_CACHE_PATH.name}")
     done = 0
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
         futures = {
-            executor.submit(detect_key_essentia, meta["location"], [p for p in ESSENTIA_PROFILES if p not in key_cache.get(pid, {})]): pid
-            for pid, meta in music_meta.items()
+            executor.submit(detect_key_essentia, track["location"], [p for p in ESSENTIA_PROFILES if p not in key_cache.get(track["id"], {})]): track["id"]
+            for track in tracks
         }
         for future in as_completed(futures):
             pid = futures[future]

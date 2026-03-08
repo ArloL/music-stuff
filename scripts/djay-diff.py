@@ -29,7 +29,7 @@ import sys
 import argparse
 from pathlib import Path
 
-from lib_apple_music import load_music_metadata
+from lib_apple_music import find_tracks_by_folder, find_all_tracks
 from lib_djay import load_djay_index
 from lib_essentia import analyse_keys, consensus_key
 
@@ -80,36 +80,37 @@ def main():
     # --- Load Music metadata ---
     desc = f"folder '{args.folder}'" if args.folder else "all tracks"
     print(f"Loading Apple Music metadata for {desc}...")
-    music_meta = load_music_metadata(args.folder)
-    print(f"  Loaded metadata for {len(music_meta)} tracks.")
+    tracks = find_tracks_by_folder(args.folder) if args.folder else find_all_tracks()
+    print(f"  Loaded metadata for {len(tracks)} tracks.")
 
     # --- Query djay ---
     print("Querying djay MediaLibrary.db...")
-    djay_index = load_djay_index(music_meta)
+    djay_index = load_djay_index(tracks)
 
     # --- Write CSV ---
     fieldnames = ["apple_music_id", "artist", "name", "key", "bpm", "djay_bpm", "djay_manual_bpm", "apple_music_bpm", "djay_am_bpm_diff", "open_key", "essentia_key", "comment", "key_diff"]
 
     # --- Phase 1: parallel key analysis for tracks with missing profiles ---
-    key_cache = analyse_keys(music_meta)
+    key_cache = analyse_keys(tracks)
 
     # --- Phase 2: build CSV rows ---
     csv_rows = []
-    for pid, meta in music_meta.items():
+    for track in tracks:
+        pid = track["id"]
         djay_data = djay_index.get(pid)
         if djay_data is None:
             continue
 
         djay_bpm = djay_data["manual_bpm"] or djay_data["bpm"]
-        music_bpm = meta["bpm"]
+        music_bpm = track["bpm"]
         bpm_diff = round(djay_bpm - music_bpm, 2) if djay_bpm != "" and music_bpm != "" else ""
         djay_open_key = djay_data["open_key"]
         essentia_key = consensus_key(key_cache.get(pid, {}))
 
         csv_rows.append({
             "apple_music_id": pid,
-            "artist": meta["artist"],
-            "name": meta["name"],
+            "artist": track["artist"],
+            "name": track["name"],
             "bpm": djay_bpm,
             "djay_bpm": djay_data["bpm"],
             "djay_manual_bpm": djay_data["manual_bpm"],
@@ -117,8 +118,8 @@ def main():
             "djay_am_bpm_diff": bpm_diff,
             "open_key": djay_open_key,
             "essentia_key": essentia_key,
-            "comment": meta["comment"],
-            "key_diff": _key_diff(djay_open_key, essentia_key, meta["comment"]),
+            "comment": track["comment"],
+            "key_diff": _key_diff(djay_open_key, essentia_key, track["comment"]),
         })
 
     csv_rows.sort(key=lambda r: int(r["key_diff"]) if r["key_diff"] != "" else 0, reverse=True)

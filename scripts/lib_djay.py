@@ -61,10 +61,10 @@ def extract_persistent_ids(data: bytes) -> list[int]:
     return result
 
 
-def load_djay_index(music_meta: dict) -> dict[int, dict]:
+def load_djay_index(tracks: list[dict]) -> dict[int, dict]:
     """
     Clone the live djay MediaLibrary.db then query it, returning a dict mapping
-    persistent_id -> {bpm, manual_bpm, open_key} for tracks present in music_meta.
+    persistent_id -> {bpm, manual_bpm, open_key} for tracks present in tracks.
     """
     clone_db()
     con = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
@@ -86,10 +86,11 @@ def load_djay_index(music_meta: dict) -> dict[int, dict]:
     """).fetchall()
     con.close()
 
+    music_ids = {track["id"] for rec in tracks}
     djay_index: dict[int, dict] = {}
     for row in rows:
         for pid in extract_persistent_ids(bytes(row["location_blob"])):
-            if pid in djay_index or pid not in music_meta:
+            if pid in djay_index or pid not in music_ids:
                 continue
             key_index = row["keySignatureIndex"]
             djay_index[pid] = {
