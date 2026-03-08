@@ -111,11 +111,12 @@ def analyse(tracks: list[dict]) -> dict[int, dict]:
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
         futures = {}
         for track in tracks:
-            entry = cache.get(track["persistentID"], {})
+            pid = int(track["persistentID"])
+            entry = cache.get(pid, {})
             missing_profiles = [p for p in ESSENTIA_PROFILES if f"{p}_key" not in entry]
             missing_bpm = "bpm_rhythm" not in entry or "bpm_rhythm_confidence" not in entry or "bpm_percival" not in entry
             if missing_profiles or missing_bpm:
-                futures[executor.submit(_detect_essentia, track["location"], missing_profiles, missing_bpm)] = track["persistentID"]
+                futures[executor.submit(_detect_essentia, track["location"], missing_profiles, missing_bpm)] = pid
         for future in as_completed(futures):
             pid = futures[future]
             cache.setdefault(int(pid), {}).update(future.result())
