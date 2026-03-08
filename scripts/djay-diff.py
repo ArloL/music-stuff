@@ -85,7 +85,7 @@ def main():
 
     # --- Query djay ---
     print("Querying djay MediaLibrary.db...")
-    djay_index = load_djay_index(tracks)
+    djay_index = load_djay_index()
     print(f"  Loaded metadata for {len(djay_index)} tracks.")
 
     # --- Write CSV ---
