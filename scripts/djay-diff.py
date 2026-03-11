@@ -30,8 +30,9 @@ import argparse
 from pathlib import Path
 
 from lib_apple_music import find_songs_by_folder_name, find_all_songs
+from lib_beatunes import lookup_songs, tonalkey_to_str
 from lib_djay import load_djay_index
-from lib_essentia import analyse, consensus_key
+from lib_essentia import analyse, consensus_key, consensus_bpm
 
 OUTPUT_PATH = Path(__file__).parent / "songs-djay-diff.csv"
 
@@ -44,16 +45,13 @@ def _parse_open_key(s: str) -> tuple[int, str] | None:
     return (int(m.group(1)), m.group(2).lower()) if m else None
 
 
-def _key_diff(djay_key: str, essentia_key: str, comment_key: str) -> str:
+def _key_diff(*keys: str) -> str:
     """
-    Return the sum of absolute pairwise circular distances among open_key,
-    essentia_key, and comment as a plain integer string.
-    - All three agree → 0
-    - Two agree, one differs by d → 2d
-    - All three disagree → d12 + d13 + d23 (scores higher than two-agree for same spread)
+    Return the sum of absolute pairwise circular distances among the given
+    Open Key strings as a plain integer string.
     Returns "" if fewer than two keys are present.
     """
-    available = [v for v in (_parse_open_key(k) for k in (djay_key, essentia_key, comment_key)) if v is not None]
+    available = [v for v in (_parse_open_key(k) for k in keys) if v is not None]
     if len(available) < 2:
         return ""
 
@@ -88,11 +86,17 @@ def main():
     djay_index = load_djay_index()
     print(f"  Loaded metadata for {len(djay_index)} songs.")
 
+    # --- Query beaTunes ---
+    print("Querying beaTunes database...")
+    hex_ids = [song.persistentID for song in songs]
+    beatunes_index = lookup_songs(hex_ids)
+    print(f"  Loaded metadata for {len(beatunes_index)} songs.")
+
     # --- Write CSV ---
-    fieldnames = ["apple_music_id", "artist", "name", "key", "bpm", "djay_bpm", "djay_manual_bpm", "apple_music_bpm", "djay_am_bpm_diff", "open_key", "essentia_key", "comment", "key_diff"]
+    fieldnames = ["apple_music_id", "artist", "name", "key", "bpm", "djay_bpm", "djay_manual_bpm", "apple_music_bpm", "beatunes_bpm", "essentia_bpm", "djay_am_bpm_diff", "open_key", "essentia_key", "beatunes_key", "comment", "key_diff"]
 
     # --- Phase 1: parallel key analysis for songs with missing profiles ---
-    key_cache = analyse(songs)
+    essentia_index = analyse(songs)
 
     # --- Phase 2: build CSV rows ---
     csv_rows = []
@@ -106,7 +110,14 @@ def main():
         music_bpm = song.bpm
         bpm_diff = round(djay_bpm - music_bpm, 2) if djay_bpm != "" and music_bpm != "" else ""
         djay_open_key = djay_data.open_key
-        essentia_key = consensus_key(key_cache.get(pid, {}))
+
+        essentia_entry = essentia_index.get(pid, {})
+        essentia_key = consensus_key(essentia_entry)
+        essentia_bpm = consensus_bpm(essentia_entry) or ""
+
+        bt_song = beatunes_index.get(pid)
+        beatunes_bpm = bt_song.exactbpm if bt_song and bt_song.exactbpm else ""
+        beatunes_key = tonalkey_to_str(bt_song.tonalkey) if bt_song else ""
 
         csv_rows.append({
             "apple_music_id": pid,
@@ -116,11 +127,14 @@ def main():
             "djay_bpm": djay_data.bpm,
             "djay_manual_bpm": djay_data.manual_bpm,
             "apple_music_bpm": music_bpm,
+            "beatunes_bpm": beatunes_bpm,
+            "essentia_bpm": essentia_bpm,
             "djay_am_bpm_diff": bpm_diff,
             "open_key": djay_open_key,
             "essentia_key": essentia_key,
+            "beatunes_key": beatunes_key,
             "comment": song.comment,
-            "key_diff": _key_diff(djay_open_key, essentia_key, song.comment),
+            "key_diff": _key_diff(djay_open_key, essentia_key, beatunes_key, song.comment),
         })
 
     csv_rows.sort(key=lambda r: int(r["key_diff"]) if r["key_diff"] != "" else 0, reverse=True)

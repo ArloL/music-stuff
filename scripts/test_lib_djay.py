@@ -29,21 +29,20 @@ def test_extract_persistent_ids_both_prefixes():
         b'junk\x08com.apple.iTunes:111\x00'
         b'more\x08com.apple.Music:222\x00'
     )
-    assert _extract_persistent_ids(blob) == [111, 222]
+    assert _extract_persistent_ids(blob) == ["000000000000006F", "00000000000000DE"]
 
 
 def test_extract_persistent_ids_negative_id():
     blob = b'\x08com.apple.iTunes:-5639804195476274594\x00'
-    assert _extract_persistent_ids(blob) == [-5639804195476274594]
+    assert _extract_persistent_ids(blob) == ["B1BB63F715E1025E"]
 
 
 def test_extract_persistent_ids_wraps_large_unsigned_to_signed():
-    """Values >= 2^63 are treated as unsigned and converted to signed."""
+    """Values >= 2^63 are stored as hex strings."""
     large_val = (1 << 63) + 100
     blob = f'\x08com.apple.iTunes:{large_val}\x00'.encode()
     result = _extract_persistent_ids(blob)
-    assert result == [large_val - (1 << 64)]
-    assert result[0] < 0
+    assert result == [format(large_val, "016X")]
 
 
 def test_extract_persistent_ids_no_match():
@@ -131,8 +130,8 @@ def test_load_djay_index_maps_key_and_bpm(mock_clone, tmp_path):
     with patch("lib_djay.DB_PATH", db):
         result = load_djay_index()
 
-    assert result[12345] == DjaySongData(bpm=120.5, manual_bpm=121.0, open_key="Key 1d")
-    assert result[67890] == DjaySongData(bpm=130.0, manual_bpm="", open_key="Key 3m")
+    assert result["0000000000003039"] == DjaySongData(bpm=120.5, manual_bpm=121.0, open_key="Key 1d")
+    assert result["0000000000010932"] == DjaySongData(bpm=130.0, manual_bpm="", open_key="Key 3m")
 
 
 @patch("lib_djay._clone_db")
@@ -143,7 +142,7 @@ def test_load_djay_index_unknown_key_produces_empty_string(mock_clone, tmp_path)
     with patch("lib_djay.DB_PATH", db):
         result = load_djay_index()
 
-    assert result[111].open_key == ""
+    assert result["000000000000006F"].open_key == ""
 
 
 @patch("lib_djay._clone_db")
@@ -174,4 +173,4 @@ def test_load_djay_index_deduplicates_by_pid(mock_clone, tmp_path):
         result = load_djay_index()
 
     assert len(result) == 1
-    assert result[999].bpm == 120.0  # first row wins
+    assert result["00000000000003E7"].bpm == 120.0  # first row wins

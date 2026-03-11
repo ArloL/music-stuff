@@ -44,6 +44,15 @@ def beatunes_id_to_hex_id(beatunes_id: int) -> str:
     return format(value, "016X")
 
 
+def tonalkey_to_str(key: int | None) -> str:
+    """Convert a beaTunes tonalkey integer to Open Key notation (e.g. 'Key 6d')."""
+    if not key:
+        return ""
+    n = (key + 1) // 2
+    mode = "d" if key % 2 != 0 else "m"
+    return f"Key {n}{mode}"
+
+
 @dataclass
 class BeaTunesSong:
     hex_id: str
