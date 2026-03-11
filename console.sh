@@ -1,12 +1,15 @@
-#!/bin/sh
-set -o errexit
-
-#!/bin/sh
+#!/bin/bash
 set -o errexit
 
 rm -f scripts/tmp/beaTunes.*.db
-cp -c "${HOME}/Library/Application Support/beaTunes/Database/"beaTunes-*.h2.db \
-    scripts/tmp/beaTunes.h2.db
+
+files=("${HOME}/Library/Application Support/beaTunes/Database/"beaTunes-*.h2.db)
+if (( ${#files[@]} != 1 )); then
+  echo "Expected exactly 1 db file, found ${#files[@]}" >&2
+  exit 1
+fi
+cp -c "${files[0]}" scripts/tmp/beaTunes.h2.db
+
 java -cp "/Applications/beaTunes5.app/Contents/Java/"h2-*.jar \
     "org.h2.tools.Console" \
     -url "jdbc:h2:~/Developer/beatunes-dbviewer/scripts/tmp/beaTunes" \
