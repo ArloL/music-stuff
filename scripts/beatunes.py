@@ -210,9 +210,10 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    write_playlist_to_file("songs-would-play.csv", "Would Play")
-    write_playlist_to_file("songs-would-play-and-didnt.csv", "Would Play And Didnt")
+    write_playlist_to_file("songs-critical-mass-2025-08.csv", "Critical Mass 2025-08")
     write_playlist_to_file("songs-critical-mass-next.csv", "Critical Mass Next")
+    write_playlist_to_file("songs-would-play-and-didnt.csv", "Would Play And Didnt")
+    write_playlist_to_file("songs-would-play.csv", "Would Play")
 
     print("\nLooking up seed song...")
     raw_seed = find_track_by_id(args.seed)
