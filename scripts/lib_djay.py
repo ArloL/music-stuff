@@ -38,14 +38,14 @@ def _clone_db() -> None:
 _APPLE_ID_RE = re.compile(rb'\x08com\.apple\.(?:iTunes|Music):(-?\d+)\x00')
 
 
-def _extract_persistent_ids(data: bytes) -> list[int]:
-    """Extract Apple Music persistent IDs (signed 64-bit) from a TSAF blob."""
+def _extract_persistent_ids(data: bytes) -> list[str]:
+    """Extract Apple Music persistent IDs as hex strings from a TSAF blob."""
     result = []
     for m in _APPLE_ID_RE.finditer(data):
         value = int(m.group(1))
-        if value >= (1 << 63):
-            value -= (1 << 64)
-        result.append(value)
+        if value < 0:
+            value += (1 << 64)
+        result.append(format(value, "016X"))
     return result
 
 
@@ -56,7 +56,7 @@ class DjaySongData:
     open_key: str
 
 
-def load_djay_index() -> dict[int, DjaySongData]:
+def load_djay_index() -> dict[str, DjaySongData]:
     """
     Clone the live djay MediaLibrary.db then query it, returning a dict mapping
     persistent_id -> DjaySongData for songs in the library.
@@ -81,7 +81,7 @@ def load_djay_index() -> dict[int, DjaySongData]:
     """).fetchall()
     con.close()
 
-    djay_index: dict[int, DjaySongData] = {}
+    djay_index: dict[str, DjaySongData] = {}
     for row in rows:
         for pid in _extract_persistent_ids(bytes(row["location_blob"])):
             if pid in djay_index:

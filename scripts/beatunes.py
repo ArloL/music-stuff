@@ -14,6 +14,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from lib_apple_music import find_songs_by_playlist_name, find_song_by_id, AppleMusicSong
+from lib_beatunes import tonalkey_to_str
 from lib_essentia import analyse, consensus_key, consensus_bpm
 from lib_transitions import ALLOWED_KEY_TRANSITIONS
 
@@ -42,22 +43,15 @@ def _comment_to_tonalkey(comment: str) -> int | None:
     return 2 * n - 1 if mode == 'd' else 2 * n
 
 
-def _tonalkey_to_str(key: int | None) -> str:
-    if not key:
-        return ""
-    n = (key + 1) // 2
-    mode = "d" if key % 2 != 0 else "m"
-    return f"Key {n}{mode}"
-
 
 # ---------------------------------------------------------------------------
 # Song enrichment / filtering
 # ---------------------------------------------------------------------------
 
-def _enrich(song: AppleMusicSong, essentia_cache: dict) -> dict:
+def _enrich(song: AppleMusicSong, essentia_index: dict) -> dict:
     s = dataclasses.asdict(song)
     s["id"] = song.persistentID
-    entry = essentia_cache.get(s["id"], {})
+    entry = essentia_index.get(s["id"], {})
     s["exactbpm"] = consensus_bpm(entry)
     s["tonalkey"] = _comment_to_tonalkey(consensus_key(entry))
     s["rating_int"] = int(song.rating or 0)
@@ -101,8 +95,8 @@ REVERSE_TRANSITIONS = _build_reverse_transitions()
 
 def _load_playlist(name: str) -> list[dict]:
     raw = find_songs_by_playlist_name(name)
-    cache = analyse(raw)
-    return [_enrich(s, cache) for s in raw]
+    essentia_index = analyse(raw)
+    return [_enrich(s, essentia_index) for s in raw]
 
 
 def _filter_candidates(
@@ -168,7 +162,7 @@ def _print_table(title: str, songs: list[dict]) -> None:
             s.get("artist", "") or "",
             s.get("name", "") or "",
             f"{s['exactbpm']:.2f}",
-            _tonalkey_to_str(s["tonalkey"]),
+            tonalkey_to_str(s["tonalkey"]),
         ))
 
 
@@ -220,8 +214,8 @@ def main() -> None:
     raw_seed = find_song_by_id(args.seed)
     if raw_seed is None:
         raise SystemExit(f"Seed song with ID {args.seed} not found in library.")
-    cache = analyse([raw_seed])
-    seed = _enrich(raw_seed, cache)
+    essentia_index = analyse([raw_seed])
+    seed = _enrich(raw_seed, essentia_index)
     print(f"  {seed.get('artist', '')} – {seed.get('name', '')}")
 
     how_to_get_here(seed)
