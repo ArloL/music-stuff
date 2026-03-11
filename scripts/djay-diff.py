@@ -32,7 +32,7 @@ from pathlib import Path
 from lib_apple_music import find_songs_by_folder_name, find_all_songs
 from lib_beatunes import lookup_songs, tonalkey_to_str
 from lib_djay import load_djay_index
-from lib_essentia import analyse, consensus_key, consensus_bpm, ESSENTIA_PROFILES
+from lib_essentia import analyse, consensus_key, ESSENTIA_PROFILES
 
 OUTPUT_PATH = Path(__file__).parent / "songs-djay-diff.csv"
 
@@ -66,11 +66,50 @@ def _key_diff(*keys: str) -> str:
     return str(total)
 
 
+def _collect_bpms(*bpms: float | int | str) -> list[float]:
+    return [float(b) for b in bpms if b != "" and b != 0 and b != 0.0]
+
+
 def _bpm_diff(*bpms: float | int | str) -> str:
-    valid = [float(b) for b in bpms if b != "" and b != 0 and b != 0.0]
+    valid = _collect_bpms(*bpms)
     if len(valid) < 2:
         return ""
-    return str(round(max(valid) - min(valid), 2))
+    # Normalise each value toward the median to collapse octave errors,
+    # then measure the remaining spread.
+    median = sorted(valid)[len(valid) // 2]
+    normalised = []
+    for b in valid:
+        while b > median * 1.5:
+            b /= 2
+        while b < median / 1.5:
+            b *= 2
+        normalised.append(b)
+    return str(round(max(normalised) - min(normalised), 2))
+
+
+def _consensus_bpm(*bpms: float | int | str) -> str:
+    """Cluster BPMs by octave-equivalence and return the median of the largest cluster."""
+    valid = _collect_bpms(*bpms)
+    if not valid:
+        return ""
+    # Build clusters: two values are octave-equivalent if one is within 1.5x of the other
+    # Use the first value as the anchor and pull others into its octave
+    anchor = sorted(valid)[len(valid) // 2]
+    normalised = []
+    for b in valid:
+        while b > anchor * 1.5:
+            b /= 2
+        while b < anchor / 1.5:
+            b *= 2
+        normalised.append(b)
+    normalised.sort()
+    n = len(normalised)
+    median = normalised[n // 2] if n % 2 == 1 else (normalised[n // 2 - 1] + normalised[n // 2]) / 2
+    # Pick the octave that the majority of original values live in
+    votes_high = sum(1 for b in valid if abs(b - median * 2) < abs(b - median))
+    if votes_high >= len(valid) / 2:
+        median *= 2
+    return str(round(median, 2))
 
 
 # ---------------------------------------------------------------------------
@@ -102,10 +141,10 @@ def main():
     # --- Write CSV ---
     fieldnames = [
         "apple_music_id", "artist", "name",
-        "djay_bpm", "djay_manual_bpm", "apple_music_bpm",
+        "effective_bpm", "consensus_bpm", "bpm_diff",
+        "djay_bpm", "djay_manual_bpm", "djay_straight_grid", "apple_music_bpm",
         "beatunes_bpm", "beatunes_bpm_salience",
-        "essentia_bpm", "bpm_rhythm", "bpm_rhythm_confidence", "bpm_percival",
-        "bpm_diff",
+        "bpm_rhythm", "bpm_rhythm_confidence", "bpm_percival",
         "open_key", "essentia_key", "beatunes_key", "comment",
         "edma_key", "edma_strength", "edmm_key", "edmm_strength",
         "bgate_key", "bgate_strength", "braw_key", "braw_strength",
@@ -128,7 +167,6 @@ def main():
         # --- Essentia ---
         essentia_entry = essentia_index.get(pid, {})
         essentia_key = consensus_key(essentia_entry)
-        essentia_bpm = consensus_bpm(essentia_entry) or ""
         bpm_rhythm = essentia_entry.get("bpm_rhythm", "")
         bpm_rhythm_confidence = essentia_entry.get("bpm_rhythm_confidence", "")
         bpm_percival = essentia_entry.get("bpm_percival", "")
@@ -145,10 +183,11 @@ def main():
 
         # --- djay ---
         djay_open_key = djay_data.open_key
-        djay_effective_bpm = djay_data.manual_bpm or djay_data.bpm
 
         # --- Diffs ---
-        bpm_diff = _bpm_diff(djay_effective_bpm, beatunes_bpm, essentia_bpm)
+        consensus = _consensus_bpm(djay_data.bpm, beatunes_bpm, bpm_rhythm, bpm_percival)
+        effective_bpm = djay_data.manual_bpm or consensus
+        bpm_diff = _bpm_diff(djay_data.bpm, beatunes_bpm, bpm_rhythm, bpm_percival)
         profile_keys = {k: v for k, v in profile_data.items() if k.endswith("_key")}
         all_keys = [djay_open_key, beatunes_key] + list(profile_keys.values())
         key_diff = _key_diff(*all_keys)
@@ -156,8 +195,10 @@ def main():
         csv_rows.append({
             "apple_music_id": pid, "artist": song.artist, "name": song.name,
             "djay_bpm": djay_data.bpm, "djay_manual_bpm": djay_data.manual_bpm,
+            "djay_straight_grid": djay_data.is_straight_grid,
             "apple_music_bpm": song.bpm, "beatunes_bpm": beatunes_bpm,
-            "essentia_bpm": essentia_bpm, "bpm_rhythm": bpm_rhythm,
+            "effective_bpm": effective_bpm, "consensus_bpm": consensus,
+            "bpm_rhythm": bpm_rhythm,
             "bpm_rhythm_confidence": bpm_rhythm_confidence, "bpm_percival": bpm_percival,
             "beatunes_bpm_salience": beatunes_bpm_salience, "bpm_diff": bpm_diff,
             "open_key": djay_open_key, "essentia_key": essentia_key,
