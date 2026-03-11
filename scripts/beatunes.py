@@ -8,11 +8,12 @@ Usage:
 """
 import argparse
 import csv
+import dataclasses
 import re
 from collections import defaultdict
 from pathlib import Path
 
-from lib_apple_music import find_songs_by_playlist_name, find_song_by_id
+from lib_apple_music import find_songs_by_playlist_name, find_song_by_id, AppleMusicSong
 from lib_essentia import analyse, consensus_key, consensus_bpm
 from lib_transitions import ALLOWED_KEY_TRANSITIONS
 
@@ -53,13 +54,13 @@ def _tonalkey_to_str(key: int | None) -> str:
 # Song enrichment / filtering
 # ---------------------------------------------------------------------------
 
-def _enrich(song: dict, essentia_cache: dict) -> dict:
-    s = dict(song)
-    s["id"] = s["persistentID"]
+def _enrich(song: AppleMusicSong, essentia_cache: dict) -> dict:
+    s = dataclasses.asdict(song)
+    s["id"] = song.persistentID
     entry = essentia_cache.get(s["id"], {})
     s["exactbpm"] = consensus_bpm(entry)
     s["tonalkey"] = _comment_to_tonalkey(consensus_key(entry))
-    s["rating_int"] = int(s.get("rating") or 0)
+    s["rating_int"] = int(song.rating or 0)
     return s
 
 
