@@ -4,9 +4,28 @@ from pathlib import Path
 
 from lib_clonefile import clonefile
 
-SOURCE_DB = Path.home() / "Library/Application Support/beaTunes/Database/beaTunes-F17A2D52DA187A20.h2.db"
-DB_PATH = Path(__file__).parent / "tmp/beaTunes-F17A2D52DA187A20.h2.db"
-H2_JAR = Path("/Applications/beaTunes5.app/Contents/Java/h2-1.4.195.jar")
+SOURCE_DB_DIR = Path.home() / "Library/Application Support/beaTunes/Database"
+H2_JAR_DIR = Path("/Applications/beaTunes5.app/Contents/Java")
+
+
+def _find_h2_jar() -> Path:
+    """Find the H2 jar file in the beaTunes application bundle."""
+    matches = sorted(H2_JAR_DIR.glob("h2-*.jar"))
+    if not matches:
+        raise FileNotFoundError(
+            f"No H2 jar found matching h2-*.jar in {H2_JAR_DIR}"
+        )
+    return matches[-1]
+
+
+def _find_source_db() -> Path:
+    """Find the beaTunes H2 database file in the standard location."""
+    matches = sorted(SOURCE_DB_DIR.glob("beaTunes-*.h2.db"))
+    if not matches:
+        raise FileNotFoundError(
+            f"No beaTunes database found matching beaTunes-*.h2.db in {SOURCE_DB_DIR}"
+        )
+    return matches[-1]
 
 
 def hex_id_to_beatunes_id(hex_id: str) -> int:
@@ -34,22 +53,23 @@ class BeaTunesSong:
     name: str
 
 
-def _clone_db() -> None:
-    """Clone the live beaTunes H2 database to DB_PATH."""
-    if not SOURCE_DB.exists():
-        raise FileNotFoundError(f"beaTunes database not found: {SOURCE_DB}")
+def _clone_db() -> Path:
+    """Clone the live beaTunes H2 database and return the clone path."""
+    source_db = _find_source_db()
+    db_path = Path(__file__).parent / "tmp" / source_db.name
     for suffix in (".lock.db", ".trace.db"):
-        Path(str(DB_PATH).replace(".h2.db", suffix)).unlink(missing_ok=True)
-    clonefile(SOURCE_DB, DB_PATH)
+        Path(str(db_path).replace(".h2.db", suffix)).unlink(missing_ok=True)
+    clonefile(source_db, db_path)
+    return db_path
 
 
-def _run_sql(sql: str) -> list[dict]:
+def _run_sql(sql: str, db_path: Path) -> list[dict]:
     """Run SQL against the cloned H2 database via the H2 Shell tool."""
     # JDBC URL omits the .h2.db extension (H2 convention)
-    jdbc_path = str(DB_PATH).replace(".h2.db", "")
+    jdbc_path = str(db_path).replace(".h2.db", "")
     result = subprocess.run(
         [
-            "java", "-cp", str(H2_JAR), "org.h2.tools.Shell",
+            "java", "-cp", str(_find_h2_jar()), "org.h2.tools.Shell",
             "-url", f"jdbc:h2:{jdbc_path};ACCESS_MODE_DATA=r",
             "-user", "sa", "-password", "", "-sql", sql,
         ],
@@ -81,7 +101,7 @@ def lookup_songs(hex_ids: list[str]) -> dict[str, BeaTunesSong]:
     if not hex_ids:
         return {}
 
-    _clone_db()
+    db_path = _clone_db()
 
     id_to_hex = {}
     for hex_id in hex_ids:
@@ -93,7 +113,7 @@ def lookup_songs(hex_ids: list[str]) -> dict[str, BeaTunesSong]:
         f"SELECT ID, EXACTBPM, TONALKEY, ARTIST, NAME "
         f"FROM SONGS WHERE ID IN ({in_clause})"
     )
-    rows = _run_sql(sql)
+    rows = _run_sql(sql, db_path)
 
     result = {}
     for row in rows:
