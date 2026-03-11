@@ -1,11 +1,7 @@
 function hexIdToInt(hexId) {
-    try {
-        const value = BigInt(`0x${hexId}`);
+            const value = BigInt(`0x${hexId}`);
         return value >= (1n << 63n) ? value - (1n << 64n) : value;
-    } catch {
-        return null;
     }
-}
 
 function intToHexId(idStr) {
     let value = BigInt(idStr);
