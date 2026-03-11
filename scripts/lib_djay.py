@@ -54,6 +54,7 @@ class DjaySongData:
     bpm: float | str
     manual_bpm: float | str
     open_key: str
+    is_straight_grid: bool | str
 
 
 def load_djay_index() -> dict[str, DjaySongData]:
@@ -69,6 +70,7 @@ def load_djay_index() -> dict[str, DjaySongData]:
             bpm_idx.bpm,
             bpm_idx.manualBPM,
             bpm_idx.keySignatureIndex,
+            analyzed.data AS analyzed_blob,
             loc.data AS location_blob
         FROM secondaryIndex_mediaItemAnalyzedDataIndex AS bpm_idx
         JOIN database2 AS analyzed
@@ -87,9 +89,11 @@ def load_djay_index() -> dict[str, DjaySongData]:
             if pid in djay_index:
                 continue
             key_index = row["keySignatureIndex"]
+            analyzed_blob = bytes(row["analyzed_blob"]) if row["analyzed_blob"] else b""
             djay_index[pid] = DjaySongData(
                 bpm=round(row["bpm"], 2) if row["bpm"] else "",
                 manual_bpm=round(row["manualBPM"], 2) if row["manualBPM"] else "",
                 open_key=("Key " + DJAY_KEY_INDEX_TO_OPEN_KEY[key_index]) if key_index in DJAY_KEY_INDEX_TO_OPEN_KEY else "",
+                is_straight_grid=b"isStraightGrid" in analyzed_blob,
             )
     return djay_index
