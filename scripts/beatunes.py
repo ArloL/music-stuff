@@ -12,7 +12,7 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-from lib_apple_music import find_tracks_by_playlist_name, find_track_by_id
+from lib_apple_music import find_songs_by_playlist_name, find_song_by_id
 from lib_essentia import analyse, consensus_key, consensus_bpm
 from lib_transitions import ALLOWED_KEY_TRANSITIONS
 
@@ -50,26 +50,26 @@ def _tonalkey_to_str(key: int | None) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Track enrichment / filtering
+# Song enrichment / filtering
 # ---------------------------------------------------------------------------
 
-def _enrich(track: dict, essentia_cache: dict) -> dict:
-    t = dict(track)
-    t["id"] = t["persistentID"]
-    entry = essentia_cache.get(t["id"], {})
-    t["exactbpm"] = consensus_bpm(entry)
-    t["tonalkey"] = _comment_to_tonalkey(consensus_key(entry))
-    t["rating_int"] = int(t.get("rating") or 0)
-    return t
+def _enrich(song: dict, essentia_cache: dict) -> dict:
+    s = dict(song)
+    s["id"] = s["persistentID"]
+    entry = essentia_cache.get(s["id"], {})
+    s["exactbpm"] = consensus_bpm(entry)
+    s["tonalkey"] = _comment_to_tonalkey(consensus_key(entry))
+    s["rating_int"] = int(s.get("rating") or 0)
+    return s
 
 
-def _is_relevant(track: dict) -> bool:
-    genre = track.get("genre", "") or ""
+def _is_relevant(song: dict) -> bool:
+    genre = song.get("genre", "") or ""
     if genre not in ("Electronic", "Ambient"):
         return False
-    if track.get("rating_int", 0) < 80:
+    if song.get("rating_int", 0) < 80:
         return False
-    comment = (track.get("comment", "") or "").strip()
+    comment = (song.get("comment", "") or "").strip()
     if comment == "ignore" or "mixed" in comment.lower():
         return False
     return True
@@ -99,9 +99,9 @@ REVERSE_TRANSITIONS = _build_reverse_transitions()
 # ---------------------------------------------------------------------------
 
 def _load_playlist(name: str) -> list[dict]:
-    raw = find_tracks_by_playlist_name(name)
+    raw = find_songs_by_playlist_name(name)
     cache = analyse(raw)
-    return [_enrich(t, cache) for t in raw]
+    return [_enrich(s, cache) for s in raw]
 
 
 def _filter_candidates(
@@ -113,11 +113,11 @@ def _filter_candidates(
 ) -> list[dict]:
     key_set = set(tonal_keys)
     return [
-        t for t in candidates
-        if t["id"] not in played_ids
-        and _is_relevant(t)
-        and from_bpm <= t["exactbpm"] <= to_bpm
-        and t["tonalkey"] in key_set
+        s for s in candidates
+        if s["id"] not in played_ids
+        and _is_relevant(s)
+        and from_bpm <= s["exactbpm"] <= to_bpm
+        and s["tonalkey"] in key_set
     ]
 
 
@@ -127,22 +127,22 @@ def _filter_candidates(
 
 def write_playlist_to_file(filename: str, playlist_name: str) -> None:
     print(f"Writing '{playlist_name}' → {filename} ...")
-    tracks = _load_playlist(playlist_name)
+    songs = _load_playlist(playlist_name)
     output = OUTPUT_DIR / filename
     with open(output, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
             f, fieldnames=["apple_music_id", "artist", "name", "key", "bpm"]
         )
         writer.writeheader()
-        for t in tracks:
+        for s in songs:
             writer.writerow({
-                "apple_music_id": t["id"],
-                "artist": t.get("artist", ""),
-                "name": t.get("name", ""),
-                "key": t["tonalkey"] or "",
-                "bpm": t["exactbpm"] or "",
+                "apple_music_id": s["id"],
+                "artist": s.get("artist", ""),
+                "name": s.get("name", ""),
+                "key": s["tonalkey"] or "",
+                "bpm": s["exactbpm"] or "",
             })
-    print(f"  Wrote {len(tracks)} tracks.")
+    print(f"  Wrote {len(songs)} songs.")
 
 
 # ---------------------------------------------------------------------------
@@ -179,7 +179,7 @@ def how_to_get_here(seed: dict) -> None:
     key = seed["tonalkey"]
     print("\nLoading candidate playlists...")
     would_play = _load_playlist("Would Play")
-    played_ids = {t["id"] for t in _load_playlist("Critical Mass Played")}
+    played_ids = {s["id"] for s in _load_playlist("Critical Mass Played")}
     bpm_lo = seed["exactbpm"] - BPM_TOLERANCE
     bpm_hi = seed["exactbpm"] + BPM_TOLERANCE
 
@@ -216,7 +216,7 @@ def main() -> None:
     write_playlist_to_file("songs-would-play.csv", "Would Play")
 
     print("\nLooking up seed song...")
-    raw_seed = find_track_by_id(args.seed)
+    raw_seed = find_song_by_id(args.seed)
     if raw_seed is None:
         raise SystemExit(f"Seed song with ID {args.seed} not found in library.")
     cache = analyse([raw_seed])
