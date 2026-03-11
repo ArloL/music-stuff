@@ -15,6 +15,19 @@ AND COMMENTS != 'ignore'
 AND COMMENTS NOT LIKE '%mixed%'
 AND TONALKEY IN (3,4,5,7,21)
 
+## beaTunes ID vs Apple Music Persistent ID
+
+beaTunes stores song IDs with the sign bit (bit 63) flipped compared to the Apple Music persistent ID.
+This is the difference between two's complement and offset binary encoding.
+
+    beatunes_id = apple_music_persistent_id ^ 0x8000000000000000
+
+Example for "Never Said Goodbye (Lee Waxman's Long Hot Disco Mix)" by Dorothy's Ghost:
+    Apple Music persistent ID (signed): -5639804195476274594  (hex: B1BB63F715E1025E)
+    beaTunes internal ID:                3583567841378501214  (hex: 31BB63F715E1025E)
+
+The XOR of the two values is exactly 0x8000000000000000 (2^63). The operation is its own inverse.
+
 ## Tonalkey
 
 0 == Not analyzed
