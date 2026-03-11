@@ -3,11 +3,19 @@ import subprocess
 import json
 
 _JS_FILE = os.path.join(os.path.dirname(__file__), "lib_apple_music_jxa.js")
+_js_source: str | None = None
+
+
+def _load_js_source() -> str:
+    global _js_source
+    if _js_source is None:
+        with open(_JS_FILE) as f:
+            _js_source = f.read()
+    return _js_source
 
 
 def _run_jxa(call: str):
-    with open(_JS_FILE) as f:
-        script = f.read() + f"\nJSON.stringify({call})"
+    script = _load_js_source() + f"\nJSON.stringify({call})"
     result = subprocess.run(
         ["osascript", "-l", "JavaScript"],
         input=script,
