@@ -1,7 +1,10 @@
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 import subprocess
 
 import pytest
+
+FAKE_DB_PATH = Path("/tmp/beaTunes-FAKE.h2.db")
 
 from lib_beatunes import (
     hex_id_to_beatunes_id,
@@ -9,7 +12,7 @@ from lib_beatunes import (
     lookup_songs,
     lookup_song,
     BeaTunesSong,
-    SOURCE_DB,
+    SOURCE_DB_DIR,
     _parse_h2_output,
 )
 
@@ -99,7 +102,7 @@ H2_OUTPUT = (
 )
 
 
-@patch("lib_beatunes._clone_db")
+@patch("lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
 @patch("subprocess.run")
 def test_lookup_songs(mock_run, mock_clone):
     mock_run.return_value = MagicMock(stdout=H2_OUTPUT)
@@ -113,7 +116,7 @@ def test_lookup_songs(mock_run, mock_clone):
     assert song.name == "Never Said Goodbye"
 
 
-@patch("lib_beatunes._clone_db")
+@patch("lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
 @patch("subprocess.run")
 def test_lookup_song(mock_run, mock_clone):
     mock_run.return_value = MagicMock(stdout=H2_OUTPUT)
@@ -123,7 +126,7 @@ def test_lookup_song(mock_run, mock_clone):
     assert song.tonalkey == 24
 
 
-@patch("lib_beatunes._clone_db")
+@patch("lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
 @patch("subprocess.run")
 def test_lookup_song_not_found(mock_run, mock_clone):
     mock_run.return_value = MagicMock(
@@ -138,7 +141,7 @@ def test_lookup_songs_empty():
     assert result == {}
 
 
-@patch("lib_beatunes._clone_db")
+@patch("lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
 @patch("subprocess.run")
 def test_lookup_songs_null_fields(mock_run, mock_clone):
     output = (
@@ -155,7 +158,10 @@ def test_lookup_songs_null_fields(mock_run, mock_clone):
 
 # --- Integration test (skipped if DB not present) ---
 
-@pytest.mark.skipif(not SOURCE_DB.exists(), reason="beaTunes database not available")
+@pytest.mark.skipif(
+    not any(SOURCE_DB_DIR.glob("beaTunes-*.h2.db")),
+    reason="beaTunes database not available",
+)
 def test_integration_never_said_goodbye():
     song = lookup_song("B1BB63F715E1025E")
     assert song is not None
