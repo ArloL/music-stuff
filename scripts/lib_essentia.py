@@ -54,7 +54,7 @@ def _load_essentia_cache() -> dict[int, dict]:
         if not reader.fieldnames or "apple_music_id" not in reader.fieldnames:
             return {}
         return {
-            int(row["apple_music_id"]): {k: _coerce(v) for k, v in row.items() if k != "apple_music_id"}
+            row["apple_music_id"]: {k: _coerce(v) for k, v in row.items() if k != "apple_music_id"}
             for row in reader
         }
 
@@ -109,7 +109,7 @@ def analyse(tracks: list[dict]) -> dict[int, dict]:
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
         futures = {}
         for track in tracks:
-            pid = int(track["persistentID"])
+            pid = track["persistentID"]
             entry = cache.get(pid, {})
             missing_profiles = [p for p in ESSENTIA_PROFILES if f"{p}_key" not in entry]
             missing_bpm = "bpm_rhythm" not in entry or "bpm_rhythm_confidence" not in entry or "bpm_percival" not in entry
@@ -118,7 +118,7 @@ def analyse(tracks: list[dict]) -> dict[int, dict]:
         done = 0
         for future in as_completed(futures):
             pid = futures[future]
-            cache.setdefault(int(pid), {}).update(future.result())
+            cache.setdefault(pid, {}).update(future.result())
             done += 1
             print(f"  Analysing [{done}/{len(futures)}]", end="\r")
             _write_essentia_cache(cache)

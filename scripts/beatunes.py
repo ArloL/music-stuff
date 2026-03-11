@@ -55,7 +55,7 @@ def _tonalkey_to_str(key: int | None) -> str:
 
 def _enrich(track: dict, essentia_cache: dict) -> dict:
     t = dict(track)
-    t["id"] = int(t["persistentID"])
+    t["id"] = t["persistentID"]
     entry = essentia_cache.get(t["id"], {})
     t["exactbpm"] = consensus_bpm(entry)
     t["tonalkey"] = _comment_to_tonalkey(consensus_key(entry))

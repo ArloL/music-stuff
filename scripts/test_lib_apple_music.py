@@ -62,18 +62,18 @@ def test_find_all_tracks():
 def test_find_track_by_id_returns_correct_track():
     tracks = find_tracks_by_folder_name("Critical Mass")
     reference = next(t for t in tracks if t["name"] == "Little Space")
-    track_id = int(reference["persistentID"])
+    track_id = reference["persistentID"]
 
     result = find_track_by_id(track_id)
 
     assert result is not None
     assert result["name"] == "Little Space"
-    assert int(result["persistentID"]) == track_id
+    assert result["persistentID"] == track_id
 
 
 def test_find_track_by_id_returns_correct_fields():
     tracks = find_tracks_by_folder_name("Critical Mass")
-    track_id = int(tracks[0]["persistentID"])
+    track_id = tracks[0]["persistentID"]
 
     result = find_track_by_id(track_id)
 
@@ -94,16 +94,16 @@ def test_find_track_by_id_returns_none_when_not_found():
 def test_find_track_by_id_negative_id():
     # Negative IDs are valid (high-bit unsigned 64-bit values stored as signed)
     tracks = find_tracks_by_folder_name("Critical Mass")
-    negative_ids = [t for t in tracks if int(t["persistentID"]) < 0]
+    negative_ids = [t for t in tracks if t["persistentID"] < 0]
     if not negative_ids:
         pytest.skip("No tracks with negative persistent IDs in Critical Mass")
     reference = negative_ids[0]
-    track_id = int(reference["persistentID"])
+    track_id = reference["persistentID"]
 
     result = find_track_by_id(track_id)
 
     assert result is not None
-    assert int(result["persistentID"]) == track_id
+    assert result["persistentID"] == track_id
 
 
 def test_find_track_by_id_passes_id_as_string_to_jxa():
