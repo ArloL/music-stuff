@@ -1,5 +1,6 @@
 import re
 import sqlite3
+from dataclasses import dataclass
 from pathlib import Path
 
 from lib_clonefile import clonefile
@@ -48,10 +49,17 @@ def _extract_persistent_ids(data: bytes) -> list[int]:
     return result
 
 
-def load_djay_index() -> dict[int, dict]:
+@dataclass
+class DjaySongData:
+    bpm: float | str
+    manual_bpm: float | str
+    open_key: str
+
+
+def load_djay_index() -> dict[int, DjaySongData]:
     """
     Clone the live djay MediaLibrary.db then query it, returning a dict mapping
-    persistent_id -> {bpm, manual_bpm, open_key} for tracks present in tracks.
+    persistent_id -> DjaySongData for songs in the library.
     """
     _clone_db()
     con = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
@@ -73,15 +81,15 @@ def load_djay_index() -> dict[int, dict]:
     """).fetchall()
     con.close()
 
-    djay_index: dict[int, dict] = {}
+    djay_index: dict[int, DjaySongData] = {}
     for row in rows:
         for pid in _extract_persistent_ids(bytes(row["location_blob"])):
             if pid in djay_index:
                 continue
             key_index = row["keySignatureIndex"]
-            djay_index[pid] = {
-                "bpm": round(row["bpm"], 2) if row["bpm"] else "",
-                "manual_bpm": round(row["manualBPM"], 2) if row["manualBPM"] else "",
-                "open_key": ("Key " + DJAY_KEY_INDEX_TO_OPEN_KEY[key_index]) if key_index in DJAY_KEY_INDEX_TO_OPEN_KEY else "",
-            }
+            djay_index[pid] = DjaySongData(
+                bpm=round(row["bpm"], 2) if row["bpm"] else "",
+                manual_bpm=round(row["manualBPM"], 2) if row["manualBPM"] else "",
+                open_key=("Key " + DJAY_KEY_INDEX_TO_OPEN_KEY[key_index]) if key_index in DJAY_KEY_INDEX_TO_OPEN_KEY else "",
+            )
     return djay_index

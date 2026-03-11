@@ -8,6 +8,7 @@ from lib_djay import (
     _extract_persistent_ids,
     _clone_db,
     load_djay_index,
+    DjaySongData,
     DJAY_KEY_INDEX_TO_OPEN_KEY,
 )
 
@@ -105,7 +106,7 @@ def _make_test_db(db_path, rows):
             "INSERT INTO secondaryIndex_mediaItemAnalyzedDataIndex VALUES (?, ?, ?, ?)",
             (i, bpm, manual_bpm, key_idx),
         )
-        key = f"track_{i}"
+        key = f"song_{i}"
         con.execute(
             "INSERT INTO database2 (rowid, key, collection, data) VALUES (?, ?, 'mediaItemAnalyzedData', ?)",
             (i, key, b""),
@@ -130,8 +131,8 @@ def test_load_djay_index_maps_key_and_bpm(mock_clone, tmp_path):
     with patch("lib_djay.DB_PATH", db):
         result = load_djay_index()
 
-    assert result[12345] == {"bpm": 120.5, "manual_bpm": 121.0, "open_key": "Key 1d"}
-    assert result[67890] == {"bpm": 130.0, "manual_bpm": "", "open_key": "Key 3m"}
+    assert result[12345] == DjaySongData(bpm=120.5, manual_bpm=121.0, open_key="Key 1d")
+    assert result[67890] == DjaySongData(bpm=130.0, manual_bpm="", open_key="Key 3m")
 
 
 @patch("lib_djay._clone_db")
@@ -142,7 +143,7 @@ def test_load_djay_index_unknown_key_produces_empty_string(mock_clone, tmp_path)
     with patch("lib_djay.DB_PATH", db):
         result = load_djay_index()
 
-    assert result[111]["open_key"] == ""
+    assert result[111].open_key == ""
 
 
 @patch("lib_djay._clone_db")
@@ -162,7 +163,7 @@ def test_load_djay_index_deduplicates_by_pid(mock_clone, tmp_path):
     """)
     blob = b'\x08com.apple.Music:999\x00'
     for i, bpm in enumerate([120.0, 130.0], 1):
-        key = f"track_{i}"
+        key = f"song_{i}"
         con.execute("INSERT INTO secondaryIndex_mediaItemAnalyzedDataIndex VALUES (?, ?, ?, ?)", (i, bpm, None, 0))
         con.execute("INSERT INTO database2 VALUES (?, ?, 'mediaItemAnalyzedData', ?)", (i, key, b""))
         con.execute("INSERT INTO database2 VALUES (?, ?, 'localMediaItemLocations', ?)", (1000 + i, key, blob))
@@ -173,4 +174,4 @@ def test_load_djay_index_deduplicates_by_pid(mock_clone, tmp_path):
         result = load_djay_index()
 
     assert len(result) == 1
-    assert result[999]["bpm"] == 120.0  # first row wins
+    assert result[999].bpm == 120.0  # first row wins

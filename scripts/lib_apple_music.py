@@ -31,21 +31,21 @@ def find_playlist_by_name(playlist_name: str) -> list[dict]:
     return _run_jxa(f"findPlaylistByName({json.dumps(playlist_name)})")
 
 
-def find_tracks_by_folder_name(folder_name: str) -> list[dict]:
+def find_songs_by_folder_name(folder_name: str) -> list[dict]:
     return _run_jxa(f"findTracksByFolderName({json.dumps(folder_name)})")
 
 
-def find_tracks_by_playlist_name(playlist_name: str) -> list[dict]:
+def find_songs_by_playlist_name(playlist_name: str) -> list[dict]:
     return _run_jxa(f"findTracksByPlaylistName({json.dumps(playlist_name)})")
 
 
-def find_track_by_id(track_id: str) -> dict | None:
-    return _run_jxa(f"findTrackById({json.dumps(track_id)})")
+def find_song_by_id(song_id: str) -> dict | None:
+    return _run_jxa(f"findTrackById({json.dumps(song_id)})")
 
 
-def find_all_tracks() -> list[dict]:
+def find_all_songs() -> list[dict]:
     return _run_jxa("findAllTracks()")
 
 
-def set_track_bpm(track_id: str, bpm: int) -> None:
-    _run_jxa(f"setTrackBpm({json.dumps(track_id)}, {json.dumps(bpm)})")
+def set_song_bpm(song_id: str, bpm: int) -> None:
+    _run_jxa(f"setTrackBpm({json.dumps(song_id)}, {json.dumps(bpm)})")

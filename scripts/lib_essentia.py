@@ -76,10 +76,10 @@ def _write_essentia_cache(cache: dict[int, dict]) -> None:
 
 
 def _detect_essentia(location: str, profiles: list[str], do_bpm: bool) -> dict:
-    """Analyse a single track: key profiles and/or BPM. Loads audio once."""
+    """Analyse a single song: key profiles and/or BPM. Loads audio once."""
     path = _location_to_path(location)
     if path is None:
-        raise ValueError(f"No location for track: {location!r}")
+        raise ValueError(f"No location for song: {location!r}")
     if not path.exists():
         raise FileNotFoundError(f"Audio file not found: {path}")
 
@@ -103,18 +103,18 @@ def _detect_essentia(location: str, profiles: list[str], do_bpm: bool) -> dict:
     return result
 
 
-def analyse(tracks: list[dict]) -> dict[int, dict]:
+def analyse(songs: list[dict]) -> dict[int, dict]:
     """Load the essentia cache, run parallel key+BPM analysis for missing data, save and return."""
     cache = _load_essentia_cache()
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
         futures = {}
-        for track in tracks:
-            pid = track["persistentID"]
+        for song in songs:
+            pid = song["persistentID"]
             entry = cache.get(pid, {})
             missing_profiles = [p for p in ESSENTIA_PROFILES if f"{p}_key" not in entry]
             missing_bpm = "bpm_rhythm" not in entry or "bpm_rhythm_confidence" not in entry or "bpm_percival" not in entry
             if missing_profiles or missing_bpm:
-                futures[executor.submit(_detect_essentia, track["location"], missing_profiles, missing_bpm)] = pid
+                futures[executor.submit(_detect_essentia, song["location"], missing_profiles, missing_bpm)] = pid
         done = 0
         for future in as_completed(futures):
             pid = futures[future]
