@@ -29,7 +29,7 @@ import sys
 import argparse
 from pathlib import Path
 
-from lib_apple_music import find_songs_by_folder_name, find_all_songs
+from lib_apple_music import find_songs_by_folder_name, find_all_songs, set_song_bpm
 from lib_beatunes import lookup_songs, tonalkey_to_str
 from lib_djay import load_djay_index
 from lib_essentia import analyse, consensus_key, ESSENTIA_PROFILES
@@ -119,6 +119,7 @@ def _consensus_bpm(*bpms: float | int | str) -> str:
 def main():
     parser = argparse.ArgumentParser(description="Export djay BPM data merged with Apple Music metadata.")
     parser.add_argument("--folder", metavar="NAME", help="Filter to songs in this Music library folder")
+    parser.add_argument("--write-bpm", action="store_true", help="Write effective BPM back to Apple Music")
     args = parser.parse_args()
 
     # --- Load Music metadata ---
@@ -224,6 +225,20 @@ def main():
 
     print(f"  Wrote {written} songs.")
     print(f"Exported to {OUTPUT_PATH}")
+
+    # --- Write effective BPM back to Apple Music ---
+    if args.write_bpm:
+        updates = [
+            r for r in csv_rows
+            if r["effective_bpm"] != "" and int(round(float(r["effective_bpm"]))) != r["apple_music_bpm"]
+        ]
+        print(f"Writing BPM to Apple Music for {len(updates)} songs...")
+        for i, row in enumerate(updates, 1):
+            bpm = int(round(float(row["effective_bpm"])))
+            set_song_bpm(row["apple_music_id"], bpm)
+            print(f"  [{i}/{len(updates)}] {row['artist']} - {row['name']}: {row['apple_music_bpm']} -> {bpm}", end="\r")
+        if updates:
+            print()
 
 
 if __name__ == "__main__":
