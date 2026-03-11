@@ -1,7 +1,12 @@
 #!/bin/bash
-set -o errexit
 
-rm -f scripts/tmp/beaTunes.*.db
+set -o errexit
+set -o nounset
+set -o xtrace
+
+cd "$(dirname "$0")/" || exit 1
+
+rm -f "scripts/tmp/"beaTunes.*.db
 
 files=("${HOME}/Library/Application Support/beaTunes/Database/"beaTunes-*.h2.db)
 if (( ${#files[@]} != 1 )); then
