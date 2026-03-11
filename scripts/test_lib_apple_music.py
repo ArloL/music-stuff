@@ -1,7 +1,7 @@
 import json
 import pytest
 from unittest.mock import patch, MagicMock
-from lib_apple_music import find_playlist_by_name, find_tracks_by_playlist_name, find_tracks_by_folder_name, find_track_by_id, find_all_tracks
+from lib_apple_music import find_playlist_by_name, find_tracks_by_playlist_name, find_tracks_by_folder_name, find_track_by_id, find_all_tracks, set_track_bpm
 
 
 def test_run_jxa_raises_on_nonzero_returncode():
@@ -113,3 +113,22 @@ def test_find_track_by_id_passes_id_as_string_to_jxa():
         find_track_by_id("966EC6D01F2DED99")
     script = mock_run.call_args.kwargs["input"]
     assert json.dumps("966EC6D01F2DED99") in script
+
+
+def test_set_track_bpm():
+    tracks = find_tracks_by_folder_name("Critical Mass")
+    track = tracks[0]
+    original_bpm = track["bpm"]
+
+    set_track_bpm(track["persistentID"], 999)
+    updated = find_track_by_id(track["persistentID"])
+    assert updated["bpm"] == 999
+
+    set_track_bpm(track["persistentID"], original_bpm)
+    restored = find_track_by_id(track["persistentID"])
+    assert restored["bpm"] == original_bpm
+
+
+def test_set_track_bpm_not_found():
+    with pytest.raises(RuntimeError, match="Track not found"):
+        set_track_bpm("FFFFFFFFFFFFFFFF", 120)
