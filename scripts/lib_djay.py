@@ -1,9 +1,8 @@
 import re
 import sqlite3
-import ctypes
-import ctypes.util
 from pathlib import Path
 
+from lib_clonefile import clonefile
 
 SOURCE_DB = Path.home() / "Music/djay/djay Media Library.djayMediaLibrary/MediaLibrary.db"
 DB_PATH = Path(__file__).parent / "tmp/djay-MediaLibrary.db"
@@ -23,28 +22,16 @@ DJAY_KEY_INDEX_TO_OPEN_KEY = {
     22: "6d", 23: "6m",
 }
 
-_libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
-_libc.clonefile.restype = ctypes.c_int
-_libc.clonefile.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint32]
-
-
-def _clonefile(src: Path, dst: Path) -> None:
-    """APFS copy-on-write clone via clonefile(2). Destination must not exist."""
-    dst.unlink(missing_ok=True)
-    ret = _libc.clonefile(str(src).encode(), str(dst).encode(), 0)
-    if ret != 0:
-        raise OSError(ctypes.get_errno(), f"clonefile({src} -> {dst})")
-
 
 def _clone_db() -> None:
     """Clone the live djay MediaLibrary.db (and WAL/SHM files) to DB_PATH."""
     if not SOURCE_DB.exists():
         raise FileNotFoundError(f"djay database not found: {SOURCE_DB}")
-    _clonefile(SOURCE_DB, DB_PATH)
+    clonefile(SOURCE_DB, DB_PATH)
     for suffix in ("-wal", "-shm"):
         src = Path(str(SOURCE_DB) + suffix)
         if src.exists():
-            _clonefile(src, Path(str(DB_PATH) + suffix))
+            clonefile(src, Path(str(DB_PATH) + suffix))
 
 
 _APPLE_ID_RE = re.compile(rb'\x08com\.apple\.(?:iTunes|Music):(-?\d+)\x00')
