@@ -87,7 +87,7 @@ def _bpm_diff(*bpms: float | int | str) -> str:
     return str(round(max(normalised) - min(normalised), 2))
 
 
-def _consensus_bpm(*bpms: float | int | str) -> str:
+def _consensus_bpm(*bpms: float | int | str) -> float:
     """Cluster BPMs by octave-equivalence and return the median of the largest cluster."""
     valid = _collect_bpms(*bpms)
     if not valid:
@@ -109,7 +109,7 @@ def _consensus_bpm(*bpms: float | int | str) -> str:
     votes_high = sum(1 for b in valid if abs(b - median * 2) < abs(b - median))
     if votes_high >= len(valid) / 2:
         median *= 2
-    return str(round(median, 2))
+    return round(median, 2)
 
 
 # ---------------------------------------------------------------------------
@@ -142,7 +142,7 @@ def main():
     # --- Write CSV ---
     fieldnames = [
         "apple_music_id", "artist", "name",
-        "effective_bpm", "consensus_bpm", "bpm_diff",
+        "effective_bpm", "consensus_bpm", "djay_bpm_diff", "bpm_diff",
         "djay_bpm", "djay_manual_bpm", "djay_straight_grid", "apple_music_bpm",
         "beatunes_bpm", "beatunes_bpm_salience",
         "bpm_rhythm", "bpm_rhythm_confidence", "bpm_percival",
@@ -188,6 +188,7 @@ def main():
         # --- Diffs ---
         consensus = _consensus_bpm(djay_data.bpm, beatunes_bpm, bpm_rhythm, bpm_percival)
         effective_bpm = djay_data.manual_bpm or consensus
+        djay_bpm_diff = abs(round(effective_bpm - djay_data.bpm, 0))
         bpm_diff = _bpm_diff(djay_data.bpm, beatunes_bpm, bpm_rhythm, bpm_percival)
         profile_keys = {k: v for k, v in profile_data.items() if k.endswith("_key")}
         all_keys = [djay_open_key, beatunes_key] + list(profile_keys.values())
@@ -201,7 +202,7 @@ def main():
             "effective_bpm": effective_bpm, "consensus_bpm": consensus,
             "bpm_rhythm": bpm_rhythm,
             "bpm_rhythm_confidence": bpm_rhythm_confidence, "bpm_percival": bpm_percival,
-            "beatunes_bpm_salience": beatunes_bpm_salience, "bpm_diff": bpm_diff,
+            "beatunes_bpm_salience": beatunes_bpm_salience, "djay_bpm_diff": djay_bpm_diff, "bpm_diff": bpm_diff,
             "open_key": djay_open_key, "essentia_key": essentia_key,
             "beatunes_key": beatunes_key, "comment": song.comment,
             **profile_data, "key_diff": key_diff,
