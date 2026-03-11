@@ -95,3 +95,13 @@ function findAllTracks() {
         .properties()
         .map(_mapTrackProperties);
 }
+
+function setTrackBpm(hexId, bpm) {
+    const music = Application("Music");
+    const tracks = music.tracks.whose({ persistentID: { _equals: hexId } });
+    if (tracks.length === 0) {
+        throw new Error("Track not found: " + hexId);
+    }
+    tracks[0].bpm = bpm;
+    return null;
+}

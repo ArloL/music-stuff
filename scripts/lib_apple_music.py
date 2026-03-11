@@ -45,3 +45,7 @@ def find_track_by_id(track_id: str) -> dict | None:
 
 def find_all_tracks() -> list[dict]:
     return _run_jxa("findAllTracks()")
+
+
+def set_track_bpm(track_id: str, bpm: int) -> None:
+    _run_jxa(f"setTrackBpm({json.dumps(track_id)}, {json.dumps(bpm)})")
