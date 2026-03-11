@@ -128,11 +128,6 @@ def _filter_candidates(
 def write_playlist_to_file(filename: str, playlist_name: str) -> None:
     print(f"Writing '{playlist_name}' → {filename} ...")
     tracks = _load_playlist(playlist_name)
-    tracks = [
-        t for t in tracks
-        if (t.get("comment", "") or "").strip() != "ignore"
-        and "mixed" not in (t.get("comment", "") or "").lower()
-    ]
     output = OUTPUT_DIR / filename
     with open(output, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
