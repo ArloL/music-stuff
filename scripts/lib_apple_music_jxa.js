@@ -1,7 +1,7 @@
 function hexIdToInt(hexId) {
-            const value = BigInt(`0x${hexId}`);
-        return value >= (1n << 63n) ? value - (1n << 64n) : value;
-    }
+    const value = BigInt(`0x${hexId}`);
+    return value >= (1n << 63n) ? value - (1n << 64n) : value;
+}
 
 function intToHexId(idStr) {
     let value = BigInt(idStr);
@@ -10,9 +10,12 @@ function intToHexId(idStr) {
 }
 
 function _mapTrackProperties(trackProperties) {
+    const persistentIdAsInt = hexIdToInt(trackProperties.persistentID);
+    const beatunesId = (persistentIdAsInt ^ -(1n << 63n));
     return {
         ...trackProperties,
-        persistentID: hexIdToInt(trackProperties.persistentID).toString(),
+        persistentIdAsInt: persistentIdAsInt.toString(),
+        beatunesId: beatunesId.toString(),
         location: trackProperties.location.toString(),
     }
 }
