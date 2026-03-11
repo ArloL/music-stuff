@@ -57,6 +57,7 @@ def tonalkey_to_str(key: int | None) -> str:
 class BeaTunesSong:
     hex_id: str
     exactbpm: float | None
+    exactbpmsalience: float | None
     tonalkey: int | None
     artist: str
     name: str
@@ -133,7 +134,7 @@ def lookup_songs(hex_ids: list[str]) -> dict[str, BeaTunesSong]:
 
     in_clause = ", ".join(str(bt_id) for bt_id in id_to_hex)
     sql = (
-        f"SELECT ID, EXACTBPM, TONALKEY, ARTIST, NAME "
+        f"SELECT ID, EXACTBPM, EXACTBPMSALIENCE, TONALKEY, ARTIST, NAME "
         f"FROM SONGS WHERE ID IN ({in_clause})"
     )
     rows = _run_sql(sql, db_path)
@@ -143,10 +144,12 @@ def lookup_songs(hex_ids: list[str]) -> dict[str, BeaTunesSong]:
         bt_id = int(row["ID"])
         hex_id = id_to_hex[bt_id]
         exactbpm_raw = row.get("EXACTBPM", "").strip()
+        exactbpmsalience_raw = row.get("EXACTBPMSALIENCE", "").strip()
         tonalkey_raw = row.get("TONALKEY", "").strip()
         result[hex_id] = BeaTunesSong(
             hex_id=hex_id,
             exactbpm=float(exactbpm_raw) if exactbpm_raw and exactbpm_raw != "null" else None,
+            exactbpmsalience=float(exactbpmsalience_raw) if exactbpmsalience_raw and exactbpmsalience_raw != "null" else None,
             tonalkey=int(tonalkey_raw) if tonalkey_raw and tonalkey_raw != "null" else None,
             artist=row.get("ARTIST", "").strip(),
             name=row.get("NAME", "").strip(),
