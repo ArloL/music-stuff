@@ -13,7 +13,7 @@ from lib_beatunes import (
     lookup_song,
     BeaTunesSong,
     SOURCE_DB_DIR,
-    _parse_h2_output,
+    _parse_h2_list_output,
 )
 
 
@@ -52,15 +52,34 @@ def test_hex_id_padded_to_16_chars():
     assert result == "8000000000000000"
 
 
-# --- H2 output parsing tests ---
+# --- H2 list-mode output parsing tests ---
 
-def test_parse_h2_output_single_row():
+PREAMBLE = (
+    "Welcome to H2 Shell 1.4.195 (2017-04-23)\n"
+    "Exit with Ctrl+C\n"
+    "Commands are case insensitive; SQL statements end with ';'\n"
+    "help or ?      Display this help\n"
+    "list           Toggle result list / stack trace mode\n"
+    "maxwidth       Set maximum column width (default is 100)\n"
+    "autocommit     Enable or disable autocommit\n"
+    "history        Show the last 20 statements\n"
+    "quit or exit   Close the connection and exit\n"
+    "\n"
+    "sql> Result list mode is now on\n"
+)
+
+
+def test_parse_h2_list_output_single_row():
     output = (
-        "ID         | EXACTBPM | TONALKEY | ARTIST          | NAME\n"
-        "3583567841378501214 | 115.02   | 24       | Dorothy's Ghost | Never Said Goodbye\n"
+        PREAMBLE
+        + "sql> ID      : 3583567841378501214\n"
+        "EXACTBPM: 115.02\n"
+        "TONALKEY: 24\n"
+        "ARTIST  : Dorothy's Ghost\n"
+        "NAME    : Never Said Goodbye\n"
         "(1 row, 12 ms)\n"
     )
-    rows = _parse_h2_output(output)
+    rows = _parse_h2_list_output(output)
     assert len(rows) == 1
     assert rows[0]["ID"] == "3583567841378501214"
     assert rows[0]["EXACTBPM"] == "115.02"
@@ -69,35 +88,48 @@ def test_parse_h2_output_single_row():
     assert rows[0]["NAME"] == "Never Said Goodbye"
 
 
-def test_parse_h2_output_multiple_rows():
+def test_parse_h2_list_output_multiple_rows():
     output = (
-        "ID | EXACTBPM | TONALKEY | ARTIST | NAME\n"
-        "111 | 120.0 | 1 | Artist A | Song A\n"
-        "222 | 130.0 | 2 | Artist B | Song B\n"
+        PREAMBLE
+        + "sql> ID      : 111\n"
+        "EXACTBPM: 120.0\n"
+        "TONALKEY: 1\n"
+        "ARTIST  : Artist A\n"
+        "NAME    : Song A\n"
+        "\n"
+        "ID      : 222\n"
+        "EXACTBPM: 130.0\n"
+        "TONALKEY: 2\n"
+        "ARTIST  : Artist B\n"
+        "NAME    : Song B\n"
         "(2 rows, 5 ms)\n"
     )
-    rows = _parse_h2_output(output)
+    rows = _parse_h2_list_output(output)
     assert len(rows) == 2
     assert rows[0]["ID"] == "111"
     assert rows[1]["ID"] == "222"
 
 
-def test_parse_h2_output_empty():
-    rows = _parse_h2_output("")
+def test_parse_h2_list_output_empty():
+    rows = _parse_h2_list_output("")
     assert rows == []
 
 
-def test_parse_h2_output_no_data_rows():
-    output = "ID | EXACTBPM | TONALKEY | ARTIST | NAME\n(0 rows, 3 ms)\n"
-    rows = _parse_h2_output(output)
+def test_parse_h2_list_output_no_data_rows():
+    output = PREAMBLE + "sql> (0 rows, 3 ms)\n"
+    rows = _parse_h2_list_output(output)
     assert rows == []
 
 
 # --- lookup tests with mocked subprocess ---
 
 H2_OUTPUT = (
-    "ID         | EXACTBPM | TONALKEY | ARTIST          | NAME\n"
-    "3583567841378501214 | 115.02   | 24       | Dorothy's Ghost | Never Said Goodbye\n"
+    PREAMBLE
+    + "sql> ID      : 3583567841378501214\n"
+    "EXACTBPM: 115.02\n"
+    "TONALKEY: 24\n"
+    "ARTIST  : Dorothy's Ghost\n"
+    "NAME    : Never Said Goodbye\n"
     "(1 row, 12 ms)\n"
 )
 
@@ -130,7 +162,7 @@ def test_lookup_song(mock_run, mock_clone):
 @patch("subprocess.run")
 def test_lookup_song_not_found(mock_run, mock_clone):
     mock_run.return_value = MagicMock(
-        stdout="ID | EXACTBPM | TONALKEY | ARTIST | NAME\n(0 rows, 3 ms)\n"
+        stdout=PREAMBLE + "sql> (0 rows, 3 ms)\n"
     )
     song = lookup_song("0000000000000001")
     assert song is None
@@ -145,8 +177,12 @@ def test_lookup_songs_empty():
 @patch("subprocess.run")
 def test_lookup_songs_null_fields(mock_run, mock_clone):
     output = (
-        "ID | EXACTBPM | TONALKEY | ARTIST | NAME\n"
-        "3583567841378501214 | null | null | Dorothy's Ghost | Never Said Goodbye\n"
+        PREAMBLE
+        + "sql> ID      : 3583567841378501214\n"
+        "EXACTBPM: null\n"
+        "TONALKEY: null\n"
+        "ARTIST  : Dorothy's Ghost\n"
+        "NAME    : Never Said Goodbye\n"
         "(1 row, 5 ms)\n"
     )
     mock_run.return_value = MagicMock(stdout=output)
