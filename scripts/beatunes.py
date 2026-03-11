@@ -203,8 +203,8 @@ def main() -> None:
     )
     parser.add_argument(
         "--seed",
-        type=int,
-        default=1616447913451187609,
+        type=str,
+        default="166EC6D01F2DED99",
         metavar="ID",
         help="Persistent ID of the seed song (default: Tozai)",
     )
