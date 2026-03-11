@@ -1,5 +1,6 @@
 ## Queries
 
+```
 SELECT COMMENTS, TONALKEY FROM SONGS GROUP BY TONALKEY, COMMENTS ORDER BY TONALKEY
 
 -- sun harmonics
@@ -14,6 +15,19 @@ AND RATING = 100
 AND COMMENTS != 'ignore'
 AND COMMENTS NOT LIKE '%mixed%'
 AND TONALKEY IN (3,4,5,7,21)
+```
+
+## essentia confidence of RhythmExtractor2013 with BeatTrackerMultiFeature (default)
+
+Copied from <https://essentia.upf.edu/reference/std_BeatTrackerMultiFeature.html>:
+
+    You can follow these guidelines [2] to assess the quality of beats estimation based on the computed confidence value:
+
+    * [0, 1) very low confidence, the input signal is hard for the employed candidate beat trackers
+    * [1, 1.5] low confidence
+    * (1.5, 3.5] good confidence, accuracy around 80% in AMLt measure
+    * (3.5, 5.32] excellent confidence
+
 
 ## beaTunes ID vs Apple Music Persistent ID
 
@@ -30,28 +44,28 @@ The XOR of the two values is exactly 0x8000000000000000 (2^63). The operation is
 
 ## Tonalkey
 
-0 == Not analyzed
-1 == 1d
-2 == 1m
-3 == 2d
-4 == 2m
-5 == 3d
-6 == 3m
-7 == 4d
-8 == 4m
-9 == 5d
-10 == 5m
-11 == 6d
-12 == 6m
-13 == 7d
-14 == 7m
-15 == 8d
-16 == 8m
-17 == 9d
-18 == 9m
-19 == 10d
-20 == 10m
-21 == 11d
-22 == 11m
-23 == 12d
-24 == 12m
+* 0 == Not analyzed
+* 1 == 1d
+* 2 == 1m
+* 3 == 2d
+* 4 == 2m
+* 5 == 3d
+* 6 == 3m
+* 7 == 4d
+* 8 == 4m
+* 9 == 5d
+* 10 == 5m
+* 11 == 6d
+* 12 == 6m
+* 13 == 7d
+* 14 == 7m
+* 15 == 8d
+* 16 == 8m
+* 17 == 9d
+* 18 == 9m
+* 19 == 10d
+* 20 == 10m
+* 21 == 11d
+* 22 == 11m
+* 23 == 12d
+* 24 == 12m
