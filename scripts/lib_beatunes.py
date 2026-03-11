@@ -71,28 +71,42 @@ def _run_sql(sql: str, db_path: Path) -> list[dict]:
         [
             "java", "-cp", str(_find_h2_jar()), "org.h2.tools.Shell",
             "-url", f"jdbc:h2:{jdbc_path};ACCESS_MODE_DATA=r",
-            "-user", "sa", "-password", "", "-sql", sql,
+            "-user", "sa", "-password", "",
         ],
+        input=f"list\n{sql};\n",
         capture_output=True,
         text=True,
         check=True,
     )
-    return _parse_h2_output(result.stdout)
+    return _parse_h2_list_output(result.stdout)
 
 
-def _parse_h2_output(output: str) -> list[dict]:
-    """Parse pipe-delimited H2 Shell output into a list of dicts."""
-    lines = [line for line in output.strip().splitlines() if line.strip()]
-    if not lines:
-        return []
+def _parse_h2_list_output(output: str) -> list[dict]:
+    """Parse H2 Shell list-mode output into a list of dicts.
 
-    headers = [h.strip() for h in lines[0].split("|")]
+    List mode emits one KEY: VALUE pair per line, with blank lines
+    between rows and a "(N rows, ...)" trailer.
+    """
+    # Strip the interactive preamble (everything up to and including "sql> Result list mode is now on")
+    marker = "Result list mode is now on"
+    idx = output.find(marker)
+    if idx != -1:
+        output = output[idx + len(marker):]
+
     rows = []
-    for line in lines[1:]:
-        if line.startswith("("):
-            break
-        values = [v.strip() for v in line.split("|")]
-        rows.append(dict(zip(headers, values)))
+    current: dict[str, str] = {}
+    for line in output.splitlines():
+        line = line.removeprefix("sql> ").rstrip()
+        if line.startswith("(") or not line:
+            if current:
+                rows.append(current)
+                current = {}
+            continue
+        if ": " in line:
+            key, _, value = line.partition(": ")
+            current[key.strip().upper()] = value.strip()
+    if current:
+        rows.append(current)
     return rows
 
 
