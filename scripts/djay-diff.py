@@ -97,21 +97,21 @@ def main():
     # --- Phase 2: build CSV rows ---
     csv_rows = []
     for song in songs:
-        pid = song["persistentID"]
+        pid = song.persistentID
         djay_data = djay_index.get(pid)
         if djay_data is None:
             continue
 
         djay_bpm = djay_data.manual_bpm or djay_data.bpm
-        music_bpm = song["bpm"]
+        music_bpm = song.bpm
         bpm_diff = round(djay_bpm - music_bpm, 2) if djay_bpm != "" and music_bpm != "" else ""
         djay_open_key = djay_data.open_key
         essentia_key = consensus_key(key_cache.get(pid, {}))
 
         csv_rows.append({
             "apple_music_id": pid,
-            "artist": song["artist"],
-            "name": song["name"],
+            "artist": song.artist,
+            "name": song.name,
             "bpm": djay_bpm,
             "djay_bpm": djay_data.bpm,
             "djay_manual_bpm": djay_data.manual_bpm,
@@ -119,8 +119,8 @@ def main():
             "djay_am_bpm_diff": bpm_diff,
             "open_key": djay_open_key,
             "essentia_key": essentia_key,
-            "comment": song["comment"],
-            "key_diff": _key_diff(djay_open_key, essentia_key, song["comment"]),
+            "comment": song.comment,
+            "key_diff": _key_diff(djay_open_key, essentia_key, song.comment),
         })
 
     csv_rows.sort(key=lambda r: int(r["key_diff"]) if r["key_diff"] != "" else 0, reverse=True)
