@@ -31,8 +31,8 @@ def find_tracks_by_playlist_name(playlist_name: str) -> list[dict]:
     return _run_jxa(f"findTracksByPlaylistName({json.dumps(playlist_name)})")
 
 
-def find_track_by_id(track_id: int) -> dict | None:
-    return _run_jxa(f"findTrackById({json.dumps(str(track_id))})")
+def find_track_by_id(track_id: str) -> dict | None:
+    return _run_jxa(f"findTrackById({json.dumps(track_id)})")
 
 
 def find_all_tracks() -> list[dict]:

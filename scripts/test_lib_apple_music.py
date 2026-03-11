@@ -87,17 +87,17 @@ def test_find_track_by_id_returns_correct_fields():
 
 
 def test_find_track_by_id_returns_none_when_not_found():
-    result = find_track_by_id(0)
+    result = find_track_by_id("FFFFFFFFFFFFFFFF")
     assert result is None
 
 
-def test_find_track_by_id_negative_id():
-    # Negative IDs are valid (high-bit unsigned 64-bit values stored as signed)
+def test_find_track_by_id_high_bit_set():
+    # IDs starting with 8-F have the high bit set (were negative as signed int64)
     tracks = find_tracks_by_folder_name("Critical Mass")
-    negative_ids = [t for t in tracks if t["persistentID"] < 0]
-    if not negative_ids:
-        pytest.skip("No tracks with negative persistent IDs in Critical Mass")
-    reference = negative_ids[0]
+    high_bit_ids = [t for t in tracks if t["persistentID"][0] in "89ABCDEF"]
+    if not high_bit_ids:
+        pytest.skip("No tracks with high-bit-set persistent IDs in Critical Mass")
+    reference = high_bit_ids[0]
     track_id = reference["persistentID"]
 
     result = find_track_by_id(track_id)
@@ -107,9 +107,9 @@ def test_find_track_by_id_negative_id():
 
 
 def test_find_track_by_id_passes_id_as_string_to_jxa():
-    # Ensures large 64-bit IDs are passed as strings, not JS numbers (which lose precision)
+    # Ensures hex IDs are passed as strings to JXA
     mock = MagicMock(returncode=0, stdout="null")
     with patch("lib_apple_music.subprocess.run", return_value=mock) as mock_run:
-        find_track_by_id(-7606924123403588199)
+        find_track_by_id("966EC6D01F2DED99")
     script = mock_run.call_args.kwargs["input"]
-    assert json.dumps(str(-7606924123403588199)) in script
+    assert json.dumps("966EC6D01F2DED99") in script
