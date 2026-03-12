@@ -134,9 +134,10 @@ H2_OUTPUT = (
 )
 
 
+@patch("music_stuff.lib.lib_beatunes._find_h2_jar", return_value=Path("/fake/h2.jar"))
 @patch("music_stuff.lib.lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
 @patch("subprocess.run")
-def test_lookup_songs(mock_run, mock_clone):
+def test_lookup_songs(mock_run, mock_clone, mock_jar):
     mock_run.return_value = MagicMock(stdout=H2_OUTPUT)
     result = lookup_songs(["B1BB63F715E1025E"])
     assert "B1BB63F715E1025E" in result
@@ -148,9 +149,10 @@ def test_lookup_songs(mock_run, mock_clone):
     assert song.name == "Never Said Goodbye"
 
 
+@patch("music_stuff.lib.lib_beatunes._find_h2_jar", return_value=Path("/fake/h2.jar"))
 @patch("music_stuff.lib.lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
 @patch("subprocess.run")
-def test_lookup_song(mock_run, mock_clone):
+def test_lookup_song(mock_run, mock_clone, mock_jar):
     mock_run.return_value = MagicMock(stdout=H2_OUTPUT)
     song = lookup_song("B1BB63F715E1025E")
     assert song is not None
@@ -158,9 +160,10 @@ def test_lookup_song(mock_run, mock_clone):
     assert song.key == "Key 12m"
 
 
+@patch("music_stuff.lib.lib_beatunes._find_h2_jar", return_value=Path("/fake/h2.jar"))
 @patch("music_stuff.lib.lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
 @patch("subprocess.run")
-def test_lookup_song_not_found(mock_run, mock_clone):
+def test_lookup_song_not_found(mock_run, mock_clone, mock_jar):
     mock_run.return_value = MagicMock(
         stdout=PREAMBLE + "sql> (0 rows, 3 ms)\n"
     )
@@ -173,9 +176,10 @@ def test_lookup_songs_empty():
     assert result == {}
 
 
+@patch("music_stuff.lib.lib_beatunes._find_h2_jar", return_value=Path("/fake/h2.jar"))
 @patch("music_stuff.lib.lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
 @patch("subprocess.run")
-def test_lookup_songs_null_fields(mock_run, mock_clone):
+def test_lookup_songs_null_fields(mock_run, mock_clone, mock_jar):
     output = (
         PREAMBLE
         + "sql> ID      : 3583567841378501214\n"
