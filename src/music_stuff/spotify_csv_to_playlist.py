@@ -43,7 +43,7 @@ def main() -> None:
         spotify_id = find_spotify_id_for_song(sp, song, spotify_mapping)
         if spotify_id == '-1':
             print(f"No spotify ID for {song['artist']} - {song['name']}")
-        elif any(track['track']['id'] == spotify_id for track in tracks):
+        elif any(track.get('track') and track['track']['id'] == spotify_id for track in tracks):
             print(f"Already in the playlist {song['artist']} - {song['name']}")
             continue
         else:
