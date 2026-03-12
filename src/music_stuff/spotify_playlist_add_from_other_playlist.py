@@ -17,7 +17,7 @@ def main(target_playlist_name, source_playlist_name):
     for i in range(0, len(tracks), 100):
         sp.playlist_add_items(
             target_playlist['id'],
-            [t['track']['id'] for t in tracks[i:i+100]]
+            [t['item']['id'] for t in tracks[i:i+100]]
         )
 
 if __name__ == '__main__':

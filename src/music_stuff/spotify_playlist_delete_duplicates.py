@@ -16,7 +16,7 @@ def main(playlist_name):
 
     position = 0
     for track in tracks:
-        track_id = track['track']['id']
+        track_id = track['item']['id']
         if track_id in track_ids:
             print(f'Removing {position} {track_id}')
             sp.playlist_remove_all_occurrences_of_items(playlist['id'], [track_id])
