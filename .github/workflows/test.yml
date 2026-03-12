@@ -10,7 +10,13 @@ permissions: {}
 
 jobs:
   test:
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: read
     steps:
@@ -19,3 +25,16 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 # v7.1.6
       - run: uv run pytest
+  required-status-check:
+    name: test.required-status-check
+    needs:
+      - test
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Use this job as the required status check of this workflow"
+      - name: Check that all jobs were successful
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          echo "$RESULTS" | jq --exit-status 'all(.result == "success")' || exit 1
