@@ -32,7 +32,8 @@ from pathlib import Path
 from lib_apple_music import find_songs_by_folder_name, find_all_songs, set_song_bpm
 from lib_beatunes import lookup_songs, tonalkey_to_str
 from lib_djay import load_djay_index
-from lib_essentia import analyse, consensus_key, ESSENTIA_PROFILES
+from lib_consensus import consensus_key, essentia_profile_keys
+from lib_essentia import analyse, ESSENTIA_PROFILES
 
 OUTPUT_PATH = Path(__file__).parent / "songs-djay-diff.csv"
 
@@ -146,7 +147,7 @@ def main():
         "djay_bpm", "djay_manual_bpm", "djay_straight_grid", "apple_music_bpm",
         "beatunes_bpm", "beatunes_bpm_salience",
         "bpm_rhythm", "bpm_rhythm_confidence", "bpm_percival",
-        "open_key", "essentia_key", "beatunes_key", "comment",
+        "open_key", "essentia_key", "beatunes_key", "consensus_key", "apple_music_comment",
         "edma_key", "edma_strength", "edmm_key", "edmm_strength",
         "bgate_key", "bgate_strength", "braw_key", "braw_strength",
         "shaath_key", "shaath_strength", "temperley_key", "temperley_strength",
@@ -167,7 +168,8 @@ def main():
 
         # --- Essentia ---
         essentia_entry = essentia_index.get(pid, {})
-        essentia_key = consensus_key(essentia_entry)
+        profile_keys_weighted = essentia_profile_keys(essentia_entry, ESSENTIA_PROFILES)
+        essentia_key = consensus_key(essentia_keys=profile_keys_weighted)
         bpm_rhythm = essentia_entry.get("bpm_rhythm", "")
         bpm_rhythm_confidence = essentia_entry.get("bpm_rhythm_confidence", "")
         bpm_percival = essentia_entry.get("bpm_percival", "")
@@ -184,6 +186,12 @@ def main():
 
         # --- djay ---
         djay_open_key = djay_data.open_key
+
+        # --- Consensus key across all sources ---
+        consensus_key_all = consensus_key(
+            djay_key=djay_open_key, beatunes_key=beatunes_key,
+            essentia_keys=profile_keys_weighted,
+        )
 
         # --- Diffs ---
         consensus = _consensus_bpm(djay_data.bpm, beatunes_bpm, bpm_rhythm, bpm_percival)
@@ -204,7 +212,8 @@ def main():
             "bpm_rhythm_confidence": bpm_rhythm_confidence, "bpm_percival": bpm_percival,
             "beatunes_bpm_salience": beatunes_bpm_salience, "djay_bpm_diff": djay_bpm_diff, "bpm_diff": bpm_diff,
             "open_key": djay_open_key, "essentia_key": essentia_key,
-            "beatunes_key": beatunes_key, "comment": song.comment,
+            "beatunes_key": beatunes_key, "consensus_key": consensus_key_all,
+            "apple_music_comment": song.comment,
             **profile_data, "key_diff": key_diff,
         })
 
