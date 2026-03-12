@@ -5,7 +5,12 @@ import csv
 from urllib.parse import urlparse
 from music_stuff.lib.lib_spotify import get_sp, user_playlist_by_name, all_playlist_items
 
-def main(playlist_name):
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description='Delete duplicates from a Spotify playlist')
+    parser.add_argument('playlist_name', nargs='?', default='Would Play', help='Name of the playlist')
+    args = parser.parse_args()
+    playlist_name = args.playlist_name
     sp = get_sp()
 
     playlist = user_playlist_by_name(sp, playlist_name)
@@ -26,10 +31,4 @@ def main(playlist_name):
             position += 1
 
 if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser(description='Delete duplicates from a Spotify playlist')
-    parser.add_argument('playlist_name', nargs='?', default='Would Play', help='Name of the playlist')
-
-    args = parser.parse_args()
-    main(args.playlist_name)
+    main()
