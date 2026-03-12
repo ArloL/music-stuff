@@ -12,47 +12,6 @@ wheels = [
 ]
 
 [[package]]
-name = "beatunes-dbviewer"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "dash" },
-    { name = "essentia" },
-    { name = "matplotlib" },
-    { name = "networkx" },
-    { name = "numpy" },
-    { name = "pandas" },
-    { name = "plotly" },
-    { name = "pulp" },
-    { name = "pyvis" },
-    { name = "scikit-learn" },
-    { name = "spotipy" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dash", specifier = "==3.3.0" },
-    { name = "essentia", specifier = "==2.1b6.dev1389" },
-    { name = "matplotlib", specifier = "==3.10.8" },
-    { name = "networkx", specifier = "==3.6.1" },
-    { name = "numpy", specifier = "==2.4.2" },
-    { name = "pandas", specifier = "==2.3.3" },
-    { name = "plotly", specifier = "==6.5.0" },
-    { name = "pulp", specifier = "==3.3.0" },
-    { name = "pyvis", specifier = "==0.3.2" },
-    { name = "scikit-learn", specifier = "==1.8.0" },
-    { name = "spotipy", specifier = "==2.25.2" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = "==9.0.2" }]
-
-[[package]]
 name = "blinker"
 version = "1.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -439,6 +398,47 @@ sdist = { url = "https://files.pythonhosted.org/packages/c7/74/97e72a36efd4ae2bc
 wheels = [
     { url = "https://files.pythonhosted.org/packages/af/33/ee4519fa02ed11a94aef9559552f3b17bb863f2ecfe1a35dc7f548cde231/matplotlib_inline-0.2.1-py3-none-any.whl", hash = "sha256:d56ce5156ba6085e00a9d54fead6ed29a9c47e215cd1bba2e976ef39f5710a76", size = 9516, upload-time = "2025-10-23T09:00:20.675Z" },
 ]
+
+[[package]]
+name = "music-stuff"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "dash" },
+    { name = "essentia" },
+    { name = "matplotlib" },
+    { name = "networkx" },
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "plotly" },
+    { name = "pulp" },
+    { name = "pyvis" },
+    { name = "scikit-learn" },
+    { name = "spotipy" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dash", specifier = "==3.3.0" },
+    { name = "essentia", specifier = "==2.1b6.dev1389" },
+    { name = "matplotlib", specifier = "==3.10.8" },
+    { name = "networkx", specifier = "==3.6.1" },
+    { name = "numpy", specifier = "==2.4.2" },
+    { name = "pandas", specifier = "==2.3.3" },
+    { name = "plotly", specifier = "==6.5.0" },
+    { name = "pulp", specifier = "==3.3.0" },
+    { name = "pyvis", specifier = "==0.3.2" },
+    { name = "scikit-learn", specifier = "==1.8.0" },
+    { name = "spotipy", specifier = "==2.25.2" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = "==9.0.2" }]
 
 [[package]]
 name = "narwhals"

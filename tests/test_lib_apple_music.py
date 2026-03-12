@@ -3,7 +3,7 @@ import shutil
 
 import pytest
 from unittest.mock import patch, MagicMock
-from lib_apple_music import (
+from music_stuff.lib.lib_apple_music import (
     AppleMusicSong,
     find_playlist_by_name,
     find_songs_by_playlist_name,
@@ -20,14 +20,14 @@ needs_osascript = pytest.mark.skipif(
 
 def test_run_jxa_raises_on_nonzero_returncode():
     mock = MagicMock(returncode=1, stderr="execution error: Error: test error (-2700)")
-    with patch("lib_apple_music.subprocess.run", return_value=mock):
+    with patch("music_stuff.lib.lib_apple_music.subprocess.run", return_value=mock):
         with pytest.raises(RuntimeError, match="test error"):
             find_songs_by_folder_name("Test Folder")
 
 
 def test_find_song_by_id_passes_id_as_string_to_jxa():
     mock = MagicMock(returncode=0, stdout="null")
-    with patch("lib_apple_music.subprocess.run", return_value=mock) as mock_run:
+    with patch("music_stuff.lib.lib_apple_music.subprocess.run", return_value=mock) as mock_run:
         find_song_by_id("966EC6D01F2DED99")
     script = mock_run.call_args.kwargs["input"]
     assert json.dumps("966EC6D01F2DED99") in script

@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from lib_transitions import (
+from music_stuff.lib.lib_transitions import (
     calculate_transition_score,
     comment_to_tonalkey,
     get_transition_type,

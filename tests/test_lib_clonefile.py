@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from lib_clonefile import clonefile
+from music_stuff.lib.lib_clonefile import clonefile
 
 
 def test_clonefile_success(tmp_path):

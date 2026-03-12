@@ -9,9 +9,9 @@ Usage:
 import argparse
 import dataclasses
 
-from lib_apple_music import find_songs_by_playlist_name, find_song_by_id, AppleMusicSong
-from lib_beatunes import tonalkey_to_str
-from lib_transitions import comment_to_tonalkey, REVERSE_KEY_TRANSITIONS
+from music_stuff.lib.lib_apple_music import find_songs_by_playlist_name, find_song_by_id, AppleMusicSong
+from music_stuff.lib.lib_beatunes import tonalkey_to_str
+from music_stuff.lib.lib_transitions import comment_to_tonalkey, REVERSE_KEY_TRANSITIONS
 
 BPM_TOLERANCE = 12
 

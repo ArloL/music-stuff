@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from lib_spotify import all_items, user_playlist_by_name
+from music_stuff.lib.lib_spotify import all_items, user_playlist_by_name
 
 
 # --- all_items ---

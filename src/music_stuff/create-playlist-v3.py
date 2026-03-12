@@ -5,7 +5,7 @@ import os
 import sys
 import argparse
 import pandas as pd
-from lib_transitions import (
+from music_stuff.lib.lib_transitions import (
     calculate_transition_score, validate_keys,
     get_transition_type, build_compatibility_graph,
 )
