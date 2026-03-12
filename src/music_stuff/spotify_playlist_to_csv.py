@@ -87,9 +87,9 @@ def main() -> None:
             'speechiness',
             'valence'])
 
-        features = get_audio_features([t['track']['id'] for t in tracks])
+        features = get_audio_features([t['item']['id'] for t in tracks])
         for i, track in enumerate(tracks):
-            track_details = track['track']
+            track_details = track['item']
             writer.writerow([
                 f'{', '.join([d['name'] for d in track_details['artists']])} - {track_details['name']}',
                 spotify_to_beatunes_key_map[(features[i]['mode'], features[i]['key'])],

@@ -19,7 +19,7 @@ def main(delete_playlist_name, source_playlist_name):
     items_to_delete = []
 
     for i, track in enumerate(delete_tracks):
-        track_id = track['track']['id']
+        track_id = track['item']['id']
         if any(t['track']['id'] == track_id for t in source_tracks):
             print(f'Removing {i} {track_id}')
             items_to_delete.append(track_id)
