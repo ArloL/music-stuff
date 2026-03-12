@@ -1,9 +1,0 @@
-### Eclipse ###
-
-*
-!/.gitignore
-!/code-formatter-profile.xml
-!/org.eclipse.jdt.core.prefs
-!/org.eclipse.jdt.ui.prefs
-
-# Add custom entries after this line to be preserved during automated updates
