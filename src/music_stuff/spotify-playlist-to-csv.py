@@ -3,7 +3,7 @@ import json
 import requests
 import csv
 from urllib.parse import urlparse
-from lib_spotify import get_sp
+from music_stuff.lib.lib_spotify import get_sp
 
 def get_audio_features(spotify_ids):
     response = requests.request(

@@ -6,7 +6,7 @@ import pytest
 
 FAKE_DB_PATH = Path("/tmp/beaTunes-FAKE.h2.db")
 
-from lib_beatunes import (
+from music_stuff.lib.lib_beatunes import (
     hex_id_to_beatunes_id,
     beatunes_id_to_hex_id,
     lookup_songs,
@@ -134,7 +134,7 @@ H2_OUTPUT = (
 )
 
 
-@patch("lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
+@patch("music_stuff.lib.lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
 @patch("subprocess.run")
 def test_lookup_songs(mock_run, mock_clone):
     mock_run.return_value = MagicMock(stdout=H2_OUTPUT)
@@ -148,7 +148,7 @@ def test_lookup_songs(mock_run, mock_clone):
     assert song.name == "Never Said Goodbye"
 
 
-@patch("lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
+@patch("music_stuff.lib.lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
 @patch("subprocess.run")
 def test_lookup_song(mock_run, mock_clone):
     mock_run.return_value = MagicMock(stdout=H2_OUTPUT)
@@ -158,7 +158,7 @@ def test_lookup_song(mock_run, mock_clone):
     assert song.tonalkey == 24
 
 
-@patch("lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
+@patch("music_stuff.lib.lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
 @patch("subprocess.run")
 def test_lookup_song_not_found(mock_run, mock_clone):
     mock_run.return_value = MagicMock(
@@ -173,7 +173,7 @@ def test_lookup_songs_empty():
     assert result == {}
 
 
-@patch("lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
+@patch("music_stuff.lib.lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
 @patch("subprocess.run")
 def test_lookup_songs_null_fields(mock_run, mock_clone):
     output = (

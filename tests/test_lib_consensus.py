@@ -1,5 +1,5 @@
-from lib_consensus import consensus_key, essentia_profile_keys
-from lib_essentia import ESSENTIA_PROFILES
+from music_stuff.lib.lib_consensus import consensus_key, essentia_profile_keys
+from music_stuff.lib.lib_essentia import ESSENTIA_PROFILES
 
 
 # --- essentia_profile_keys ---

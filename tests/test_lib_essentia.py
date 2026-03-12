@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from lib_essentia import (
+from music_stuff.lib.lib_essentia import (
     _location_to_path,
     _coerce,
     _normalise_bpm,
@@ -99,7 +99,7 @@ def test_cache_round_trip_preserves_types(tmp_path):
         "DEF456": {"edma_key": "Key 1m", "edma_strength": 0.72, "bpm_rhythm": 95.0},
     }
 
-    with patch("lib_essentia.ESSENTIA_CACHE_PATH", cache_path):
+    with patch("music_stuff.lib.lib_essentia.ESSENTIA_CACHE_PATH", cache_path):
         _write_essentia_cache(cache)
         loaded = _load_essentia_cache()
 
@@ -113,7 +113,7 @@ def test_cache_writes_sorted_by_id(tmp_path):
     cache_path = tmp_path / "cache.csv"
     cache = {"ZZZ": {"bpm_rhythm": 100.0}, "AAA": {"bpm_rhythm": 200.0}}
 
-    with patch("lib_essentia.ESSENTIA_CACHE_PATH", cache_path):
+    with patch("music_stuff.lib.lib_essentia.ESSENTIA_CACHE_PATH", cache_path):
         _write_essentia_cache(cache)
 
     lines = cache_path.read_text().splitlines()
@@ -122,5 +122,5 @@ def test_cache_writes_sorted_by_id(tmp_path):
 
 
 def test_load_cache_returns_empty_for_missing_file(tmp_path):
-    with patch("lib_essentia.ESSENTIA_CACHE_PATH", tmp_path / "nonexistent.csv"):
+    with patch("music_stuff.lib.lib_essentia.ESSENTIA_CACHE_PATH", tmp_path / "nonexistent.csv"):
         assert _load_essentia_cache() == {}

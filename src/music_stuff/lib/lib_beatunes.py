@@ -2,7 +2,7 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-from lib_clonefile import clonefile
+from music_stuff.lib.lib_clonefile import clonefile
 
 SOURCE_DB_DIR = Path.home() / "Library/Application Support/beaTunes/Database"
 H2_JAR_DIR = Path("/Applications/beaTunes5.app/Contents/Java")
@@ -67,6 +67,7 @@ def _clone_db() -> Path:
     """Clone the live beaTunes H2 database and return the clone path."""
     source_db = _find_source_db()
     db_path = Path(__file__).parent / "tmp" / source_db.name
+    db_path.parent.mkdir(parents=True, exist_ok=True)
     for suffix in (".lock.db", ".trace.db"):
         Path(str(db_path).replace(".h2.db", suffix)).unlink(missing_ok=True)
     clonefile(source_db, db_path)

@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from lib_djay import (
+from music_stuff.lib.lib_djay import (
     _extract_persistent_ids,
     _clone_db,
     load_djay_index,
@@ -52,33 +52,33 @@ def test_extract_persistent_ids_no_match():
 
 # --- _clone_db ---
 
-@patch("lib_djay.clonefile")
+@patch("music_stuff.lib.lib_djay.clonefile")
 def test_clone_db_raises_if_source_missing(mock_clonefile, tmp_path):
-    with patch("lib_djay.SOURCE_DB", tmp_path / "nonexistent.db"):
+    with patch("music_stuff.lib.lib_djay.SOURCE_DB", tmp_path / "nonexistent.db"):
         with pytest.raises(FileNotFoundError, match="djay database not found"):
             _clone_db()
     mock_clonefile.assert_not_called()
 
 
-@patch("lib_djay.clonefile")
+@patch("music_stuff.lib.lib_djay.clonefile")
 def test_clone_db_clones_main_and_wal_shm(mock_clonefile, tmp_path):
     source = tmp_path / "MediaLibrary.db"
     source.touch()
     Path(str(source) + "-wal").touch()
     Path(str(source) + "-shm").touch()
 
-    with patch("lib_djay.SOURCE_DB", source), patch("lib_djay.DB_PATH", tmp_path / "clone.db"):
+    with patch("music_stuff.lib.lib_djay.SOURCE_DB", source), patch("music_stuff.lib.lib_djay.DB_PATH", tmp_path / "clone.db"):
         _clone_db()
 
     assert mock_clonefile.call_count == 3
 
 
-@patch("lib_djay.clonefile")
+@patch("music_stuff.lib.lib_djay.clonefile")
 def test_clone_db_skips_missing_wal_shm(mock_clonefile, tmp_path):
     source = tmp_path / "MediaLibrary.db"
     source.touch()
 
-    with patch("lib_djay.SOURCE_DB", source), patch("lib_djay.DB_PATH", tmp_path / "clone.db"):
+    with patch("music_stuff.lib.lib_djay.SOURCE_DB", source), patch("music_stuff.lib.lib_djay.DB_PATH", tmp_path / "clone.db"):
         _clone_db()
 
     mock_clonefile.assert_called_once()
@@ -119,7 +119,7 @@ def _make_test_db(db_path, rows):
     con.close()
 
 
-@patch("lib_djay._clone_db")
+@patch("music_stuff.lib.lib_djay._clone_db")
 def test_load_djay_index_maps_key_and_bpm(mock_clone, tmp_path):
     db = tmp_path / "test.db"
     _make_test_db(db, [
@@ -127,25 +127,25 @@ def test_load_djay_index_maps_key_and_bpm(mock_clone, tmp_path):
         (130.0, None, 5, 67890),     # key index 5 -> "3m", no manual BPM
     ])
 
-    with patch("lib_djay.DB_PATH", db):
+    with patch("music_stuff.lib.lib_djay.DB_PATH", db):
         result = load_djay_index()
 
     assert result["0000000000003039"] == DjaySongData(bpm=120.5, manual_bpm=121.0, open_key="Key 1d", is_straight_grid=False)
     assert result["0000000000010932"] == DjaySongData(bpm=130.0, manual_bpm="", open_key="Key 3m", is_straight_grid=False)
 
 
-@patch("lib_djay._clone_db")
+@patch("music_stuff.lib.lib_djay._clone_db")
 def test_load_djay_index_unknown_key_produces_empty_string(mock_clone, tmp_path):
     db = tmp_path / "test.db"
     _make_test_db(db, [(100.0, None, 99, 111)])
 
-    with patch("lib_djay.DB_PATH", db):
+    with patch("music_stuff.lib.lib_djay.DB_PATH", db):
         result = load_djay_index()
 
     assert result["000000000000006F"].open_key == ""
 
 
-@patch("lib_djay._clone_db")
+@patch("music_stuff.lib.lib_djay._clone_db")
 def test_load_djay_index_deduplicates_by_pid(mock_clone, tmp_path):
     """If the same persistent ID appears in multiple rows, keep the first."""
     db = tmp_path / "test.db"
@@ -169,7 +169,7 @@ def test_load_djay_index_deduplicates_by_pid(mock_clone, tmp_path):
     con.commit()
     con.close()
 
-    with patch("lib_djay.DB_PATH", db):
+    with patch("music_stuff.lib.lib_djay.DB_PATH", db):
         result = load_djay_index()
 
     assert len(result) == 1

@@ -3,7 +3,7 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
-from lib_clonefile import clonefile
+from music_stuff.lib.lib_clonefile import clonefile
 
 SOURCE_DB = Path.home() / "Music/djay/djay Media Library.djayMediaLibrary/MediaLibrary.db"
 DB_PATH = Path(__file__).parent / "tmp/djay-MediaLibrary.db"

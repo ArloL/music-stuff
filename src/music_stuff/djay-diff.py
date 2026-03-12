@@ -29,11 +29,11 @@ import sys
 import argparse
 from pathlib import Path
 
-from lib_apple_music import find_songs_by_folder_name, find_all_songs, set_song_bpm
-from lib_beatunes import lookup_songs, tonalkey_to_str
-from lib_djay import load_djay_index
-from lib_consensus import consensus_key, essentia_profile_keys
-from lib_essentia import analyse, ESSENTIA_PROFILES
+from music_stuff.lib.lib_apple_music import find_songs_by_folder_name, find_all_songs, set_song_bpm
+from music_stuff.lib.lib_beatunes import lookup_songs, tonalkey_to_str
+from music_stuff.lib.lib_djay import load_djay_index
+from music_stuff.lib.lib_consensus import consensus_key, essentia_profile_keys
+from music_stuff.lib.lib_essentia import analyse, ESSENTIA_PROFILES
 
 OUTPUT_PATH = Path(__file__).parent / "songs-djay-diff.csv"
 
