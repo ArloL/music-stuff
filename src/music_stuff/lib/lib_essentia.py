@@ -8,7 +8,7 @@ from urllib.request import url2pathname
 import essentia.standard as es
 
 
-ESSENTIA_CACHE_PATH = Path(__file__).parent / "lib_essentia_cache.csv"
+ESSENTIA_CACHE_PATH = Path(__file__).parent.parent.parent.parent / "data" / "lib_essentia_cache.csv"
 
 ESSENTIA_PROFILES = ["edma", "edmm", "bgate", "braw", "shaath", "temperley", "noland"]
 

@@ -27,19 +27,6 @@ def get_audio_features(spotify_ids):
         result.append(features[spotify_id])
     return result
 
-sp = get_sp()
-
-# print(json.dumps(track, indent=1))
-
-critical_mass_selection = '74eUXrePcNpIrEYaFBlmbw'
-critical_mass_2025_08 = '6LOmsXgiO9FHvRKnlwbwxg'
-results = sp.playlist_items(critical_mass_selection)
-
-tracks = results['items']
-while results['next']:
-    results = sp.next(results)
-    tracks.extend(results['items'])
-
 spotify_to_beatunes_key_map = {
     (-1, -1): -1, # no key detected
     (0, 1): 10, # ??: ??
@@ -67,42 +54,60 @@ spotify_to_beatunes_key_map = {
     (1, 11): 11, # ??: ??
 }
 
-with open('songs_spotify.csv', 'w', newline='') as csvfile:
-    writer = csv.writer(csvfile)
-    writer.writerow([
-        'apple_music_id',
-        'key',
-        'bpm',
-        'id',
-        'spotify_id',
-        'acousticness',
-        'danceability',
-        'energy',
-        'instrumentalness',
-        'spotify_key',
-        'liveness',
-        'loudness',
-        'mode',
-        'speechiness',
-        'valence'])
 
-    features = get_audio_features([t['track']['id'] for t in tracks])
-    for i, track in enumerate(tracks):
-        track_details = track['track']
+def main() -> None:
+    sp = get_sp()
+
+    # print(json.dumps(track, indent=1))
+
+    critical_mass_selection = '74eUXrePcNpIrEYaFBlmbw'
+    results = sp.playlist_items(critical_mass_selection)
+
+    tracks = results['items']
+    while results['next']:
+        results = sp.next(results)
+        tracks.extend(results['items'])
+
+    with open('songs_spotify.csv', 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
         writer.writerow([
-            f'{', '.join([d['name'] for d in track_details['artists']])} - {track_details['name']}',
-            spotify_to_beatunes_key_map[(features[i]['mode'], features[i]['key'])],
-            features[i]['tempo'],
-            features[i]['id'],
-            features[i]['spotify_id'],
-            features[i]['acousticness'],
-            features[i]['danceability'],
-            features[i]['energy'],
-            features[i]['instrumentalness'],
-            features[i]['key'],
-            features[i]['liveness'],
-            features[i]['loudness'],
-            features[i]['mode'],
-            features[i]['speechiness'],
-            features[i]['valence']
-        ])
+            'apple_music_id',
+            'key',
+            'bpm',
+            'id',
+            'spotify_id',
+            'acousticness',
+            'danceability',
+            'energy',
+            'instrumentalness',
+            'spotify_key',
+            'liveness',
+            'loudness',
+            'mode',
+            'speechiness',
+            'valence'])
+
+        features = get_audio_features([t['track']['id'] for t in tracks])
+        for i, track in enumerate(tracks):
+            track_details = track['track']
+            writer.writerow([
+                f'{', '.join([d['name'] for d in track_details['artists']])} - {track_details['name']}',
+                spotify_to_beatunes_key_map[(features[i]['mode'], features[i]['key'])],
+                features[i]['tempo'],
+                features[i]['id'],
+                features[i]['spotify_id'],
+                features[i]['acousticness'],
+                features[i]['danceability'],
+                features[i]['energy'],
+                features[i]['instrumentalness'],
+                features[i]['key'],
+                features[i]['liveness'],
+                features[i]['loudness'],
+                features[i]['mode'],
+                features[i]['speechiness'],
+                features[i]['valence']
+            ])
+
+
+if __name__ == "__main__":
+    main()

@@ -12,7 +12,7 @@ from pathlib import Path
 
 from music_stuff.lib.lib_apple_music import find_songs_by_playlist_name
 
-OUTPUT_DIR = Path(__file__).parent.parent
+OUTPUT_DIR = Path(__file__).parent.parent.parent / "data"
 FIELDNAMES = ["apple_music_id", "artist", "name", "key", "bpm"]
 
 
