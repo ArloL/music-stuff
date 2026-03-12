@@ -1,8 +1,11 @@
 import json
 import requests
 import pandas as pd
+from pathlib import Path
 from urllib.parse import urlparse
 from music_stuff.lib.lib_spotify import get_sp
+
+DATA_DIR = Path(__file__).parent.parent.parent / "data"
 
 
 def find_spotify_id_for_artist_name(sp, artist, name, spotify_mapping):
@@ -18,13 +21,13 @@ def find_spotify_id_for_song(sp, song, spotify_mapping):
     else:
         spotify_id = find_spotify_id_for_artist_name(sp, song['artist'], song['name'], spotify_mapping)
         spotify_mapping.loc[amid] = {'spotify_id': spotify_id}
-        spotify_mapping.to_csv("spotify-mapping.csv", index_label='apple_music_id')
+        spotify_mapping.to_csv(DATA_DIR / "spotify-mapping.csv", index_label='apple_music_id')
         return spotify_id
 
 
 def main() -> None:
     sp = get_sp()
-    spotify_mapping = pd.read_csv("spotify-mapping.csv").set_index('apple_music_id')
+    spotify_mapping = pd.read_csv(DATA_DIR / "spotify-mapping.csv").set_index('apple_music_id')
 
     playlist_id = '74eUXrePcNpIrEYaFBlmbw'
     results = sp.playlist_items(playlist_id)
@@ -34,7 +37,7 @@ def main() -> None:
         results = sp.next(results)
         tracks.extend(results['items'])
 
-    df = pd.read_csv("songs-would-play.csv")
+    df = pd.read_csv(DATA_DIR / "songs-would-play.csv")
 
     for i, song in df.iterrows():
         spotify_id = find_spotify_id_for_song(sp, song, spotify_mapping)
