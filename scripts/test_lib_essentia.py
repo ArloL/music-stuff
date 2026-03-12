@@ -8,10 +8,8 @@ from lib_essentia import (
     _coerce,
     _normalise_bpm,
     consensus_bpm,
-    consensus_key,
     _load_essentia_cache,
     _write_essentia_cache,
-    ESSENTIA_PROFILES,
 )
 
 
@@ -90,38 +88,6 @@ def test_consensus_bpm_returns_zero_when_no_data():
     assert consensus_bpm({}) == 0.0
     assert consensus_bpm({"bpm_rhythm": 0.0, "bpm_percival": 0.0}) == 0.0
 
-
-# --- consensus_key ---
-
-def test_consensus_key_returns_unanimous_winner():
-    entry = {f"{p}_key": "Key 5d" for p in ESSENTIA_PROFILES}
-    entry.update({f"{p}_strength": 0.8 for p in ESSENTIA_PROFILES})
-    assert consensus_key(entry) == "Key 5d"
-
-
-def test_consensus_key_is_strength_weighted():
-    """A single high-confidence profile can outweigh many low-confidence ones."""
-    entry = {}
-    for i, p in enumerate(ESSENTIA_PROFILES):
-        if i == 0:
-            entry[f"{p}_key"] = "Key 7d"
-            entry[f"{p}_strength"] = 10.0
-        else:
-            entry[f"{p}_key"] = "Key 1m"
-            entry[f"{p}_strength"] = 0.1
-    assert consensus_key(entry) == "Key 7d"
-
-
-def test_consensus_key_ignores_empty_keys():
-    entry = {
-        "edma_key": "", "edma_strength": 0.9,
-        "edmm_key": "Key 3d", "edmm_strength": 0.5,
-    }
-    assert consensus_key(entry) == "Key 3d"
-
-
-def test_consensus_key_empty_input():
-    assert consensus_key({}) == ""
 
 
 # --- cache I/O ---

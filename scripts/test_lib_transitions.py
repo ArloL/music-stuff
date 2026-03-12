@@ -2,9 +2,11 @@ import pandas as pd
 import pytest
 from lib_transitions import (
     calculate_transition_score,
+    comment_to_tonalkey,
     get_transition_type,
     validate_keys,
     ALLOWED_KEY_TRANSITIONS,
+    REVERSE_KEY_TRANSITIONS,
     TRANSITIONS_WEIGHTS,
 )
 
@@ -103,3 +105,40 @@ def test_every_key_1_to_24_is_a_source_in_all_transition_types():
     expected = set(range(1, 25))
     for name, transitions in ALLOWED_KEY_TRANSITIONS.items():
         assert set(transitions.keys()) == expected, f"{name} missing keys"
+
+
+# --- REVERSE_KEY_TRANSITIONS ---
+
+def test_reverse_transitions_has_same_types():
+    assert set(REVERSE_KEY_TRANSITIONS.keys()) == set(ALLOWED_KEY_TRANSITIONS.keys())
+
+
+def test_reverse_transitions_inverts_forward():
+    """If forward says 11→13 (boost), then reverse boost should map 13→[..., 11, ...]."""
+    assert 11 in REVERSE_KEY_TRANSITIONS["boost"][13]
+
+
+def test_reverse_transitions_covers_all_target_keys():
+    """Every key that appears as a target in forward should be a source in reverse."""
+    for ttype, forward in ALLOWED_KEY_TRANSITIONS.items():
+        all_targets = {t for targets in forward.values() for t in targets}
+        assert all_targets <= set(REVERSE_KEY_TRANSITIONS[ttype].keys()), f"{ttype} missing reverse keys"
+
+
+# --- comment_to_tonalkey ---
+
+def test_comment_to_tonalkey_major():
+    assert comment_to_tonalkey("Key 6d") == 11
+
+def test_comment_to_tonalkey_minor():
+    assert comment_to_tonalkey("Key 6m") == 12
+
+def test_comment_to_tonalkey_embedded_in_text():
+    assert comment_to_tonalkey("some text Key 3d more text") == 5
+
+def test_comment_to_tonalkey_empty():
+    assert comment_to_tonalkey("") is None
+    assert comment_to_tonalkey(None) is None
+
+def test_comment_to_tonalkey_no_match():
+    assert comment_to_tonalkey("no key here") is None

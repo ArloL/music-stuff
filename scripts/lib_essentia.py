@@ -170,12 +170,3 @@ def consensus_bpm(entry: dict) -> float:
     return round(rn, 2)  # both needed folding — prefer rhythm after normalisation
 
 
-def consensus_key(entry: dict) -> str:
-    """Strength-weighted majority vote across profiles. Returns the winning open key."""
-    votes: dict[str, float] = {}
-    for p in ESSENTIA_PROFILES:
-        open_key = entry.get(f"{p}_key", "")
-        strength = entry.get(f"{p}_strength", 0.0)
-        if open_key:
-            votes[open_key] = votes.get(open_key, 0.0) + strength
-    return max(votes, key=lambda k: votes[k]) if votes else ""

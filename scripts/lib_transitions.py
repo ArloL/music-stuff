@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 
 ALLOWED_KEY_TRANSITIONS = {
@@ -274,3 +275,35 @@ def build_compatibility_graph(df):
             print(f"{i} is unreachable")
 
     return graph, scores
+
+
+def _build_reverse_transitions() -> dict[str, dict[int, list[int]]]:
+    """Invert ALLOWED_KEY_TRANSITIONS: A→B in forward becomes B→A in reverse."""
+    result = {}
+    for ttype, forward in ALLOWED_KEY_TRANSITIONS.items():
+        rev: dict[int, list[int]] = defaultdict(list)
+        for src, targets in forward.items():
+            for tgt in targets:
+                rev[tgt].append(src)
+        result[ttype] = dict(rev)
+    return result
+
+
+REVERSE_KEY_TRANSITIONS = _build_reverse_transitions()
+
+
+_KEY_PAT = re.compile(r"Key\s+(\d+)([dm])", re.IGNORECASE)
+
+
+def comment_to_tonalkey(comment: str) -> int | None:
+    """Parse an Open Key string (e.g. "Key 6d") from a comment into a tonalkey integer.
+
+    Encoding:  "Nd" → 2N-1  (major),  "Nm" → 2N  (minor).
+    """
+    if not comment:
+        return None
+    m = _KEY_PAT.search(comment)
+    if not m:
+        return None
+    n, mode = int(m.group(1)), m.group(2).lower()
+    return 2 * n - 1 if mode == "d" else 2 * n
