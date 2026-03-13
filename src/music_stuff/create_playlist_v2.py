@@ -197,7 +197,7 @@ def main(source_file):
         print(f"\nPlaylist saved to {output_file}")
     else:
         print("No compatible playlist found!")
-        print("Check that your song keys are valid (1-24) and BPMs allow for transitions.")
+        print("Check that your song keys are valid (e.g. '6d', '1m') and BPMs allow for transitions.")
 
 if __name__ == "__main__":
     source_file = sys.argv[1] if len(sys.argv) > 1 else "songs.csv"

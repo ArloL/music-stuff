@@ -12,7 +12,6 @@ from music_stuff.lib.lib_apple_music import find_song_by_id
 from music_stuff.lib.lib_transitions import (
     ALLOWED_KEY_TRANSITIONS,
     BPM_TOLERANCE,
-    enrich_song,
     filter_candidates,
     load_playlist,
     print_table,
@@ -21,21 +20,21 @@ from music_stuff.lib.lib_transitions import (
 _UPWARD_TRANSITIONS = {"matching", "boost", "boost boost", "boost boost boost"}
 
 
-def where_to_go(seed: dict, playlist: str, exclude: str, genres: set[str] | None = None, min_rating: int = 80) -> None:
-    key = seed["tonalkey"]
+def where_to_go(seed, playlist: str, exclude: str, genres: set[str] | None = None, min_rating: int = 80) -> None:
+    key = seed.key
     print("\nLoading candidate playlists...")
     candidates = load_playlist(playlist)
-    played_ids = {s["id"] for s in load_playlist(exclude)}
-    bpm_hi = seed["exactbpm"] + BPM_TOLERANCE
+    played_ids = {s.id for s in load_playlist(exclude)}
+    bpm_hi = seed.bpm + BPM_TOLERANCE
 
     print_table("Seed", [seed])
     for label, fwd_map in ALLOWED_KEY_TRANSITIONS.items():
-        tonal_keys = fwd_map.get(key, [])
-        if not tonal_keys:
+        keys = fwd_map.get(key, set())
+        if not keys:
             results = []
         else:
-            bpm_lo = seed["exactbpm"] if label in _UPWARD_TRANSITIONS else seed["exactbpm"] - BPM_TOLERANCE
-            results = filter_candidates(candidates, played_ids, bpm_lo, bpm_hi, tonal_keys, genres, min_rating)
+            bpm_lo = seed.bpm if label in _UPWARD_TRANSITIONS else seed.bpm - BPM_TOLERANCE
+            results = filter_candidates(candidates, played_ids, bpm_lo, bpm_hi, keys, genres, min_rating)
         print_table(label.title(), results)
 
 
@@ -78,10 +77,9 @@ def main() -> None:
     args = parser.parse_args()
 
     print("Looking up seed song...")
-    raw_seed = find_song_by_id(args.seed)
-    if raw_seed is None:
+    seed = find_song_by_id(args.seed)
+    if seed is None:
         raise SystemExit(f"Seed song with ID {args.seed} not found in library.")
-    seed = enrich_song(raw_seed)
     print(f"  {seed.get('artist', '')} – {seed.get('name', '')}")
 
     where_to_go(seed, args.playlist, args.exclude, set(args.genres) if args.genres else None, args.min_rating)

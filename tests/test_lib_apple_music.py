@@ -69,18 +69,18 @@ def test_find_song_by_id():
     songs = find_songs_by_folder_name("Test Folder")
     reference = next(s for s in songs if s.name == "Sweet Unrest")
 
-    result = find_song_by_id(reference.persistentID)
+    result = find_song_by_id(reference.id)
     assert result is not None
     assert isinstance(result, AppleMusicSong)
     assert result.name == "Sweet Unrest"
-    assert result.persistentID == reference.persistentID
+    assert result.id == reference.id
 
     # High-bit-set ID (was negative as signed int64)
-    high_bit_ids = [s for s in songs if s.persistentID[0] in "89ABCDEF"]
+    high_bit_ids = [s for s in songs if s.id[0] in "89ABCDEF"]
     if high_bit_ids:
-        hb = find_song_by_id(high_bit_ids[0].persistentID)
+        hb = find_song_by_id(high_bit_ids[0].id)
         assert hb is not None
-        assert hb.persistentID == high_bit_ids[0].persistentID
+        assert hb.id == high_bit_ids[0].id
 
 
 @needs_osascript
@@ -95,12 +95,12 @@ def test_set_song_bpm():
     song = songs[0]
     original_bpm = song.bpm
 
-    set_song_bpm(song.persistentID, 999)
-    updated = find_song_by_id(song.persistentID)
+    set_song_bpm(song.id, 999)
+    updated = find_song_by_id(song.id)
     assert updated.bpm == 999
 
-    set_song_bpm(song.persistentID, original_bpm)
-    restored = find_song_by_id(song.persistentID)
+    set_song_bpm(song.id, original_bpm)
+    restored = find_song_by_id(song.id)
     assert restored.bpm == original_bpm
 
 

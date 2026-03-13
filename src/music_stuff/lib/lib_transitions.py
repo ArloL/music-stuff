@@ -1,190 +1,188 @@
-import dataclasses
-import re
 from collections import defaultdict
 
 ALLOWED_KEY_TRANSITIONS = {
     "drop drop drop": {
-        11: [7],
-        13: [9],
-        15: [11],
-        17: [13],
-        19: [15],
-        21: [17],
-        23: [19],
-        1: [21],
-        3: [23],
-        5: [1],
-        7: [3],
-        9: [5],
-        12: [8],
-        14: [10],
-        16: [12],
-        18: [14],
-        20: [16],
-        22: [18],
-        24: [20],
-        2: [22],
-        4: [24],
-        6: [2],
-        8: [4],
-        10: [6]
+        "6d": {"4d"},
+        "7d": {"5d"},
+        "8d": {"6d"},
+        "9d": {"7d"},
+        "10d": {"8d"},
+        "11d": {"9d"},
+        "12d": {"10d"},
+        "1d": {"11d"},
+        "2d": {"12d"},
+        "3d": {"1d"},
+        "4d": {"2d"},
+        "5d": {"3d"},
+        "6m": {"4m"},
+        "7m": {"5m"},
+        "8m": {"6m"},
+        "9m": {"7m"},
+        "10m": {"8m"},
+        "11m": {"9m"},
+        "12m": {"10m"},
+        "1m": {"11m"},
+        "2m": {"12m"},
+        "3m": {"1m"},
+        "4m": {"2m"},
+        "5m": {"3m"},
     },
     "drop drop": {
-        11: [17],
-        13: [19],
-        15: [21],
-        17: [23],
-        19: [1],
-        21: [3],
-        23: [5],
-        1: [7],
-        3: [9],
-        5: [11],
-        7: [13],
-        9: [15],
-        12: [18],
-        14: [20],
-        16: [22],
-        18: [24],
-        20: [2],
-        22: [4],
-        24: [6],
-        2: [8],
-        4: [10],
-        6: [12],
-        8: [14],
-        10: [16]
+        "6d": {"9d"},
+        "7d": {"10d"},
+        "8d": {"11d"},
+        "9d": {"12d"},
+        "10d": {"1d"},
+        "11d": {"2d"},
+        "12d": {"3d"},
+        "1d": {"4d"},
+        "2d": {"5d"},
+        "3d": {"6d"},
+        "4d": {"7d"},
+        "5d": {"8d"},
+        "6m": {"9m"},
+        "7m": {"10m"},
+        "8m": {"11m"},
+        "9m": {"12m"},
+        "10m": {"1m"},
+        "11m": {"2m"},
+        "12m": {"3m"},
+        "1m": {"4m"},
+        "2m": {"5m"},
+        "3m": {"6m"},
+        "4m": {"7m"},
+        "5m": {"8m"},
     },
-    "drop" :{
-        11: [12, 9],
-        13: [14, 11],
-        15: [16, 13],
-        17: [18, 15],
-        19: [20, 17],
-        21: [22, 19],
-        23: [24, 21],
-        1: [2, 23],
-        3: [4, 1],
-        5: [6, 3],
-        7: [8, 5],
-        9: [10, 7],
-        12: [10],
-        14: [12],
-        16: [14],
-        18: [16],
-        20: [18],
-        22: [20],
-        24: [22],
-        2: [24],
-        4: [2],
-        6: [4],
-        8: [6],
-        10: [8]
+    "drop": {
+        "6d": {"6m", "5d"},
+        "7d": {"7m", "6d"},
+        "8d": {"8m", "7d"},
+        "9d": {"9m", "8d"},
+        "10d": {"10m", "9d"},
+        "11d": {"11m", "10d"},
+        "12d": {"12m", "11d"},
+        "1d": {"1m", "12d"},
+        "2d": {"2m", "1d"},
+        "3d": {"3m", "2d"},
+        "4d": {"4m", "3d"},
+        "5d": {"5m", "4d"},
+        "6m": {"5m"},
+        "7m": {"6m"},
+        "8m": {"7m"},
+        "9m": {"8m"},
+        "10m": {"9m"},
+        "11m": {"10m"},
+        "12m": {"11m"},
+        "1m": {"12m"},
+        "2m": {"1m"},
+        "3m": {"2m"},
+        "4m": {"3m"},
+        "5m": {"4m"},
     },
     "matching": {
-        11: [11, 14],
-        13: [13, 16],
-        15: [15, 18],
-        17: [17, 20],
-        19: [19, 22],
-        21: [21, 24],
-        23: [23, 2],
-        1: [1, 4],
-        3: [3, 6],
-        5: [5, 8],
-        7: [7, 10],
-        9: [9, 12],
-        12: [12, 9],
-        14: [14, 11],
-        16: [16, 13],
-        18: [18, 15],
-        20: [20, 17],
-        22: [22, 19],
-        24: [24, 21],
-        2: [2, 23],
-        4: [4, 1],
-        6: [6, 3],
-        8: [8, 5],
-        10: [10, 7]
+        "6d": {"6d", "7m"},
+        "7d": {"7d", "8m"},
+        "8d": {"8d", "9m"},
+        "9d": {"9d", "10m"},
+        "10d": {"10d", "11m"},
+        "11d": {"11d", "12m"},
+        "12d": {"12d", "1m"},
+        "1d": {"1d", "2m"},
+        "2d": {"2d", "3m"},
+        "3d": {"3d", "4m"},
+        "4d": {"4d", "5m"},
+        "5d": {"5d", "6m"},
+        "6m": {"6m", "5d"},
+        "7m": {"7m", "6d"},
+        "8m": {"8m", "7d"},
+        "9m": {"9m", "8d"},
+        "10m": {"10m", "9d"},
+        "11m": {"11m", "10d"},
+        "12m": {"12m", "11d"},
+        "1m": {"1m", "12d"},
+        "2m": {"2m", "1d"},
+        "3m": {"3m", "2d"},
+        "4m": {"4m", "3d"},
+        "5m": {"5m", "4d"},
     },
     "boost": {
-        11: [13],
-        13: [15],
-        15: [17],
-        17: [19],
-        19: [21],
-        21: [23],
-        23: [1],
-        1: [3],
-        3: [5],
-        5: [7],
-        7: [9],
-        9: [11],
-        12: [11, 14],
-        14: [13, 16],
-        16: [15, 18],
-        18: [17, 20],
-        20: [19, 22],
-        22: [21, 24],
-        24: [23, 2],
-        2: [1, 4],
-        4: [3, 6],
-        6: [5, 8],
-        8: [7, 10],
-        10: [9, 12]
+        "6d": {"7d"},
+        "7d": {"8d"},
+        "8d": {"9d"},
+        "9d": {"10d"},
+        "10d": {"11d"},
+        "11d": {"12d"},
+        "12d": {"1d"},
+        "1d": {"2d"},
+        "2d": {"3d"},
+        "3d": {"4d"},
+        "4d": {"5d"},
+        "5d": {"6d"},
+        "6m": {"6d", "7m"},
+        "7m": {"7d", "8m"},
+        "8m": {"8d", "9m"},
+        "9m": {"9d", "10m"},
+        "10m": {"10d", "11m"},
+        "11m": {"11d", "12m"},
+        "12m": {"12d", "1m"},
+        "1m": {"1d", "2m"},
+        "2m": {"2d", "3m"},
+        "3m": {"3d", "4m"},
+        "4m": {"4d", "5m"},
+        "5m": {"5d", "6m"},
     },
     "boost boost": {
-        11: [5],
-        13: [7],
-        15: [9],
-        17: [11],
-        19: [13],
-        21: [15],
-        23: [17],
-        1: [19],
-        3: [21],
-        5: [23],
-        7: [1],
-        9: [3],
-        12: [6],
-        14: [8],
-        16: [10],
-        18: [12],
-        20: [14],
-        22: [16],
-        24: [18],
-        2: [20],
-        4: [22],
-        6: [24],
-        8: [2],
-        10: [4]
+        "6d": {"3d"},
+        "7d": {"4d"},
+        "8d": {"5d"},
+        "9d": {"6d"},
+        "10d": {"7d"},
+        "11d": {"8d"},
+        "12d": {"9d"},
+        "1d": {"10d"},
+        "2d": {"11d"},
+        "3d": {"12d"},
+        "4d": {"1d"},
+        "5d": {"2d"},
+        "6m": {"3m"},
+        "7m": {"4m"},
+        "8m": {"5m"},
+        "9m": {"6m"},
+        "10m": {"7m"},
+        "11m": {"8m"},
+        "12m": {"9m"},
+        "1m": {"10m"},
+        "2m": {"11m"},
+        "3m": {"12m"},
+        "4m": {"1m"},
+        "5m": {"2m"},
     },
     "boost boost boost": {
-        11: [15, 1],
-        13: [17, 3],
-        15: [19, 5],
-        17: [21, 7],
-        19: [23, 9],
-        21: [1, 11],
-        23: [3, 13],
-        1: [5, 15],
-        3: [7, 17],
-        5: [9, 19],
-        7: [11, 21],
-        9: [13, 23],
-        12: [16, 2],
-        14: [18, 4],
-        16: [20, 6],
-        18: [22, 8],
-        20: [24, 10],
-        22: [2, 12],
-        24: [4, 14],
-        2: [6, 16],
-        4: [8, 18],
-        6: [10, 20],
-        8: [12, 22],
-        10: [14, 24]
-    }
+        "6d": {"8d", "1d"},
+        "7d": {"9d", "2d"},
+        "8d": {"10d", "3d"},
+        "9d": {"11d", "4d"},
+        "10d": {"12d", "5d"},
+        "11d": {"1d", "6d"},
+        "12d": {"2d", "7d"},
+        "1d": {"3d", "8d"},
+        "2d": {"4d", "9d"},
+        "3d": {"5d", "10d"},
+        "4d": {"6d", "11d"},
+        "5d": {"7d", "12d"},
+        "6m": {"8m", "1m"},
+        "7m": {"9m", "2m"},
+        "8m": {"10m", "3m"},
+        "9m": {"11m", "4m"},
+        "10m": {"12m", "5m"},
+        "11m": {"1m", "6m"},
+        "12m": {"2m", "7m"},
+        "1m": {"3m", "8m"},
+        "2m": {"4m", "9m"},
+        "3m": {"5m", "10m"},
+        "4m": {"6m", "11m"},
+        "5m": {"7m", "12m"},
+    },
 }
 
 TRANSITIONS_WEIGHTS ={
@@ -278,14 +276,14 @@ def build_compatibility_graph(df):
     return graph, scores
 
 
-def _build_reverse_transitions() -> dict[str, dict[int, list[int]]]:
+def _build_reverse_transitions() -> dict[str, dict[str, set[str]]]:
     """Invert ALLOWED_KEY_TRANSITIONS: A→B in forward becomes B→A in reverse."""
     result = {}
     for ttype, forward in ALLOWED_KEY_TRANSITIONS.items():
-        rev: dict[int, list[int]] = defaultdict(list)
+        rev: dict[str, set[str]] = defaultdict(set)
         for src, targets in forward.items():
             for tgt in targets:
-                rev[tgt].append(src)
+                rev[tgt].add(src)
         result[ttype] = dict(rev)
     return result
 
@@ -293,90 +291,47 @@ def _build_reverse_transitions() -> dict[str, dict[int, list[int]]]:
 REVERSE_KEY_TRANSITIONS = _build_reverse_transitions()
 
 
-_KEY_PAT = re.compile(r"Key\s+(\d+)([dm])", re.IGNORECASE)
-
-
-def comment_to_tonalkey(comment: str) -> int | None:
-    """Parse an Open Key string (e.g. "Key 6d") from a comment into a tonalkey integer.
-
-    Encoding:  "Nd" → 2N-1  (major),  "Nm" → 2N  (minor).
-    """
-    if not comment:
-        return None
-    m = _KEY_PAT.search(comment)
-    if not m:
-        return None
-    n, mode = int(m.group(1)), m.group(2).lower()
-    return 2 * n - 1 if mode == "d" else 2 * n
-
-
 BPM_TOLERANCE = 12
 
 
-def enrich_song(song) -> dict:
-    s = dataclasses.asdict(song)
-    s["id"] = song.persistentID
-    s["exactbpm"] = float(song.bpm or 0)
-    s["tonalkey"] = comment_to_tonalkey(song.comment)
-    s["rating_int"] = int(song.rating or 0)
-    return s
-
-
-def is_relevant(song: dict, genres: set[str] | None = None, min_rating: int = 80) -> bool:
-    if genres is not None:
-        genre = song.get("genre", "") or ""
-        if genre not in genres:
-            return False
-    if song.get("rating_int", 0) < min_rating:
+def is_relevant(song, genres: set[str] | None = None, min_rating: int = 80) -> bool:
+    if genres is not None and song.genre not in genres:
         return False
-    comment = (song.get("comment", "") or "").strip()
+    if song.rating < min_rating:
+        return False
+    comment = (song.comment or "").strip()
     if comment == "ignore" or "mixed" in comment.lower():
         return False
     return True
 
 
-def filter_candidates(
-    candidates: list[dict],
-    played_ids: set[int],
-    from_bpm: float,
-    to_bpm: float,
-    tonal_keys: list[int],
-    genres: set[str] | None = None,
-    min_rating: int = 80,
-) -> list[dict]:
-    key_set = set(tonal_keys)
+def filter_candidates(candidates, played_ids: set[str], from_bpm: float, to_bpm: float,
+                      keys: set[str], genres: set[str] | None = None, min_rating: int = 80):
     return [
         s for s in candidates
-        if s["id"] not in played_ids
+        if s.id not in played_ids
         and is_relevant(s, genres, min_rating)
-        and from_bpm <= s["exactbpm"] <= to_bpm
-        and s["tonalkey"] in key_set
+        and from_bpm <= s.bpm <= to_bpm
+        and s.key in keys
     ]
 
 
-def print_table(title: str, songs: list[dict]) -> None:
-    from music_stuff.lib.lib_beatunes import tonalkey_to_str
+def print_table(title: str, songs) -> None:
     print(f"\n= {title} =")
     if not songs:
         print("  (none)")
         return
-    col_id   = max(len(str(s["id"])) for s in songs)
-    col_art  = max((len(s.get("artist", "") or "") for s in songs), default=6)
-    col_name = max((len(s.get("name", "") or "") for s in songs), default=4)
+    col_id   = max(len(s.id) for s in songs)
+    col_art  = max((len(s.artist) for s in songs), default=6)
+    col_name = max((len(s.name) for s in songs), default=4)
     row = f"{{:<{col_id}}}  {{:<{col_art}}}  {{:<{col_name}}}  {{:<7}}  {{:<8}}"
     header = row.format("ID", "Artist", "Name", "BPM", "Key")
     print(header)
     print("-" * len(header))
     for s in songs:
-        print(row.format(
-            str(s["id"]),
-            s.get("artist", "") or "",
-            s.get("name", "") or "",
-            f"{s['exactbpm']:.2f}",
-            tonalkey_to_str(s["tonalkey"]),
-        ))
+        print(row.format(s.id, s.artist, s.name, f"{s.bpm:.2f}", s.key))
 
 
-def load_playlist(name: str) -> list[dict]:
+def load_playlist(name: str):
     from music_stuff.lib.lib_apple_music import find_songs_by_playlist_name
-    return [enrich_song(s) for s in find_songs_by_playlist_name(name)]
+    return find_songs_by_playlist_name(name)

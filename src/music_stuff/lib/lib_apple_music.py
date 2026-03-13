@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import json
 from dataclasses import dataclass
@@ -6,15 +7,18 @@ from dataclasses import dataclass
 _JS_FILE = os.path.join(os.path.dirname(__file__), "lib_apple_music_jxa.js")
 _js_source: str | None = None
 
+_KEY_PAT = re.compile(r"Key\s+(\d+)([dm])", re.IGNORECASE)
+
 
 @dataclass
 class AppleMusicSong:
-    persistentID: str
+    id: str
     name: str
     artist: str
     comment: str
     bpm: int
     location: str
+    key: str
     rating: int = 0
     genre: str = ""
     persistentIdAsInt: int = 0
@@ -22,13 +26,16 @@ class AppleMusicSong:
 
 
 def _to_song(raw: dict) -> AppleMusicSong:
+    comment = raw.get("comment", "")
+    m = _KEY_PAT.search(comment or "")
     return AppleMusicSong(
-        persistentID=raw["persistentID"],
+        id=raw["persistentID"],
         name=raw.get("name", ""),
         artist=raw.get("artist", ""),
-        comment=raw.get("comment", ""),
+        comment=comment,
         bpm=raw.get("bpm", 0),
         location=raw.get("location", ""),
+        key=f"{m.group(1)}{m.group(2).lower()}" if m else "",
         rating=raw.get("rating", 0),
         genre=raw.get("genre", ""),
         persistentIdAsInt=int(raw["persistentIdAsInt"]) if raw.get("persistentIdAsInt") else 0,

@@ -53,7 +53,7 @@ def _extract_persistent_ids(data: bytes) -> list[str]:
 class DjaySongData:
     bpm: float | str
     manual_bpm: float | str
-    open_key: str
+    key: str
     is_straight_grid: bool | str
 
 
@@ -93,7 +93,7 @@ def load_djay_index() -> dict[str, DjaySongData]:
             djay_index[pid] = DjaySongData(
                 bpm=round(row["bpm"], 2) if row["bpm"] else "",
                 manual_bpm=round(row["manualBPM"], 2) if row["manualBPM"] else "",
-                open_key=("Key " + DJAY_KEY_INDEX_TO_OPEN_KEY[key_index]) if key_index in DJAY_KEY_INDEX_TO_OPEN_KEY else "",
+                key=("Key " + DJAY_KEY_INDEX_TO_OPEN_KEY[key_index]) if key_index in DJAY_KEY_INDEX_TO_OPEN_KEY else "",
                 is_straight_grid=b"isStraightGrid" in analyzed_blob,
             )
     return djay_index

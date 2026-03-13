@@ -30,7 +30,7 @@ import argparse
 from pathlib import Path
 
 from music_stuff.lib.lib_apple_music import find_songs_by_folder_name, find_all_songs, set_song_bpm
-from music_stuff.lib.lib_beatunes import lookup_songs, tonalkey_to_str
+from music_stuff.lib.lib_beatunes import lookup_songs
 from music_stuff.lib.lib_djay import load_djay_index
 from music_stuff.lib.lib_consensus import consensus_key, essentia_profile_keys
 from music_stuff.lib.lib_essentia import analyse, ESSENTIA_PROFILES
@@ -136,7 +136,7 @@ def main():
 
     # --- Query beaTunes ---
     print("Querying beaTunes database...")
-    hex_ids = [song.persistentID for song in songs]
+    hex_ids = [song.id for song in songs]
     beatunes_index = lookup_songs(hex_ids)
     print(f"  Loaded metadata for {len(beatunes_index)} songs.")
 
@@ -161,7 +161,7 @@ def main():
     # --- Phase 2: build CSV rows ---
     csv_rows = []
     for song in songs:
-        pid = song.persistentID
+        pid = song.id
         djay_data = djay_index.get(pid)
         if djay_data is None:
             continue
@@ -182,10 +182,10 @@ def main():
         bt_song = beatunes_index.get(pid)
         beatunes_bpm = bt_song.exactbpm if bt_song and bt_song.exactbpm else ""
         beatunes_bpm_salience = bt_song.exactbpmsalience if bt_song and bt_song.exactbpmsalience else ""
-        beatunes_key = tonalkey_to_str(bt_song.tonalkey) if bt_song else ""
+        beatunes_key = bt_song.key if bt_song else ""
 
         # --- djay ---
-        djay_open_key = djay_data.open_key
+        djay_open_key = djay_data.key
 
         # --- Consensus key across all sources ---
         consensus_key_all = consensus_key(

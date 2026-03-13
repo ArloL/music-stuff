@@ -31,10 +31,10 @@ def write_playlist_to_file(playlist_name: str) -> None:
         writer.writeheader()
         for s in songs:
             writer.writerow({
-                "apple_music_id": s.persistentID,
+                "apple_music_id": s.id,
                 "artist": s.artist,
                 "name": s.name,
-                "key": s.comment or "",
+                "key": s.key,
                 "bpm": s.bpm or "",
             })
     print(f"  Wrote {len(songs)} songs to {output}")

@@ -143,7 +143,7 @@ def test_lookup_songs(mock_run, mock_clone):
     song = result["B1BB63F715E1025E"]
     assert isinstance(song, BeaTunesSong)
     assert song.exactbpm == 115.02
-    assert song.tonalkey == 24
+    assert song.key == "Key 12m"
     assert song.artist == "Dorothy's Ghost"
     assert song.name == "Never Said Goodbye"
 
@@ -155,7 +155,7 @@ def test_lookup_song(mock_run, mock_clone):
     song = lookup_song("B1BB63F715E1025E")
     assert song is not None
     assert song.exactbpm == 115.02
-    assert song.tonalkey == 24
+    assert song.key == "Key 12m"
 
 
 @patch("music_stuff.lib.lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
@@ -189,7 +189,7 @@ def test_lookup_songs_null_fields(mock_run, mock_clone):
     result = lookup_songs(["B1BB63F715E1025E"])
     song = result["B1BB63F715E1025E"]
     assert song.exactbpm is None
-    assert song.tonalkey is None
+    assert song.key == ""
 
 
 # --- Integration test (skipped if DB not present) ---
@@ -202,5 +202,5 @@ def test_integration_never_said_goodbye():
     song = lookup_song("B1BB63F715E1025E")
     assert song is not None
     assert 114 <= song.exactbpm <= 116
-    assert song.tonalkey == 24
+    assert song.key == "Key 12m"
     assert "Never Said Goodbye" in song.name
