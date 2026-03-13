@@ -35,6 +35,18 @@ from music_stuff.lib.lib_consensus import consensus_key, essentia_profile_keys
 from music_stuff.lib.lib_essentia import analyse, ESSENTIA_PROFILES
 
 OUTPUT_PATH = Path(__file__).parent.parent.parent / "data" / "songs-djay-diff.csv"
+MANUAL_BPM_PATH = Path(__file__).parent.parent.parent / "data" / "songs-manual.csv"
+
+
+def _load_manual_overrides() -> dict[str, dict]:
+    """Load {apple_music_id: {bpm, key}} overrides from songs-manual.csv."""
+    if not MANUAL_BPM_PATH.exists():
+        return {}
+    with open(MANUAL_BPM_PATH, newline="", encoding="utf-8") as f:
+        return {
+            row["apple_music_id"]: {"bpm": float(row["bpm"]), "key": row["key"].strip()}
+            for row in csv.DictReader(f)
+        }
 
 
 def _parse_open_key(s: str) -> int | None:
@@ -154,13 +166,18 @@ def main():
         "djay_bpm", "djay_manual_bpm", "djay_straight_grid", "apple_music_bpm",
         "beatunes_bpm", "beatunes_bpm_salience",
         "bpm_rhythm", "bpm_rhythm_confidence", "bpm_percival",
-        "djay_key", "essentia_key", "beatunes_key", "consensus_key", "apple_music_comment",
+        "effective_key", "consensus_key", "djay_key", "essentia_key", "beatunes_key", "apple_music_key",
         "edma_key", "edma_strength", "edmm_key", "edmm_strength",
         "bgate_key", "bgate_strength", "braw_key", "braw_strength",
         "shaath_key", "shaath_strength", "temperley_key", "temperley_strength",
         "noland_key", "noland_strength",
         "key_diff",
     ]
+
+    # --- Load manual overrides ---
+    manual_overrides = _load_manual_overrides()
+    if manual_overrides:
+        print(f"Loaded {len(manual_overrides)} manual override(s).")
 
     # --- Phase 1: parallel key analysis for songs with missing profiles ---
     essentia_index = analyse(songs)
@@ -200,13 +217,17 @@ def main():
             essentia_keys=profile_keys_weighted,
         )
 
+        # --- Manual overrides ---
+        manual = manual_overrides.get(pid, {})
+        effective_key = manual.get("key") or consensus_key_all
+
         # --- Diffs ---
         consensus = _consensus_bpm(djay_data.bpm, beatunes_bpm, bpm_rhythm, bpm_percival)
-        effective_bpm = djay_data.manual_bpm or consensus
+        effective_bpm = manual.get("bpm") or djay_data.manual_bpm or consensus
         djay_bpm_diff = abs(round(effective_bpm - djay_data.bpm, 0))
         bpm_diff = _bpm_diff(djay_data.bpm, beatunes_bpm, bpm_rhythm, bpm_percival)
         profile_keys = {k: v for k, v in profile_data.items() if k.endswith("_key")}
-        all_keys = [djay_key, beatunes_key] + list(profile_keys.values())
+        all_keys = [effective_key, djay_key, beatunes_key] + list(profile_keys.values())
         key_diff = _key_diff(*all_keys)
 
         csv_rows.append({
@@ -219,8 +240,8 @@ def main():
             "bpm_rhythm_confidence": bpm_rhythm_confidence, "bpm_percival": bpm_percival,
             "beatunes_bpm_salience": beatunes_bpm_salience, "djay_bpm_diff": djay_bpm_diff, "bpm_diff": bpm_diff,
             "djay_key": djay_key, "essentia_key": essentia_key,
-            "beatunes_key": beatunes_key, "consensus_key": consensus_key_all,
-            "apple_music_comment": song.comment,
+            "beatunes_key": beatunes_key, "consensus_key": consensus_key_all, "effective_key": effective_key,
+            "apple_music_key": song.key,
             **profile_data, "key_diff": key_diff,
         })
 
