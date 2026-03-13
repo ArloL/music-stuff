@@ -1,13 +1,27 @@
+from dataclasses import dataclass
+
 import pandas as pd
 import pytest
 from music_stuff.lib.lib_transitions import (
     calculate_transition_score,
+    filter_candidates,
     get_transition_type,
+    is_relevant,
     validate_keys,
     ALLOWED_KEY_TRANSITIONS,
     REVERSE_KEY_TRANSITIONS,
     TRANSITIONS_WEIGHTS,
 )
+
+
+@dataclass
+class _Song:
+    id: str
+    bpm: float
+    key: str
+    rating: int = 100
+    genre: str = "Electronic"
+    comment: str = ""
 
 
 # --- get_transition_type ---
@@ -124,3 +138,64 @@ def test_reverse_transitions_covers_all_target_keys():
     for ttype, forward in ALLOWED_KEY_TRANSITIONS.items():
         all_targets = {t for targets in forward.values() for t in targets}
         assert all_targets <= set(REVERSE_KEY_TRANSITIONS[ttype].keys()), f"{ttype} missing reverse keys"
+
+
+# --- is_relevant ---
+
+def test_is_relevant_passes_by_default():
+    assert is_relevant(_Song("1", 120, "1d")) is True
+
+def test_is_relevant_fails_below_min_rating():
+    assert is_relevant(_Song("1", 120, "1d", rating=79)) is False
+
+def test_is_relevant_passes_at_min_rating():
+    assert is_relevant(_Song("1", 120, "1d", rating=80)) is True
+
+def test_is_relevant_fails_wrong_genre():
+    assert is_relevant(_Song("1", 120, "1d"), genres={"Ambient"}) is False
+
+def test_is_relevant_passes_matching_genre():
+    assert is_relevant(_Song("1", 120, "1d", genre="Ambient"), genres={"Ambient"}) is True
+
+def test_is_relevant_passes_no_genre_filter():
+    assert is_relevant(_Song("1", 120, "1d", genre="Anything"), genres=None) is True
+
+def test_is_relevant_fails_comment_ignore():
+    assert is_relevant(_Song("1", 120, "1d", comment="ignore")) is False
+
+def test_is_relevant_fails_comment_mixed():
+    assert is_relevant(_Song("1", 120, "1d", comment="Key 1d mixed")) is False
+
+def test_is_relevant_fails_comment_mixed_case():
+    assert is_relevant(_Song("1", 120, "1d", comment="Mixed set")) is False
+
+
+# --- filter_candidates ---
+
+def test_filter_candidates_returns_matching():
+    songs = [_Song("a", 120, "1d"), _Song("b", 130, "2d")]
+    result = filter_candidates(songs, set(), 115, 125, {"1d"})
+    assert [s.id for s in result] == ["a"]
+
+def test_filter_candidates_excludes_played():
+    songs = [_Song("a", 120, "1d"), _Song("b", 120, "1d")]
+    result = filter_candidates(songs, {"a"}, 115, 125, {"1d"})
+    assert [s.id for s in result] == ["b"]
+
+def test_filter_candidates_excludes_bpm_out_of_range():
+    songs = [_Song("a", 110, "1d"), _Song("b", 120, "1d"), _Song("c", 130, "1d")]
+    result = filter_candidates(songs, set(), 115, 125, {"1d"})
+    assert [s.id for s in result] == ["b"]
+
+def test_filter_candidates_excludes_wrong_key():
+    songs = [_Song("a", 120, "1d"), _Song("b", 120, "2d")]
+    result = filter_candidates(songs, set(), 115, 125, {"1d"})
+    assert [s.id for s in result] == ["a"]
+
+def test_filter_candidates_respects_min_rating():
+    songs = [_Song("a", 120, "1d", rating=60), _Song("b", 120, "1d", rating=100)]
+    result = filter_candidates(songs, set(), 115, 125, {"1d"})
+    assert [s.id for s in result] == ["b"]
+
+def test_filter_candidates_empty_input():
+    assert filter_candidates([], set(), 100, 130, {"1d"}) == []
