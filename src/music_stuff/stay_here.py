@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-Find songs that can transition INTO a given seed song, filtered by BPM
-tolerance and harmonic key compatibility.
+Find songs that can transition FROM a given seed song at the same BPM level,
+filtered by BPM tolerance and harmonic key compatibility.
 
 Usage:
-    uv run python how-to-get-here.py [--seed PERSISTENT_ID]
+    uv run python stay_here.py [--seed PERSISTENT_ID]
 """
 import argparse
 
 from music_stuff.lib.lib_apple_music import find_song_by_id
 from music_stuff.lib.lib_transitions import (
+    ALLOWED_KEY_TRANSITIONS,
     BPM_TOLERANCE,
-    REVERSE_KEY_TRANSITIONS,
     enrich_song,
     filter_candidates,
     load_playlist,
@@ -19,7 +19,7 @@ from music_stuff.lib.lib_transitions import (
 )
 
 
-def how_to_get_here(seed: dict, playlist: str, exclude: str, genres: set[str] | None = None, min_rating: int = 80) -> None:
+def stay_here(seed: dict, playlist: str, exclude: str, genres: set[str] | None = None, min_rating: int = 80) -> None:
     key = seed["tonalkey"]
     print("\nLoading candidate playlists...")
     candidates = load_playlist(playlist)
@@ -28,8 +28,8 @@ def how_to_get_here(seed: dict, playlist: str, exclude: str, genres: set[str] | 
     bpm_hi = seed["exactbpm"] + BPM_TOLERANCE
 
     print_table("Seed", [seed])
-    for label, rev_map in REVERSE_KEY_TRANSITIONS.items():
-        tonal_keys = rev_map.get(key, [])
+    for label, fwd_map in ALLOWED_KEY_TRANSITIONS.items():
+        tonal_keys = fwd_map.get(key, [])
         results = (
             filter_candidates(candidates, played_ids, bpm_lo, bpm_hi, tonal_keys, genres, min_rating)
             if tonal_keys else []
@@ -39,7 +39,7 @@ def how_to_get_here(seed: dict, playlist: str, exclude: str, genres: set[str] | 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Find songs that can transition into a seed song."
+        description="Find songs to play after a seed song at the same energy level."
     )
     parser.add_argument(
         "--seed",
@@ -82,7 +82,7 @@ def main() -> None:
     seed = enrich_song(raw_seed)
     print(f"  {seed.get('artist', '')} – {seed.get('name', '')}")
 
-    how_to_get_here(seed, args.playlist, args.exclude, set(args.genres) if args.genres else None, args.min_rating)
+    stay_here(seed, args.playlist, args.exclude, set(args.genres) if args.genres else None, args.min_rating)
 
 
 if __name__ == "__main__":

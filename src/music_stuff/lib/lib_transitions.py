@@ -1,3 +1,4 @@
+import dataclasses
 import re
 from collections import defaultdict
 
@@ -307,3 +308,75 @@ def comment_to_tonalkey(comment: str) -> int | None:
         return None
     n, mode = int(m.group(1)), m.group(2).lower()
     return 2 * n - 1 if mode == "d" else 2 * n
+
+
+BPM_TOLERANCE = 12
+
+
+def enrich_song(song) -> dict:
+    s = dataclasses.asdict(song)
+    s["id"] = song.persistentID
+    s["exactbpm"] = float(song.bpm or 0)
+    s["tonalkey"] = comment_to_tonalkey(song.comment)
+    s["rating_int"] = int(song.rating or 0)
+    return s
+
+
+def is_relevant(song: dict, genres: set[str] | None = None, min_rating: int = 80) -> bool:
+    if genres is not None:
+        genre = song.get("genre", "") or ""
+        if genre not in genres:
+            return False
+    if song.get("rating_int", 0) < min_rating:
+        return False
+    comment = (song.get("comment", "") or "").strip()
+    if comment == "ignore" or "mixed" in comment.lower():
+        return False
+    return True
+
+
+def filter_candidates(
+    candidates: list[dict],
+    played_ids: set[int],
+    from_bpm: float,
+    to_bpm: float,
+    tonal_keys: list[int],
+    genres: set[str] | None = None,
+    min_rating: int = 80,
+) -> list[dict]:
+    key_set = set(tonal_keys)
+    return [
+        s for s in candidates
+        if s["id"] not in played_ids
+        and is_relevant(s, genres, min_rating)
+        and from_bpm <= s["exactbpm"] <= to_bpm
+        and s["tonalkey"] in key_set
+    ]
+
+
+def print_table(title: str, songs: list[dict]) -> None:
+    from music_stuff.lib.lib_beatunes import tonalkey_to_str
+    print(f"\n= {title} =")
+    if not songs:
+        print("  (none)")
+        return
+    col_id   = max(len(str(s["id"])) for s in songs)
+    col_art  = max((len(s.get("artist", "") or "") for s in songs), default=6)
+    col_name = max((len(s.get("name", "") or "") for s in songs), default=4)
+    row = f"{{:<{col_id}}}  {{:<{col_art}}}  {{:<{col_name}}}  {{:<7}}  {{:<8}}"
+    header = row.format("ID", "Artist", "Name", "BPM", "Key")
+    print(header)
+    print("-" * len(header))
+    for s in songs:
+        print(row.format(
+            str(s["id"]),
+            s.get("artist", "") or "",
+            s.get("name", "") or "",
+            f"{s['exactbpm']:.2f}",
+            tonalkey_to_str(s["tonalkey"]),
+        ))
+
+
+def load_playlist(name: str) -> list[dict]:
+    from music_stuff.lib.lib_apple_music import find_songs_by_playlist_name
+    return [enrich_song(s) for s in find_songs_by_playlist_name(name)]
