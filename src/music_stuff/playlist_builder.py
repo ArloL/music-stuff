@@ -194,8 +194,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Interactive TUI playlist builder")
     parser.add_argument("--seed", help="Apple Music persistent ID of the starting track")
     parser.add_argument("--playlist", default="Would Play", help="Source playlist name")
-    parser.add_argument("--exclude", default="Critical Mass Played", help="Exclude playlist name")
-    parser.add_argument("--genres", nargs="*", help="Allowed genres (space-separated)")
+    parser.add_argument("--exclude", default=None, help="Exclude playlist name")
+    parser.add_argument("--genre", dest="genres", action="append", metavar="GENRE", help="Allowed genre (repeat for multiple: --genre Techno --genre House)")
     parser.add_argument("--min-rating", type=int, default=80)
     parser.add_argument(
         "--bpm-lo",
@@ -213,8 +213,7 @@ def main() -> None:
 
     print("Loading playlists…")
     pool = load_playlist(args.playlist)
-    exclude_songs = load_playlist(args.exclude)
-    exclude_ids = {s.id for s in exclude_songs}
+    exclude_ids = {s.id for s in load_playlist(args.exclude)} if args.exclude else set()
 
     # Pre-filter: drop songs with empty key
     pool = [s for s in pool if s.key]
