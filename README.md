@@ -44,6 +44,8 @@ uv add <package>         # add a dependency
 
 **Secrets stay out of the repo.** Spotify credentials go in `secrets/` which is gitignored.
 
+**Pin exact dependency versions.** Every entry in `pyproject.toml` uses `==`. When adding a package, pin the exact version that was installed (`uv pip show <package>` to find it). This avoids surprise breakage from transitive upgrades and keeps the environment reproducible across machines.
+
 ## Platform notes
 
 Some code is macOS-only by design:

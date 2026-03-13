@@ -20,6 +20,8 @@ dependencies = [
     "scikit-learn==1.8.0",
     "spotipy==2.26.0",
     "essentia==2.1b6.dev1389",
+    "prompt-toolkit==3.0.52",
+    "miniaudio==1.61",
 ]
 
 [project.scripts]
@@ -36,6 +38,7 @@ spotify-playlist-delete-duplicates = "music_stuff.spotify_playlist_delete_duplic
 spotify-playlist-delete-present-in-other-playlist = "music_stuff.spotify_playlist_delete_present_in_other_playlist:main"
 spotify-playlist-to-csv = "music_stuff.spotify_playlist_to_csv:main"
 spotify-csv-to-playlist = "music_stuff.spotify_csv_to_playlist:main"
+playlist-builder = "music_stuff.playlist_builder:main"
 
 [dependency-groups]
 dev = [
