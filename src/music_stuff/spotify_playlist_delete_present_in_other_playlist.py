@@ -21,11 +21,12 @@ def main():
     delete_tracks = all_playlist_items(sp, delete_playlist['id'])
     source_tracks = all_playlist_items(sp, source_playlist_id)
 
+    source_ids = {t['item']['id'] for t in source_tracks}
     items_to_delete = []
 
     for i, track in enumerate(delete_tracks):
         track_id = track['item']['id']
-        if any(t['item']['id'] == track_id for t in source_tracks):
+        if track_id in source_ids:
             print(f'Removing {i} {track_id}')
             items_to_delete.append(track_id)
 

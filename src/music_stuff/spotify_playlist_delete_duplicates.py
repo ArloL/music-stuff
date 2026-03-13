@@ -17,18 +17,34 @@ def main():
 
     tracks = all_playlist_items(sp, playlist['id'])
 
-    track_ids = {}
+    seen = set()
+    deduped_uris = []
 
-    position = 0
     for track in tracks:
-        track_id = track['item']['id']
-        if track_id in track_ids:
-            print(f'Removing {position} {track_id}')
-            sp.playlist_remove_all_occurrences_of_items(playlist['id'], [track_id])
-            sp.playlist_add_items(playlist['id'], [track_id], position=track_ids[track_id])
-        else:
-            track_ids[track_id] = position
-            position += 1
+        item = track['item']
+        if item is None:
+            continue
+        track_id = item['id']
+        if track_id not in seen:
+            seen.add(track_id)
+            deduped_uris.append(item['uri'])
+
+    removed = len(tracks) - len(deduped_uris)
+    if removed == 0:
+        print('No duplicates found')
+        return
+
+    print(f'Found {removed} duplicates. Replacing playlist with {len(deduped_uris)} tracks...')
+
+    # Replace the playlist in batches (100 per call)
+    # First call replaces the entire playlist contents
+    sp.playlist_replace_items(playlist['id'], deduped_uris[:100])
+    for i in range(100, len(deduped_uris), 100):
+        chunk = deduped_uris[i:i + 100]
+        sp.playlist_add_items(playlist['id'], chunk)
+        print(f'Added tracks {i + 1}–{i + len(chunk)}')
+
+    print('Done')
 
 if __name__ == '__main__':
     main()
