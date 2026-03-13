@@ -167,7 +167,7 @@ def main():
         "djay_bpm", "djay_manual_bpm", "djay_straight_grid", "apple_music_bpm",
         "beatunes_bpm", "beatunes_bpm_salience",
         "bpm_rhythm", "bpm_rhythm_confidence", "bpm_percival",
-        "effective_key", "consensus_key", "djay_key_diff", "key_diff",
+        "effective_key", "consensus_key", "key_diff",
         "djay_key", "essentia_key", "beatunes_key", "apple_music_key",
         "edma_key", "edma_strength", "edmm_key", "edmm_strength",
         "bgate_key", "bgate_strength", "braw_key", "braw_strength",
@@ -230,7 +230,7 @@ def main():
         profile_keys = {k: v for k, v in profile_data.items() if k.endswith("_key")}
         all_keys = [effective_key, djay_key, beatunes_key] + list(profile_keys.values())
         key_diff = _key_diff(*all_keys)
-        djay_key_diff = _key_diff(effective_key, djay_key)
+
 
         csv_rows.append({
             "apple_music_id": pid, "artist": song.artist, "name": song.name,
@@ -244,7 +244,7 @@ def main():
             "djay_key": djay_key, "essentia_key": essentia_key,
             "beatunes_key": beatunes_key, "consensus_key": consensus_key_all, "effective_key": effective_key,
             "apple_music_key": song.key,
-            **profile_data, "key_diff": key_diff, "djay_key_diff": djay_key_diff,
+            **profile_data, "key_diff": key_diff,
         })
 
     csv_rows.sort(
