@@ -28,13 +28,13 @@ import sys
 import argparse
 from pathlib import Path
 
-from music_stuff.lib.lib_apple_music import find_songs_by_folder_name, find_all_songs, set_song_bpm
+from music_stuff.lib.lib_apple_music import find_songs_by_folder_name, find_songs_by_playlist_name, set_song_bpm
 from music_stuff.lib.lib_beatunes import lookup_songs
 from music_stuff.lib.lib_djay import load_djay_index
 from music_stuff.lib.lib_consensus import consensus_key, essentia_profile_keys
 from music_stuff.lib.lib_essentia import analyse, ESSENTIA_PROFILES
 
-OUTPUT_PATH = Path(__file__).parent / "songs-djay-diff.csv"
+OUTPUT_PATH = Path(__file__).parent.parent.parent / "data" / "songs-djay-diff.csv"
 
 
 def _parse_open_key(s: str) -> int | None:
@@ -117,14 +117,23 @@ def _consensus_bpm(*bpms: float | int | str) -> float:
 
 def main():
     parser = argparse.ArgumentParser(description="Export djay BPM data merged with Apple Music metadata.")
-    parser.add_argument("--folder", metavar="NAME", help="Filter to songs in this Music library folder")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--folder", metavar="NAME",
+                       help="Filter to songs in this Music library folder (default: Critical Mass)")
+    group.add_argument("--playlist", metavar="NAME", default="Would Play",
+                       help="Filter to songs in this Music library playlist (default: Would Play)")
     parser.add_argument("--write-bpm", action="store_true", help="Write effective BPM back to Apple Music")
     args = parser.parse_args()
 
     # --- Load Music metadata ---
-    desc = f"folder '{args.folder}'" if args.folder else "all songs"
+    if args.playlist:
+        desc = f"playlist '{args.playlist}'"
+        loader = lambda: find_songs_by_playlist_name(args.playlist)
+    else:
+        desc = f"folder '{args.folder}'"
+        loader = lambda: find_songs_by_folder_name(args.folder)
     print(f"Loading Apple Music metadata for {desc}...")
-    songs = find_songs_by_folder_name(args.folder) if args.folder else find_all_songs()
+    songs = loader()
     print(f"  Loaded metadata for {len(songs)} songs.")
 
     # --- Query djay ---
