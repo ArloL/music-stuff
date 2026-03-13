@@ -145,7 +145,7 @@ def main():
         "djay_bpm", "djay_manual_bpm", "djay_straight_grid", "apple_music_bpm",
         "beatunes_bpm", "beatunes_bpm_salience",
         "bpm_rhythm", "bpm_rhythm_confidence", "bpm_percival",
-        "open_key", "essentia_key", "beatunes_key", "consensus_key", "apple_music_comment",
+        "djay_key", "essentia_key", "beatunes_key", "consensus_key", "apple_music_comment",
         "edma_key", "edma_strength", "edmm_key", "edmm_strength",
         "bgate_key", "bgate_strength", "braw_key", "braw_strength",
         "shaath_key", "shaath_strength", "temperley_key", "temperley_strength",
@@ -183,11 +183,11 @@ def main():
         beatunes_key = bt_song.key if bt_song else ""
 
         # --- djay ---
-        djay_open_key = djay_data.key
+        djay_key = djay_data.key
 
         # --- Consensus key across all sources ---
         consensus_key_all = consensus_key(
-            djay_key=djay_open_key, beatunes_key=beatunes_key,
+            djay_key=djay_key, beatunes_key=beatunes_key,
             essentia_keys=profile_keys_weighted,
         )
 
@@ -197,7 +197,7 @@ def main():
         djay_bpm_diff = abs(round(effective_bpm - djay_data.bpm, 0))
         bpm_diff = _bpm_diff(djay_data.bpm, beatunes_bpm, bpm_rhythm, bpm_percival)
         profile_keys = {k: v for k, v in profile_data.items() if k.endswith("_key")}
-        all_keys = [djay_open_key, beatunes_key] + list(profile_keys.values())
+        all_keys = [djay_key, beatunes_key] + list(profile_keys.values())
         key_diff = _key_diff(*all_keys)
 
         csv_rows.append({
@@ -209,7 +209,7 @@ def main():
             "bpm_rhythm": bpm_rhythm,
             "bpm_rhythm_confidence": bpm_rhythm_confidence, "bpm_percival": bpm_percival,
             "beatunes_bpm_salience": beatunes_bpm_salience, "djay_bpm_diff": djay_bpm_diff, "bpm_diff": bpm_diff,
-            "open_key": djay_open_key, "essentia_key": essentia_key,
+            "djay_key": djay_key, "essentia_key": essentia_key,
             "beatunes_key": beatunes_key, "consensus_key": consensus_key_all,
             "apple_music_comment": song.comment,
             **profile_data, "key_diff": key_diff,
