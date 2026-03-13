@@ -89,8 +89,8 @@ def _detect_essentia(location: str, profiles: list[str], do_bpm: bool) -> dict:
     for profile in profiles:
         key, scale, strength = es.KeyExtractor(profileType=profile)(audio)
         mapping = _ESSENTIA_MAJOR_TO_OPEN_KEY if scale == "major" else _ESSENTIA_MINOR_TO_OPEN_KEY
-        open_key = mapping.get(key, "")
-        result[f"{profile}_key"] = open_key
+        key = mapping.get(key, "")
+        result[f"{profile}_key"] = key
         result[f"{profile}_strength"] = round(float(strength), 4)
 
     if do_bpm:

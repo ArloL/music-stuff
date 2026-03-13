@@ -2,13 +2,13 @@
 
 
 def essentia_profile_keys(entry: dict, profiles: list[str]) -> dict[str, float]:
-    """Extract {open_key: strength} votes from an Essentia cache entry."""
+    """Extract {key: strength} votes from an Essentia cache entry."""
     votes: dict[str, float] = {}
     for p in profiles:
-        open_key = entry.get(f"{p}_key", "")
+        key = entry.get(f"{p}_key", "")
         strength = entry.get(f"{p}_strength", 0.0)
-        if open_key:
-            votes[open_key] = votes.get(open_key, 0.0) + float(strength)
+        if key:
+            votes[key] = votes.get(key, 0.0) + float(strength)
     return votes
 
 
