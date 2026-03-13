@@ -3,8 +3,7 @@ from unittest.mock import patch
 
 from music_stuff.lib.lib_apple_music import AppleMusicSong
 
-import importlib
-playlist_csv = importlib.import_module("music_stuff.playlist-csv")
+from music_stuff import playlist_csv
 
 
 def test_write_playlist_to_file(tmp_path):
