@@ -9,12 +9,12 @@ from music_stuff import playlist_csv
 def test_write_playlist_to_file(tmp_path):
     songs = [
         AppleMusicSong(
-            persistentID="ABC123", name="Song A", artist="Artist 1",
-            comment="Key 6d", bpm=120, location="", rating=80,
+            id="ABC123", name="Song A", artist="Artist 1",
+            comment="Key 6d", bpm=120, location="", key="6d", rating=80,
         ),
         AppleMusicSong(
-            persistentID="DEF456", name="Song B", artist="Artist 2",
-            comment="Key 3m", bpm=0, location="", rating=60,
+            id="DEF456", name="Song B", artist="Artist 2",
+            comment="Key 3m", bpm=0, location="", key="3m", rating=60,
         ),
     ]
 
@@ -31,9 +31,9 @@ def test_write_playlist_to_file(tmp_path):
     assert len(rows) == 2
     assert rows[0] == {
         "apple_music_id": "ABC123", "artist": "Artist 1", "name": "Song A",
-        "key": "Key 6d", "bpm": "120",
+        "key": "6d", "bpm": "120",
     }
     assert rows[1] == {
         "apple_music_id": "DEF456", "artist": "Artist 2", "name": "Song B",
-        "key": "Key 3m", "bpm": "",
+        "key": "3m", "bpm": "",
     }

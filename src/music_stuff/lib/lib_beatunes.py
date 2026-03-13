@@ -44,21 +44,12 @@ def beatunes_id_to_hex_id(beatunes_id: int) -> str:
     return format(value, "016X")
 
 
-def tonalkey_to_str(key: int | None) -> str:
-    """Convert a beaTunes tonalkey integer to Open Key notation (e.g. 'Key 6d')."""
-    if not key:
-        return ""
-    n = (key + 1) // 2
-    mode = "d" if key % 2 != 0 else "m"
-    return f"Key {n}{mode}"
-
-
 @dataclass
 class BeaTunesSong:
     hex_id: str
     exactbpm: float | None
     exactbpmsalience: float | None
-    tonalkey: int | None
+    key: str
     artist: str
     name: str
 
@@ -147,11 +138,12 @@ def lookup_songs(hex_ids: list[str]) -> dict[str, BeaTunesSong]:
         exactbpm_raw = row.get("EXACTBPM", "").strip()
         exactbpmsalience_raw = row.get("EXACTBPMSALIENCE", "").strip()
         tonalkey_raw = row.get("TONALKEY", "").strip()
+        tonalkey = int(tonalkey_raw) if tonalkey_raw and tonalkey_raw != "null" else None
         result[hex_id] = BeaTunesSong(
             hex_id=hex_id,
             exactbpm=float(exactbpm_raw) if exactbpm_raw and exactbpm_raw != "null" else None,
             exactbpmsalience=float(exactbpmsalience_raw) if exactbpmsalience_raw and exactbpmsalience_raw != "null" else None,
-            tonalkey=int(tonalkey_raw) if tonalkey_raw and tonalkey_raw != "null" else None,
+            key=f"Key {(tonalkey + 1) // 2}{'d' if tonalkey % 2 != 0 else 'm'}" if tonalkey else "",
             artist=row.get("ARTIST", "").strip(),
             name=row.get("NAME", "").strip(),
         )

@@ -109,7 +109,7 @@ def analyse(songs: list) -> dict[int, dict]:
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
         futures = {}
         for song in songs:
-            pid = song.persistentID
+            pid = song.id
             entry = cache.get(pid, {})
             missing_profiles = [p for p in ESSENTIA_PROFILES if f"{p}_key" not in entry]
             missing_bpm = "bpm_rhythm" not in entry or "bpm_rhythm_confidence" not in entry or "bpm_percival" not in entry

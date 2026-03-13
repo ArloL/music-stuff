@@ -130,8 +130,8 @@ def test_load_djay_index_maps_key_and_bpm(mock_clone, tmp_path):
     with patch("music_stuff.lib.lib_djay.DB_PATH", db):
         result = load_djay_index()
 
-    assert result["0000000000003039"] == DjaySongData(bpm=120.5, manual_bpm=121.0, open_key="Key 1d", is_straight_grid=False)
-    assert result["0000000000010932"] == DjaySongData(bpm=130.0, manual_bpm="", open_key="Key 3m", is_straight_grid=False)
+    assert result["0000000000003039"] == DjaySongData(bpm=120.5, manual_bpm=121.0, key="Key 1d", is_straight_grid=False)
+    assert result["0000000000010932"] == DjaySongData(bpm=130.0, manual_bpm="", key="Key 3m", is_straight_grid=False)
 
 
 @patch("music_stuff.lib.lib_djay._clone_db")
@@ -142,7 +142,7 @@ def test_load_djay_index_unknown_key_produces_empty_string(mock_clone, tmp_path)
     with patch("music_stuff.lib.lib_djay.DB_PATH", db):
         result = load_djay_index()
 
-    assert result["000000000000006F"].open_key == ""
+    assert result["000000000000006F"].key == ""
 
 
 @patch("music_stuff.lib.lib_djay._clone_db")
