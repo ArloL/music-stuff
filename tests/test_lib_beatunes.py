@@ -144,7 +144,7 @@ def test_lookup_songs(mock_run, mock_clone, mock_jar):
     song = result["B1BB63F715E1025E"]
     assert isinstance(song, BeaTunesSong)
     assert song.exactbpm == 115.02
-    assert song.key == "Key 12m"
+    assert song.key == "12m"
     assert song.artist == "Dorothy's Ghost"
     assert song.name == "Never Said Goodbye"
 
@@ -157,7 +157,7 @@ def test_lookup_song(mock_run, mock_clone, mock_jar):
     song = lookup_song("B1BB63F715E1025E")
     assert song is not None
     assert song.exactbpm == 115.02
-    assert song.key == "Key 12m"
+    assert song.key == "12m"
 
 
 @patch("music_stuff.lib.lib_beatunes._find_h2_jar", return_value=Path("/fake/h2.jar"))
@@ -206,5 +206,5 @@ def test_integration_never_said_goodbye():
     song = lookup_song("B1BB63F715E1025E")
     assert song is not None
     assert 114 <= song.exactbpm <= 116
-    assert song.key == "Key 12m"
+    assert song.key == "12m"
     assert "Never Said Goodbye" in song.name

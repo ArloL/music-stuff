@@ -24,7 +24,6 @@ Cross-reference key:
 """
 
 import csv
-import re
 import sys
 import argparse
 from pathlib import Path
@@ -38,12 +37,12 @@ from music_stuff.lib.lib_essentia import analyse, ESSENTIA_PROFILES
 OUTPUT_PATH = Path(__file__).parent / "songs-djay-diff.csv"
 
 
-_KEY_PAT = re.compile(r"Key\s+(\d+)([dm])", re.IGNORECASE)
-
-
-def _parse_open_key(s: str) -> tuple[int, str] | None:
-    m = _KEY_PAT.fullmatch(s.strip()) if s else None
-    return (int(m.group(1)), m.group(2).lower()) if m else None
+def _parse_open_key(s: str) -> int | None:
+    """Parse an Open Key string like '1d' or '12m' into the numeric part."""
+    s = s.strip()
+    if s and s[:-1].isdigit() and s[-1] in "dm":
+        return int(s[:-1])
+    return None
 
 
 def _key_diff(*keys: str) -> str:
@@ -59,8 +58,7 @@ def _key_diff(*keys: str) -> str:
     total = 0
     for i in range(len(available)):
         for j in range(i + 1, len(available)):
-            n1, n2 = available[i][0], available[j][0]
-            diff = (n2 - n1) % 12
+            diff = (available[j] - available[i]) % 12
             if diff > 6:
                 diff -= 12
             total += abs(diff)

@@ -36,7 +36,7 @@ def test_coerce_converts_numeric_strings_to_float():
 
 
 def test_coerce_leaves_non_numeric_strings_unchanged():
-    assert _coerce("Key 5d") == "Key 5d"
+    assert _coerce("5d") == "5d"
     assert _coerce("") == ""
 
 
@@ -95,8 +95,8 @@ def test_consensus_bpm_returns_zero_when_no_data():
 def test_cache_round_trip_preserves_types(tmp_path):
     cache_path = tmp_path / "cache.csv"
     cache = {
-        "ABC123": {"edma_key": "Key 5d", "edma_strength": 0.85, "bpm_rhythm": 120.5},
-        "DEF456": {"edma_key": "Key 1m", "edma_strength": 0.72, "bpm_rhythm": 95.0},
+        "ABC123": {"edma_key": "5d", "edma_strength": 0.85, "bpm_rhythm": 120.5},
+        "DEF456": {"edma_key": "1m", "edma_strength": 0.72, "bpm_rhythm": 95.0},
     }
 
     with patch("music_stuff.lib.lib_essentia.ESSENTIA_CACHE_PATH", cache_path):
@@ -104,7 +104,7 @@ def test_cache_round_trip_preserves_types(tmp_path):
         loaded = _load_essentia_cache()
 
     assert set(loaded.keys()) == {"ABC123", "DEF456"}
-    assert loaded["ABC123"]["edma_key"] == "Key 5d"
+    assert loaded["ABC123"]["edma_key"] == "5d"
     assert loaded["ABC123"]["edma_strength"] == 0.85
     assert loaded["ABC123"]["bpm_rhythm"] == 120.5
 

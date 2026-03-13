@@ -93,7 +93,7 @@ def load_djay_index() -> dict[str, DjaySongData]:
             djay_index[pid] = DjaySongData(
                 bpm=round(row["bpm"], 2) if row["bpm"] else "",
                 manual_bpm=round(row["manualBPM"], 2) if row["manualBPM"] else "",
-                key=("Key " + DJAY_KEY_INDEX_TO_OPEN_KEY[key_index]) if key_index in DJAY_KEY_INDEX_TO_OPEN_KEY else "",
+                key=DJAY_KEY_INDEX_TO_OPEN_KEY.get(key_index, ""),
                 is_straight_grid=b"isStraightGrid" in analyzed_blob,
             )
     return djay_index
