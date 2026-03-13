@@ -1,3 +1,11 @@
+## Spotify API: playlist_remove_specific_occurrences_of_items does not work
+
+Tried using
+`sp.playlist_remove_specific_occurrences_of_items(playlist_id, [{uri, positions}])`
+to remove only duplicate positions while keeping the first occurrence. Despite
+passing exact positions, it removed **all** occurrences of the track rather
+than just the specified positions.
+
 ## Queries
 
 ```
