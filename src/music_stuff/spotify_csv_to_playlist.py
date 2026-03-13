@@ -39,16 +39,20 @@ def main() -> None:
 
     df = pd.read_csv(DATA_DIR / "songs-would-play.csv")
 
+    existing_ids = {track['item']['id'] for track in tracks if track.get('item')}
+    to_add = []
     for i, song in df.iterrows():
         spotify_id = find_spotify_id_for_song(sp, song, spotify_mapping)
         if spotify_id == '-1':
             print(f"No spotify ID for {song['artist']} - {song['name']}")
-        elif any(track['item']['id'] == spotify_id for track in tracks):
+        elif spotify_id in existing_ids:
             print(f"Already in the playlist {song['artist']} - {song['name']}")
-            continue
         else:
             print(f"Adding {song['artist']} - {song['name']}")
-            sp.playlist_add_items(playlist_id, [f"spotify:track:{spotify_id}"])
+            to_add.append(f"spotify:track:{spotify_id}")
+
+    for i in range(0, len(to_add), 100):
+        sp.playlist_add_items(playlist_id, to_add[i:i+100])
 
 
 if __name__ == "__main__":
