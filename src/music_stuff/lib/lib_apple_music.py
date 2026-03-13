@@ -87,3 +87,7 @@ def find_all_songs() -> list[AppleMusicSong]:
 
 def set_song_bpm(song_id: str, bpm: int) -> None:
     _run_jxa(f"setTrackBpm({json.dumps(song_id)}, {json.dumps(bpm)})")
+
+
+def set_song_key(song_id: str, key: str) -> None:
+    _run_jxa(f"setTrackKey({json.dumps(song_id)}, {json.dumps(key)})")

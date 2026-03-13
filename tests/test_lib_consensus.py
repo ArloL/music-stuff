@@ -82,7 +82,7 @@ def test_external_keys_swing_weak_essentia_split():
         "braw_key": "Key 1m", "braw_strength": 0.5,
     }
     profile_keys = essentia_profile_keys(entry, ["edma", "edmm", "bgate", "braw"])
-    # Essentia is tied 1.0 vs 1.0; external keys break the tie
+    # Essentia is tied 1.0 vs 1.0; external keys (0.5 each) break the tie
     result = consensus_key(
         djay_key="Key 1m", beatunes_key="Key 1m", essentia_keys=profile_keys,
     )
@@ -107,6 +107,6 @@ def test_single_external_key_only():
 
 
 def test_external_keys_disagree():
-    """When only external keys are present and they disagree, either wins (both weight 1.0)."""
+    """When only external keys are present and they disagree, either wins (both weight 0.5)."""
     result = consensus_key(djay_key="Key 3d", beatunes_key="Key 8m")
     assert result in ("Key 3d", "Key 8m")

@@ -90,3 +90,18 @@ function setTrackBpm(hexId, bpm) {
     tracks[0].bpm = bpm;
     return null;
 }
+
+function setTrackKey(hexId, key) {
+    const music = Application("Music");
+    const tracks = music.tracks.whose({ persistentID: { _equals: hexId } });
+    if (tracks.length === 0) {
+        throw new Error("Track not found: " + hexId);
+    }
+    const track = tracks[0];
+    const comment = (track.comment() || "").trim();
+    if (comment && !/^Key\s+\d+[dm]$/i.test(comment)) {
+        throw new Error("Comment contains more than a key: " + comment);
+    }
+    track.comment = "Key " + key;
+    return null;
+}
