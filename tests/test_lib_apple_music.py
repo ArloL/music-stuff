@@ -15,7 +15,7 @@ from music_stuff.lib.lib_apple_music import (
 
 
 def _try_launch_music() -> bool:
-    """Try to launch Music.app and return True if it ends up running."""
+    """Try to launch Music.app and verify the library is accessible via JXA."""
     if shutil.which("osascript") is None:
         return False
     try:
@@ -25,13 +25,15 @@ def _try_launch_music() -> bool:
             text=True,
             timeout=30,
         )
+        # Probe that the library is actually queryable, not just that the app launched
         result = subprocess.run(
-            ["osascript", "-l", "JavaScript", "-e", 'Application("Music").running()'],
+            ["osascript", "-l", "JavaScript", "-e",
+             'Application("Music").playlists.length'],
             capture_output=True,
             text=True,
-            timeout=5,
+            timeout=10,
         )
-        return result.returncode == 0 and result.stdout.strip() == "true"
+        return result.returncode == 0
     except Exception:
         return False
 
