@@ -4,7 +4,7 @@ Find songs that can transition INTO a given seed song, filtered by BPM
 tolerance and harmonic key compatibility.
 
 Usage:
-    uv run python how-to-get-here.py [--seed PERSISTENT_ID]
+    uv run candidates-previous [--seed PERSISTENT_ID]
 """
 import argparse
 
@@ -18,7 +18,7 @@ from music_stuff.lib.lib_transitions import (
 )
 
 
-def how_to_get_here(seed, playlist: str, exclude: str, genres: set[str] | None = None,
+def candidates_previous(seed, playlist: str, exclude: str, genres: set[str] | None = None,
                     min_rating: int = 80, bpm_lo: float = BPM_TOLERANCE, bpm_hi: float = BPM_TOLERANCE) -> None:
     key = seed.key
     print("\nLoading candidate playlists...")
@@ -91,7 +91,7 @@ def main() -> None:
         raise SystemExit(f"Seed song with ID {args.seed} not found in library.")
     print(f"  {seed.artist} – {seed.name}")
 
-    how_to_get_here(seed, args.playlist, args.exclude, set(args.genres) if args.genres else None, args.min_rating, args.bpm_lo, args.bpm_hi)
+    candidates_previous(seed, args.playlist, args.exclude, set(args.genres) if args.genres else None, args.min_rating, args.bpm_lo, args.bpm_hi)
 
 
 if __name__ == "__main__":

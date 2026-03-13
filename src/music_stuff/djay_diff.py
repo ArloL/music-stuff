@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """
-Extract analyzed BPM data from djay's MediaLibrary.db and merge with
-comments and BPM from the Apple Music library via osascript.
+Merge BPM and key data from djay, beaTunes, Essentia, and Apple Music into a
+single CSV for review and reconciliation.
 
 Usage:
-    uv run python extract_bpm.py [--folder NAME]
+    uv run djay-diff [--folder NAME | --playlist NAME] [--write-bpm] [--write-key]
 
-Options:
-    --folder NAME   Filter to songs in a Music library folder (e.g. "Critical Mass")
+Defaults to --folder "Critical Mass". Outputs to data/songs-djay-diff.csv.
 
-Database structure:
+Manual overrides can be placed in data/songs-manual.csv with columns:
+    apple_music_id, bpm, key
+
+Database structure (djay MediaLibrary.db):
 - `database2` holds all data as binary TSAF blobs
 - `secondaryIndex_mediaItemAnalyzedDataIndex` holds indexed BPM values
 - All collections share a common hash key per song
@@ -19,7 +21,7 @@ Fields are stored value-first, then key (e.g. "Only Love", "title").
 
 Cross-reference key:
   djay apple_id  "com.apple.iTunes:<decimal>"
-  osascript Persistent ID  "<HEX>"
+  Apple Music Persistent ID  "<HEX>"
   These represent the same value in different bases.
 """
 

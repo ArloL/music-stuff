@@ -116,7 +116,7 @@ def create_plotly_network(G, layout_type='spring'):
         edge_x.extend([x0, x1, None])
         edge_y.extend([y0, y1, None])
 
-        bpm_diff = G[edge[0]][edge[1]]['bmp_diff'] if 'bmp_diff' in G[edge[0]][edge[1]] else 0
+        bpm_diff = G[edge[0]][edge[1]]['bpm_diff'] if 'bpm_diff' in G[edge[0]][edge[1]] else 0
         edge_info.append(f"{edge[0]} → {edge[1]}<br>BPM diff: {bpm_diff}")
 
     # Create edge trace
