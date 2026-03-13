@@ -18,19 +18,18 @@ from music_stuff.lib.lib_transitions import (
 )
 
 
-def stay_here(seed, playlist: str, exclude: str, genres: set[str] | None = None, min_rating: int = 80) -> None:
+def stay_here(seed, playlist: str, exclude: str, genres: set[str] | None = None,
+              min_rating: int = 80, bpm_lo: float = BPM_TOLERANCE, bpm_hi: float = BPM_TOLERANCE) -> None:
     key = seed.key
     print("\nLoading candidate playlists...")
     candidates = load_playlist(playlist)
     played_ids = {s.id for s in load_playlist(exclude)}
-    bpm_lo = seed.bpm - BPM_TOLERANCE
-    bpm_hi = seed.bpm + BPM_TOLERANCE
 
     print_table("Seed", [seed])
     for label, fwd_map in ALLOWED_KEY_TRANSITIONS.items():
         keys = fwd_map.get(key, set())
         results = (
-            filter_candidates(candidates, played_ids, bpm_lo, bpm_hi, keys, genres, min_rating)
+            filter_candidates(candidates, played_ids, seed.bpm - bpm_lo, seed.bpm + bpm_hi, keys, genres, min_rating)
             if keys else []
         )
         print_table(label.title(), results)
@@ -72,6 +71,18 @@ def main() -> None:
         default=80,
         help="Minimum song rating to include (default: 80)",
     )
+    parser.add_argument(
+        "--bpm-lo",
+        type=float,
+        default=BPM_TOLERANCE,
+        help=f"BPM below seed to include (default: {BPM_TOLERANCE})",
+    )
+    parser.add_argument(
+        "--bpm-hi",
+        type=float,
+        default=BPM_TOLERANCE,
+        help=f"BPM above seed to include (default: {BPM_TOLERANCE})",
+    )
     args = parser.parse_args()
 
     print("Looking up seed song...")
@@ -80,7 +91,7 @@ def main() -> None:
         raise SystemExit(f"Seed song with ID {args.seed} not found in library.")
     print(f"  {seed.get('artist', '')} – {seed.get('name', '')}")
 
-    stay_here(seed, args.playlist, args.exclude, set(args.genres) if args.genres else None, args.min_rating)
+    stay_here(seed, args.playlist, args.exclude, set(args.genres) if args.genres else None, args.min_rating, args.bpm_lo, args.bpm_hi)
 
 
 if __name__ == "__main__":
