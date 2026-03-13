@@ -143,7 +143,7 @@ def lookup_songs(hex_ids: list[str]) -> dict[str, BeaTunesSong]:
             hex_id=hex_id,
             exactbpm=float(exactbpm_raw) if exactbpm_raw and exactbpm_raw != "null" else None,
             exactbpmsalience=float(exactbpmsalience_raw) if exactbpmsalience_raw and exactbpmsalience_raw != "null" else None,
-            key=f"Key {(tonalkey + 1) // 2}{'d' if tonalkey % 2 != 0 else 'm'}" if tonalkey else "",
+            key=f"{(tonalkey + 1) // 2}{'d' if tonalkey % 2 != 0 else 'm'}" if tonalkey else "",
             artist=row.get("ARTIST", "").strip(),
             name=row.get("NAME", "").strip(),
         )
