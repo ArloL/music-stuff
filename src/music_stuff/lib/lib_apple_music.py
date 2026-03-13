@@ -21,8 +21,6 @@ class AppleMusicSong:
     key: str
     rating: int = 0
     genre: str = ""
-    persistentIdAsInt: int = 0
-    beatunesId: int = 0
 
 
 def _to_song(raw: dict) -> AppleMusicSong:
@@ -38,8 +36,6 @@ def _to_song(raw: dict) -> AppleMusicSong:
         key=f"{m.group(1)}{m.group(2).lower()}" if m else "",
         rating=raw.get("rating", 0),
         genre=raw.get("genre", ""),
-        persistentIdAsInt=int(raw["persistentIdAsInt"]) if raw.get("persistentIdAsInt") else 0,
-        beatunesId=int(raw["beatunesId"]) if raw.get("beatunesId") else 0,
     )
 
 
