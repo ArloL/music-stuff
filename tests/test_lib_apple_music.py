@@ -1,5 +1,6 @@
 import json
 import shutil
+import subprocess
 
 import pytest
 from unittest.mock import patch, MagicMock
@@ -12,9 +13,32 @@ from music_stuff.lib.lib_apple_music import (
     set_song_bpm,
 )
 
+
+def _try_launch_music() -> bool:
+    """Try to launch Music.app and return True if it ends up running."""
+    if shutil.which("osascript") is None:
+        return False
+    try:
+        subprocess.run(
+            ["osascript", "-l", "JavaScript", "-e", 'Application("Music").launch()'],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        result = subprocess.run(
+            ["osascript", "-l", "JavaScript", "-e", 'Application("Music").running()'],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        return result.returncode == 0 and result.stdout.strip() == "true"
+    except Exception:
+        return False
+
+
 needs_osascript = pytest.mark.skipif(
-    shutil.which("osascript") is None,
-    reason="osascript not available",
+    not _try_launch_music(),
+    reason="Music app unavailable",
 )
 
 
