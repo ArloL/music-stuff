@@ -53,12 +53,16 @@ def _load_js_source() -> str:
 
 def _run_jxa(call: str):
     script = _load_js_source() + f"\nJSON.stringify({call})"
-    result = subprocess.run(
-        ["osascript", "-l", "JavaScript"],
-        input=script,
-        capture_output=True,
-        text=True,
-    )
+    try:
+        result = subprocess.run(
+            ["osascript", "-l", "JavaScript"],
+            input=script,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired as e:
+        raise RuntimeError("osascript timed out") from e
     if result.returncode != 0:
         raise RuntimeError(result.stderr.strip())
     return json.loads(result.stdout)
