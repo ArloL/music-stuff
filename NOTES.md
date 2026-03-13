@@ -10,6 +10,61 @@
 
 **`key_diff`** — sum of circular distances from `effective_key` to each source key. A single outlier contributes its own distance once, not amplified by every other source.
 
+## djay MediaLibrary.db — TSAF binary format and automix cue points
+
+djay stores everything in a single SQLite file (`MediaLibrary.db`) with a `database2` table:
+
+```
+database2(rowid, collection, key, data, metadata)
+```
+
+All data is in `data` as TSAF binary blobs.  Key collections:
+
+| collection | purpose |
+|---|---|
+| `mediaItemAnalyzedData` | BPM, key, beat grid |
+| `mediaItemUserData` | per-track DJ settings (cues, play count, colour) |
+| `localMediaItemLocations` | file path + Apple Music persistent ID |
+| `historySessions` | DJ set sessions |
+| `historySessionItems` | individual tracks played in each session |
+
+### TSAF encoding
+
+Fields are encoded as `VALUE 0x08 FIELD_NAME 0x00`.  The value type is determined by a prefix byte before the value:
+
+| prefix | type |
+|---|---|
+| `0x08 … 0x00` | string (the `0x08` is part of the value, no separate prefix) |
+| `0x0B [4 bytes]` | uint32 little-endian |
+| `0x13 [4 bytes]` | float32 little-endian |
+| `0x13 0x00 [4 bytes]` | float32 little-endian (alternate form) |
+| `0x30 0x00 [8 bytes]` | float64 little-endian (Core Data timestamp: seconds since 2001-01-01) |
+| `0x0F [1 byte]` | uint8 |
+| bare byte | raw single-byte value (no prefix) |
+| `0x2B` | entity start marker (followed by `0x08 EntityTypeName 0x00`) |
+
+After the first occurrence of an entity type, subsequent instances of the same entity in the blob use compact numeric field IDs (`0x05 ID`) instead of string names.
+
+### Automix cue points (`mediaItemUserData`)
+
+Tracks where the DJ has configured automix transition points have:
+
+- **`automixStartPoint`** (`uint32`, observed values 4–7) — djay's automix preference integer, likely beats or seconds.
+- **`automixEndPoint`** (`uint32`, observed values 4–7) — same for the incoming side.  Usually only one of the two is stored per track.
+- **`ADCCuePoint.time`** (`float32`, seconds from track start) — the precise track position for the transition cue.  Cue number byte `0x2E` (46) = automix-out cue; `0x2D` (45) = rare automix-in variant.
+
+The `mediaItemUserData` key is the same as the `localMediaItemLocations` key, so joining on key gives the Apple Music persistent ID.  See `load_automix_index()` in `lib_djay.py`.
+
+### historySessionItems
+
+Each played track in a session is a `historySessionItems` row.  Relevant fields:
+
+- `sessionUUID` (string) — links to the `historySessions` record
+- `startTime` (float64 Core Data timestamp) — when this track started playing
+- `duration` (float32, seconds) — track length
+- `deckNumber` (uint8) — which deck (0-based)
+- `originSourceID` (string, e.g. `com.apple.iTunes`) + Apple Music persistent ID in same blob
+
 ## Spotify API: playlist_remove_specific_occurrences_of_items does not work
 
 Tried using
