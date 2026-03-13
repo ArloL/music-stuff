@@ -1,3 +1,15 @@
+## Domain concepts
+
+**Open Key notation** — keys are expressed as `1d`–`12d` (major) and `1m`–`12m` (minor), corresponding to positions on the circle of fifths. All sources normalise to this format.
+
+**Key consensus** (`lib_consensus.py`) — weighted vote across 9 independent algorithms: 7 Essentia profiles (weighted by their strength score, typically 0.77–0.90) plus djay and beaTunes (each weighted 0.5 as less reliable).
+
+**BPM consensus** — normalises octave errors (halving/doubling) before averaging across sources.
+
+**Essentia cache** — analysis results are stored in `data/lib_essentia_cache.csv`. Already-cached songs are skipped. Delete an entry (or the whole file) to force re-analysis.
+
+**`key_diff`** — sum of circular distances from `effective_key` to each source key. A single outlier contributes its own distance once, not amplified by every other source.
+
 ## Spotify API: playlist_remove_specific_occurrences_of_items does not work
 
 Tried using
