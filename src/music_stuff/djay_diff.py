@@ -28,7 +28,7 @@ import sys
 import argparse
 from pathlib import Path
 
-from music_stuff.lib.lib_apple_music import find_songs_by_folder_name, find_songs_by_playlist_name, set_song_bpm
+from music_stuff.lib.lib_apple_music import find_songs_by_folder_name, find_songs_by_playlist_name, set_song_bpm, set_song_key
 from music_stuff.lib.lib_beatunes import lookup_songs
 from music_stuff.lib.lib_djay import load_djay_index
 from music_stuff.lib.lib_consensus import consensus_key, essentia_profile_keys
@@ -57,23 +57,23 @@ def _parse_open_key(s: str) -> int | None:
     return None
 
 
-def _key_diff(*keys: str) -> str:
+def _key_diff(reference: str, *keys: str) -> str:
     """
-    Return the sum of absolute pairwise circular distances among the given
-    Open Key strings as a plain integer string.
-    Returns "" if fewer than two keys are present.
+    Return the sum of circular distances from the reference key to each other key.
+    Returns "" if the reference key is missing or no other keys are present.
     """
-    available = [v for v in (_parse_open_key(k) for k in keys) if v is not None]
-    if len(available) < 2:
+    ref = _parse_open_key(reference)
+    if ref is None:
         return ""
-
+    others = [v for v in (_parse_open_key(k) for k in keys) if v is not None]
+    if not others:
+        return ""
     total = 0
-    for i in range(len(available)):
-        for j in range(i + 1, len(available)):
-            diff = (available[j] - available[i]) % 12
-            if diff > 6:
-                diff -= 12
-            total += abs(diff)
+    for other in others:
+        diff = (other - ref) % 12
+        if diff > 6:
+            diff -= 12
+        total += abs(diff)
     return str(total)
 
 
@@ -135,6 +135,7 @@ def main():
     group.add_argument("--playlist", metavar="NAME", default="Would Play",
                        help="Filter to songs in this Music library playlist (default: Would Play)")
     parser.add_argument("--write-bpm", action="store_true", help="Write effective BPM back to Apple Music")
+    parser.add_argument("--write-key", action="store_true", help="Write effective key back to Apple Music")
     args = parser.parse_args()
 
     # --- Load Music metadata ---
@@ -166,12 +167,12 @@ def main():
         "djay_bpm", "djay_manual_bpm", "djay_straight_grid", "apple_music_bpm",
         "beatunes_bpm", "beatunes_bpm_salience",
         "bpm_rhythm", "bpm_rhythm_confidence", "bpm_percival",
-        "effective_key", "consensus_key", "djay_key", "essentia_key", "beatunes_key", "apple_music_key",
+        "effective_key", "consensus_key", "djay_key_diff", "key_diff",
+        "djay_key", "essentia_key", "beatunes_key", "apple_music_key",
         "edma_key", "edma_strength", "edmm_key", "edmm_strength",
         "bgate_key", "bgate_strength", "braw_key", "braw_strength",
         "shaath_key", "shaath_strength", "temperley_key", "temperley_strength",
         "noland_key", "noland_strength",
-        "key_diff",
     ]
 
     # --- Load manual overrides ---
@@ -229,6 +230,7 @@ def main():
         profile_keys = {k: v for k, v in profile_data.items() if k.endswith("_key")}
         all_keys = [effective_key, djay_key, beatunes_key] + list(profile_keys.values())
         key_diff = _key_diff(*all_keys)
+        djay_key_diff = _key_diff(effective_key, djay_key)
 
         csv_rows.append({
             "apple_music_id": pid, "artist": song.artist, "name": song.name,
@@ -242,13 +244,13 @@ def main():
             "djay_key": djay_key, "essentia_key": essentia_key,
             "beatunes_key": beatunes_key, "consensus_key": consensus_key_all, "effective_key": effective_key,
             "apple_music_key": song.key,
-            **profile_data, "key_diff": key_diff,
+            **profile_data, "key_diff": key_diff, "djay_key_diff": djay_key_diff,
         })
 
     csv_rows.sort(
         key=lambda r: (
-            float(r["bpm_diff"]) if r["bpm_diff"] != "" else 0,
             int(r["key_diff"]) if r["key_diff"] != "" else 0,
+            float(r["bpm_diff"]) if r["bpm_diff"] != "" else 0,
         ),
         reverse=True,
     )
@@ -275,6 +277,16 @@ def main():
             bpm = int(round(float(row["effective_bpm"])))
             set_song_bpm(row["apple_music_id"], bpm)
             print(f"  [{i}/{len(updates)}] {row['artist']} - {row['name']}: {row['apple_music_bpm']} -> {bpm}", end="\r")
+        if updates:
+            print()
+
+    # --- Write effective key back to Apple Music ---
+    if args.write_key:
+        updates = [r for r in csv_rows if r["effective_key"] and r["effective_key"] != r["apple_music_key"]]
+        print(f"Writing key to Apple Music for {len(updates)} songs...")
+        for i, row in enumerate(updates, 1):
+            set_song_key(row["apple_music_id"], row["effective_key"])
+            print(f"  [{i}/{len(updates)}] {row['artist']} - {row['name']}: {row['apple_music_key']} -> {row['effective_key']}", end="\r")
         if updates:
             print()
 
