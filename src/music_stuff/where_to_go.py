@@ -1,45 +1,47 @@
 #!/usr/bin/env python3
 """
-Find songs that can transition INTO a given seed song, filtered by BPM
-tolerance and harmonic key compatibility.
+Find songs to transition TO from a given seed song, biasing upward in BPM for
+boost-direction transitions and allowing full range for drop-direction transitions.
 
 Usage:
-    uv run python how-to-get-here.py [--seed PERSISTENT_ID]
+    uv run python where_to_go.py [--seed PERSISTENT_ID]
 """
 import argparse
 
 from music_stuff.lib.lib_apple_music import find_song_by_id
 from music_stuff.lib.lib_transitions import (
+    ALLOWED_KEY_TRANSITIONS,
     BPM_TOLERANCE,
-    REVERSE_KEY_TRANSITIONS,
     enrich_song,
     filter_candidates,
     load_playlist,
     print_table,
 )
 
+_UPWARD_TRANSITIONS = {"matching", "boost", "boost boost", "boost boost boost"}
 
-def how_to_get_here(seed: dict, playlist: str, exclude: str, genres: set[str] | None = None, min_rating: int = 80) -> None:
+
+def where_to_go(seed: dict, playlist: str, exclude: str, genres: set[str] | None = None, min_rating: int = 80) -> None:
     key = seed["tonalkey"]
     print("\nLoading candidate playlists...")
     candidates = load_playlist(playlist)
     played_ids = {s["id"] for s in load_playlist(exclude)}
-    bpm_lo = seed["exactbpm"] - BPM_TOLERANCE
     bpm_hi = seed["exactbpm"] + BPM_TOLERANCE
 
     print_table("Seed", [seed])
-    for label, rev_map in REVERSE_KEY_TRANSITIONS.items():
-        tonal_keys = rev_map.get(key, [])
-        results = (
-            filter_candidates(candidates, played_ids, bpm_lo, bpm_hi, tonal_keys, genres, min_rating)
-            if tonal_keys else []
-        )
+    for label, fwd_map in ALLOWED_KEY_TRANSITIONS.items():
+        tonal_keys = fwd_map.get(key, [])
+        if not tonal_keys:
+            results = []
+        else:
+            bpm_lo = seed["exactbpm"] if label in _UPWARD_TRANSITIONS else seed["exactbpm"] - BPM_TOLERANCE
+            results = filter_candidates(candidates, played_ids, bpm_lo, bpm_hi, tonal_keys, genres, min_rating)
         print_table(label.title(), results)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Find songs that can transition into a seed song."
+        description="Find songs to play after a seed song, biasing toward higher energy."
     )
     parser.add_argument(
         "--seed",
@@ -82,7 +84,7 @@ def main() -> None:
     seed = enrich_song(raw_seed)
     print(f"  {seed.get('artist', '')} – {seed.get('name', '')}")
 
-    how_to_get_here(seed, args.playlist, args.exclude, set(args.genres) if args.genres else None, args.min_rating)
+    where_to_go(seed, args.playlist, args.exclude, set(args.genres) if args.genres else None, args.min_rating)
 
 
 if __name__ == "__main__":
