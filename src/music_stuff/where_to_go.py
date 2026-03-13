@@ -89,7 +89,7 @@ def main() -> None:
     seed = find_song_by_id(args.seed)
     if seed is None:
         raise SystemExit(f"Seed song with ID {args.seed} not found in library.")
-    print(f"  {seed.get('artist', '')} – {seed.get('name', '')}")
+    print(f"  {seed.artist} – {seed.name}")
 
     where_to_go(seed, args.playlist, args.exclude, set(args.genres) if args.genres else None, args.min_rating, args.bpm_lo, args.bpm_hi)
 
