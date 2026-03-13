@@ -6,7 +6,7 @@ single CSV for review and reconciliation.
 Usage:
     uv run djay-diff [--folder NAME | --playlist NAME] [--write-bpm] [--write-key]
 
-Defaults to --folder "Critical Mass". Outputs to data/songs-djay-diff.csv.
+Defaults to --playlist "Would Play". Outputs to data/songs-djay-diff.csv.
 
 Manual overrides can be placed in data/songs-manual.csv with columns:
     apple_music_id, bpm, key
@@ -133,7 +133,7 @@ def main():
     parser = argparse.ArgumentParser(description="Export djay BPM data merged with Apple Music metadata.")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--folder", metavar="NAME",
-                       help="Filter to songs in this Music library folder (default: Critical Mass)")
+                       help="Filter to songs in this Music library folder")
     group.add_argument("--playlist", metavar="NAME", default="Would Play",
                        help="Filter to songs in this Music library playlist (default: Would Play)")
     parser.add_argument("--write-bpm", action="store_true", help="Write effective BPM back to Apple Music")
