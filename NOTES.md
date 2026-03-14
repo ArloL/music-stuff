@@ -82,7 +82,18 @@ Tracks where the DJ has configured automix transition points contain an `ADCCueP
 
 The **time** field is what callers need — the integer automix points are djay's internal grid preferences, not actual time positions. The cue number byte (`0x2E` = 46 = automix-out, `0x2D` = 45 = automix-in) identifies which cue point is which.
 
+### Analyzed automix points (`mediaItemAnalyzedData`)
+
+djay also stores AI-predicted automix transition points in `mediaItemAnalyzedData`. These are the default transition points that users can override with manual cue points. These are stored as float32 seconds values (not grid positions like the user data):
+
+- **`analyzedAutomixStartPoint`** (`float32`, seconds) — predicted start point for the outgoing track
+- **`analyzedAutomixEndPoint`** (`float32`, seconds) — when this track should end (i.e., start transitioning to the next track)
+
+These represent actual time positions (e.g., ~15.4 seconds into the track, ~3:48.5 from the end).
+
 The `mediaItemUserData` key is the same as the `localMediaItemLocations` key, so joining on key gives the Apple Music persistent ID.  See `load_automix_index()` in `lib_djay.py`.
+
+> **Note**: When searching for a track in a fresh database export, the exact key may not match if the track was added/removed. Use `localMediaItemLocations` to find the correct key first, then query other collections by that key.
 
 ### historySessionItems
 
