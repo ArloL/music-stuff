@@ -164,7 +164,7 @@ def main():
 
     # --- Write CSV ---
     fieldnames = [
-        "apple_music_id", "artist", "name",
+        "apple_music_id", "djay_id", "artist", "name",
         "effective_bpm", "consensus_bpm", "djay_bpm_diff", "bpm_diff",
         "djay_bpm", "djay_manual_bpm", "djay_straight_grid", "apple_music_bpm",
         "beatunes_bpm", "beatunes_bpm_salience",
@@ -235,7 +235,7 @@ def main():
 
 
         csv_rows.append({
-            "apple_music_id": pid, "artist": song.artist, "name": song.name,
+            "apple_music_id": pid, "djay_id": djay_data.id, "artist": song.artist, "name": song.name,
             "djay_bpm": djay_data.bpm, "djay_manual_bpm": djay_data.manual_bpm,
             "djay_straight_grid": djay_data.is_straight_grid,
             "apple_music_bpm": song.bpm, "beatunes_bpm": beatunes_bpm,
