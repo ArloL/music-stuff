@@ -17,7 +17,7 @@ class TsafEntity:
 SOURCE_DB = (
     Path.home() / "Music/djay/djay Media Library.djayMediaLibrary/MediaLibrary.db"
 )
-DB_PATH = Path(__file__).parent.parent.parent / "tmp/djay-MediaLibrary.db"
+DB_PATH = Path(__file__).parent.parent.parent.parent / "tmp/djay-MediaLibrary.db"
 
 DJAY_KEY_INDEX_TO_OPEN_KEY = {
     0: "1d",
@@ -51,6 +51,7 @@ def _clone_db() -> None:
     """Clone the live djay MediaLibrary.db (and WAL/SHM files) to DB_PATH."""
     if not SOURCE_DB.exists():
         raise FileNotFoundError(f"djay database not found: {SOURCE_DB}")
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     clonefile(SOURCE_DB, DB_PATH)
     for suffix in ("-wal", "-shm"):
         src = Path(str(SOURCE_DB) + suffix)
