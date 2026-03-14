@@ -28,6 +28,21 @@ All data is in `data` as TSAF binary blobs.  Key collections:
 | `historySessions` | DJ set sessions |
 | `historySessionItems` | individual tracks played in each session |
 
+ The `key` is **not** the Apple Music persistent ID.
+
+### Finding a track
+
+To find a specific track, look at the `localMediaItemLocations` collection.
+It contains the Apple Music persistent ID as decimal in the blob data:
+`\x08com.apple.iTunes:PERSISTENT_ID_DECIMAL\x00`.
+For example to get the hexadecimal song id BCF4FFC5EFDDC171,
+first convert it to decimal (13615788799045779825) and then query with
+`instr` to allow sqlite to search the binary data:
+
+```
+select * from database2 where collection = 'localMediaItemLocations' and instr(data, 'com.apple.iTunes:13615788799045779825') > 0
+```
+
 ### TSAF encoding
 
 TSAF blobs use two encoding modes: **verbose** (string field names) and **compact** (numeric field IDs).
@@ -49,19 +64,23 @@ Fields are encoded as `TYPE_TAG VALUE 0x08 FIELD_NAME 0x00`.  The type tag deter
 
 #### Schema entries
 
-Field names also appear as bare `0x08 FIELD_NAME 0x00` sequences **without** a preceding type tag earlier in the blob. These are schema declarations, not data-carrying fields. When searching for a field value by name, you must check for the expected type tag byte before the value to distinguish data fields from schema entries. See `_find_tsaf_field()` in `lib_djay.py` for how this works in practice.
+Field names also appear as bare `0x08 FIELD_NAME 0x00` sequences **without** a preceding type tag earlier in the blob. These are schema declarations, not data-carrying fields. The `parse_tsaf()` function in `lib_djay.py` handles this distinction by checking for type tags before values.
 
 #### Compact encoding
 
-After the first occurrence of an entity type, subsequent instances of the same entity in the blob use compact numeric field IDs (`0x05 FIELD_ID`) instead of string names. The field ID to name mapping is defined by the first (verbose) occurrence. We don't fully understand the compact encoding yet — `_find_compact_cue_time()` in `lib_djay.py` handles the one case we need by matching a known byte sequence rather than general-purpose decoding.
+After the first occurrence of an entity type, subsequent instances use compact numeric field IDs (`0x05 FIELD_ID`). The `parse_tsaf()` function maintains a schema registry that maps entity type names to their field names from the first verbose occurrence, then uses this to decode compact entities.
+
+The parser handles both encoding modes and returns a list of `TsafEntity` dataclasses with `type_name`, `fields` (dict of field names to values), and `compact` (bool) attributes.
 
 ### Automix cue points (`mediaItemUserData`)
 
-Tracks where the DJ has configured automix transition points have:
+Tracks where the DJ has configured automix transition points contain an `ADCCuePoint` entity with:
 
-- **`automixStartPoint`** (`uint32`, observed values 4–7) — djay's automix preference integer, likely beats or seconds.
-- **`automixEndPoint`** (`uint32`, observed values 4–7) — same for the incoming side.  Usually only one of the two is stored per track.
-- **`ADCCuePoint.time`** (`float32`, seconds from track start) — the precise track position for the transition cue.  Cue number byte `0x2E` (46) = automix-out cue; `0x2D` (45) = rare automix-in variant.
+- **`automixStartPoint`** (`uint32`) — small integer (observed values 4–7), likely a grid position or beat count
+- **`automixEndPoint`** (`uint32`) — same as above for the incoming side
+- **`ADCCuePoint.time`** (`float32`, seconds) — the precise track position for the transition cue
+
+The **time** field is what callers need — the integer automix points are djay's internal grid preferences, not actual time positions. The cue number byte (`0x2E` = 46 = automix-out, `0x2D` = 45 = automix-in) identifies which cue point is which.
 
 The `mediaItemUserData` key is the same as the `localMediaItemLocations` key, so joining on key gives the Apple Music persistent ID.  See `load_automix_index()` in `lib_djay.py`.
 
