@@ -73,6 +73,12 @@ def _extract_persistent_ids(data: bytes) -> list[str]:
     return result
 
 
+def hex_id_to_djay_id(hex_id: str) -> int:
+    """Convert an Apple Music hex persistent ID to a djay ID."""
+    value = int(hex_id, 16)
+    return value
+
+
 def parse_tsaf(blob: bytes) -> list[TsafEntity]:
     """Parse a TSAF blob and return a list of entities."""
     if len(blob) < 20 or blob[:4] != b"TSAF":
