@@ -352,6 +352,7 @@ def _extract_automix_data(
 
 @dataclass
 class DjaySongData:
+    id: str
     bpm: float | str
     manual_bpm: float | str
     key: str
@@ -373,6 +374,7 @@ def load_djay_index() -> dict[str, DjaySongData]:
             bpm_idx.bpm,
             bpm_idx.manualBPM,
             bpm_idx.keySignatureIndex,
+            analyzed.key AS analyzed_key,
             analyzed.data AS analyzed_blob,
             loc.data AS location_blob,
             ud.data AS ud_blob
@@ -400,6 +402,7 @@ def load_djay_index() -> dict[str, DjaySongData]:
             ud_blob = bytes(row["ud_blob"]) if row["ud_blob"] else b""
             cs, ct = _extract_automix_data(ud_blob)
             djay_index[pid] = DjaySongData(
+                id=row["analyzed_key"],
                 bpm=round(row["bpm"], 2) if row["bpm"] else "",
                 manual_bpm=round(row["manualBPM"], 2) if row["manualBPM"] else "",
                 key=DJAY_KEY_INDEX_TO_OPEN_KEY.get(key_index, ""),
