@@ -70,4 +70,6 @@ Tests for the macOS-only paths are marked `@needs_osascript` and skip gracefully
 2. Add `tests/test_lib_your_thing.py`.
 3. Keep it focused — one external system or one algorithm per file.
 
+**Document what you learn.** When you reverse-engineer a binary format, discover an API quirk, or figure out how an external tool works, add it to [NOTES.md](NOTES.md). Future-you will thank past-you.
+
 See [NOTES.md](NOTES.md) for domain concepts, architecture decisions, and technical reference.
