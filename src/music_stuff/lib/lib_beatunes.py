@@ -57,7 +57,7 @@ class BeaTunesSong:
 def _clone_db() -> Path:
     """Clone the live beaTunes H2 database and return the clone path."""
     source_db = _find_source_db()
-    db_path = Path(__file__).parent / "tmp" / source_db.name
+    db_path = Path(__file__).parent.parent.parent.parent / "tmp/beaTunes.h2.db"
     db_path.parent.mkdir(parents=True, exist_ok=True)
     for suffix in (".lock.db", ".trace.db"):
         Path(str(db_path).replace(".h2.db", suffix)).unlink(missing_ok=True)
