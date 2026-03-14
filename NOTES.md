@@ -30,20 +30,30 @@ All data is in `data` as TSAF binary blobs.  Key collections:
 
 ### TSAF encoding
 
-Fields are encoded as `VALUE 0x08 FIELD_NAME 0x00`.  The value type is determined by a prefix byte before the value:
+TSAF blobs use two encoding modes: **verbose** (string field names) and **compact** (numeric field IDs).
 
-| prefix | type |
+#### Verbose encoding
+
+Fields are encoded as `TYPE_TAG VALUE 0x08 FIELD_NAME 0x00`.  The type tag determines how to read the value:
+
+| type tag | type |
 |---|---|
-| `0x08 … 0x00` | string (the `0x08` is part of the value, no separate prefix) |
+| `0x08 … 0x00` | string (the `0x08` is part of the value, no separate type tag) |
 | `0x0B [4 bytes]` | uint32 little-endian |
 | `0x13 [4 bytes]` | float32 little-endian |
 | `0x13 0x00 [4 bytes]` | float32 little-endian (alternate form) |
 | `0x30 0x00 [8 bytes]` | float64 little-endian (Core Data timestamp: seconds since 2001-01-01) |
 | `0x0F [1 byte]` | uint8 |
-| bare byte | raw single-byte value (no prefix) |
+| bare byte | raw single-byte value (no type tag) |
 | `0x2B` | entity start marker (followed by `0x08 EntityTypeName 0x00`) |
 
-After the first occurrence of an entity type, subsequent instances of the same entity in the blob use compact numeric field IDs (`0x05 ID`) instead of string names.
+#### Schema entries
+
+Field names also appear as bare `0x08 FIELD_NAME 0x00` sequences **without** a preceding type tag earlier in the blob. These are schema declarations, not data-carrying fields. When searching for a field value by name, you must check for the expected type tag byte before the value to distinguish data fields from schema entries. See `_find_tsaf_field()` in `lib_djay.py` for how this works in practice.
+
+#### Compact encoding
+
+After the first occurrence of an entity type, subsequent instances of the same entity in the blob use compact numeric field IDs (`0x05 FIELD_ID`) instead of string names. The field ID to name mapping is defined by the first (verbose) occurrence. We don't fully understand the compact encoding yet — `_find_compact_cue_time()` in `lib_djay.py` handles the one case we need by matching a known byte sequence rather than general-purpose decoding.
 
 ### Automix cue points (`mediaItemUserData`)
 
