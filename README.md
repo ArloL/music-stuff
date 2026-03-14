@@ -24,6 +24,7 @@ src/music_stuff/
 tests/              one test file per library module
 data/               CSV exports and Essentia cache (not committed except cache)
 scripts/            shell helpers for external tools
+tmp/                contains clones of the beaTunes and djay databases
 ```
 
 ## Rules
@@ -45,6 +46,8 @@ uv add <package>         # add a dependency
 **Secrets stay out of the repo.** Spotify credentials go in `secrets/` which is gitignored.
 
 **Pin exact dependency versions.** Every entry in `pyproject.toml` uses `==`. When adding a package, pin the exact version that was installed (`uv pip show <package>` to find it). This avoids surprise breakage from transitive upgrades and keeps the environment reproducible across machines.
+
+**Always work with the clones of the databases in ./tmp**
 
 ## Platform notes
 
