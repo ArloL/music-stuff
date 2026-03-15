@@ -370,43 +370,45 @@ def load_djay_index() -> dict[str, DjaySongData]:
     con = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
     con.row_factory = sqlite3.Row
     rows = con.execute("""
-        SELECT
-            bpm_idx.bpm,
-            bpm_idx.manualBPM,
-            bpm_idx.keySignatureIndex,
-            analyzed.key AS analyzed_key,
-            analyzed.data AS analyzed_blob,
-            loc.data AS location_blob,
-            ud.data AS ud_blob
-        FROM secondaryIndex_mediaItemAnalyzedDataIndex AS bpm_idx
-        JOIN database2 AS analyzed
-            ON analyzed.rowid = bpm_idx.rowid
-            AND analyzed.collection = 'mediaItemAnalyzedData'
-        JOIN database2 AS loc
-            ON loc.key = analyzed.key
-            AND loc.collection = 'localMediaItemLocations'
-        LEFT JOIN database2 AS ud
-            ON ud.key = analyzed.key
-            AND ud.collection = 'mediaItemUserData'
-        WHERE bpm_idx.bpm IS NOT NULL
+        select
+            dlmil.key as id,
+            simiadi.bpm as bpm,
+            simiadi.keySignatureIndex as keyIndex,
+            simiudi.manualBPM as manualBpm,
+            dmiad.data AS dmiad_data,
+            dlmil.data AS dlmil_data,
+            dmiud.data AS dmiud_data
+        from database2 dlmil
+        left join database2 as dmiad
+            on dmiad.key = dlmil.key
+            and dmiad.collection = 'mediaItemAnalyzedData'
+        left join database2 AS dmiud
+            on dmiud.key = dlmil.key
+            and dmiud.collection = 'mediaItemUserData'
+        left join secondaryIndex_mediaItemAnalyzedDataIndex simiadi
+            on  simiadi.rowid = dmiad.rowid
+        left join secondaryIndex_mediaItemUserDataIndex AS simiudi
+            on simiudi.rowid = dmiud.rowid
+        where dlmil.collection = 'localMediaItemLocations'
+        and instr(dlmil.data, 'com.apple.iTunes') > 0
     """).fetchall()
     con.close()
 
     djay_index: dict[str, DjaySongData] = {}
     for row in rows:
-        for pid in _extract_persistent_ids(bytes(row["location_blob"])):
+        for pid in _extract_persistent_ids(bytes(row["dlmil_data"])):
             if pid in djay_index:
                 continue
-            key_index = row["keySignatureIndex"]
-            analyzed_blob = bytes(row["analyzed_blob"]) if row["analyzed_blob"] else b""
-            ud_blob = bytes(row["ud_blob"]) if row["ud_blob"] else b""
-            cs, ct = _extract_automix_data(ud_blob)
+            key = DJAY_KEY_INDEX_TO_OPEN_KEY.get(row["keyIndex"], "")
+            dmiad_data = bytes(row["dmiad_data"]) if row["dmiad_data"] else b""
+            dmiud_data = bytes(row["dmiud_data"]) if row["dmiud_data"] else b""
+            cs, ct = _extract_automix_data(dmiud_data)
             djay_index[pid] = DjaySongData(
-                id=row["analyzed_key"],
+                id=row["id"],
                 bpm=round(row["bpm"], 2) if row["bpm"] else "",
-                manual_bpm=round(row["manualBPM"], 2) if row["manualBPM"] else "",
-                key=DJAY_KEY_INDEX_TO_OPEN_KEY.get(key_index, ""),
-                is_straight_grid=b"isStraightGrid" in analyzed_blob,
+                manual_bpm=round(row["manualBpm"], 2) if row["manualBpm"] else "",
+                key=key,
+                is_straight_grid=b"isStraightGrid" in dmiad_data,
                 cue_start_time=cs,
                 cue_end_time=ct,
             )
