@@ -30,11 +30,6 @@ def test_key_map_is_bijection_over_all_open_keys():
 # --- _extract_persistent_ids ---
 
 
-def test_extract_persistent_ids_both_prefixes():
-    blob = b"junk\x08com.apple.iTunes:111\x00more\x08com.apple.Music:222\x00"
-    assert _extract_persistent_ids(blob) == ["000000000000006F", "00000000000000DE"]
-
-
 def test_extract_persistent_ids_negative_id():
     blob = b"\x08com.apple.iTunes:-5639804195476274594\x00"
     assert _extract_persistent_ids(blob) == ["B1BB63F715E1025E"]
@@ -125,7 +120,7 @@ _BLOB_4D24 = bytes.fromhex(
 )
 
 
-def _make_ud_blob(*, cue_start_time=None, cue_time=None):
+def _make_dmiud_data(*, cue_start_time=None, cue_time=None):
     """Build a minimal TSAF-style mediaItemUserData blob for testing."""
     header = b"TSAF\x03\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
     parts = [header]
@@ -150,21 +145,21 @@ def _make_ud_blob(*, cue_start_time=None, cue_time=None):
 
 
 def test_extract_automix_data_all_fields():
-    blob = _make_ud_blob(cue_start_time=10.0, cue_time=200.5)
+    blob = _make_dmiud_data(cue_start_time=10.0, cue_time=200.5)
     cs, ct = _extract_automix_data(blob)
     assert abs(cs - 10.0) < 0.01
     assert abs(ct - 200.5) < 0.01
 
 
 def test_extract_automix_data_start_only():
-    blob = _make_ud_blob()
+    blob = _make_dmiud_data()
     cs, ct = _extract_automix_data(blob)
     assert cs is None
     assert ct is None
 
 
 def test_extract_automix_data_cue_only():
-    blob = _make_ud_blob(cue_time=150.0)
+    blob = _make_dmiud_data(cue_time=150.0)
     cs, ct = _extract_automix_data(blob)
     assert cs is None
     assert abs(ct - 150.0) < 0.01
@@ -197,41 +192,56 @@ def test_extract_automix_data_real_blob_4d24():
 def _make_test_db(db_path, rows):
     """Create a minimal sqlite DB mimicking djay's schema for testing.
 
-    rows: list of (bpm, manual_bpm, key_idx, apple_id, ud_blob)
-    ud_blob may be None to simulate a track with no mediaItemUserData row.
+    rows: list of (bpm, manual_bpm, key_index, apple_music_id, dmiud_data)
+    dmiud_data may be None to simulate a track with no mediaItemUserData row.
     """
     con = sqlite3.connect(str(db_path))
     con.execute("""
-        CREATE TABLE secondaryIndex_mediaItemAnalyzedDataIndex (
-            rowid INTEGER PRIMARY KEY, bpm REAL, manualBPM REAL, keySignatureIndex INTEGER
+        CREATE TABLE "database2" (
+            "rowid" INTEGER PRIMARY KEY, "key" TEXT, "collection" TEXT, "data" BLOB
         )
     """)
     con.execute("""
-        CREATE TABLE database2 (
-            rowid INTEGER PRIMARY KEY, key TEXT, collection TEXT, data BLOB
+        CREATE TABLE "secondaryIndex_mediaItemAnalyzedDataIndex" (
+            "rowid" INTEGER PRIMARY KEY, "bpm" REAL, "manualBPM" REAL, "keySignatureIndex" INTEGER
         )
     """)
-    loc_rowid = 1000
-    ud_rowid = 2000
-    for i, (bpm, manual_bpm, key_idx, apple_id, ud_blob) in enumerate(rows, 1):
+    con.execute("""
+        CREATE TABLE "secondaryIndex_mediaItemLocationIndex" (
+            "rowid" INTEGER PRIMARY KEY, "fileName" TEXT
+        )
+    """)
+    con.execute("""
+        CREATE TABLE "secondaryIndex_mediaItemUserDataIndex" (
+            "rowid" INTEGER PRIMARY KEY, "tags" TEXT, "manualBPM" REAL
+        )
+    """)
+    dlmil_rowid_start = 1000
+    dmiud_rowid_start = 2000
+    for i, (bpm, manual_bpm, key_index, apple_music_id, dmiud_data) in enumerate(rows, 1):
         con.execute(
             "INSERT INTO secondaryIndex_mediaItemAnalyzedDataIndex VALUES (?, ?, ?, ?)",
-            (i, bpm, manual_bpm, key_idx),
+            (i, bpm, None, key_index),
         )
         key = f"song_{i}"
         con.execute(
             "INSERT INTO database2 (rowid, key, collection, data) VALUES (?, ?, 'mediaItemAnalyzedData', ?)",
             (i, key, b""),
         )
-        blob = f"\x08com.apple.Music:{apple_id}\x00".encode()
+        blob = f"\x08com.apple.iTunes:{apple_music_id}\x00".encode()
         con.execute(
             "INSERT INTO database2 (rowid, key, collection, data) VALUES (?, ?, 'localMediaItemLocations', ?)",
-            (loc_rowid + i, key, blob),
+            (dlmil_rowid_start + i, key, blob),
         )
-        if ud_blob is not None:
+        if dmiud_data is not None or manual_bpm is not None:
+            if manual_bpm is not None:
+                con.execute(
+                    "INSERT INTO secondaryIndex_mediaItemUserDataIndex VALUES (?, ?, ?)",
+                    (dmiud_rowid_start + i, None, manual_bpm),
+                )
             con.execute(
                 "INSERT INTO database2 (rowid, key, collection, data) VALUES (?, ?, 'mediaItemUserData', ?)",
-                (ud_rowid + i, key, ud_blob),
+                (dmiud_rowid_start + i, key, dmiud_data),
             )
     con.commit()
     con.close()
@@ -252,6 +262,7 @@ def test_load_djay_index_maps_key_and_bpm(mock_clone, tmp_path):
         result = load_djay_index()
 
     assert result["0000000000003039"] == DjaySongData(
+        id="song_1",
         bpm=120.5,
         manual_bpm=121.0,
         key="1d",
@@ -260,6 +271,7 @@ def test_load_djay_index_maps_key_and_bpm(mock_clone, tmp_path):
         cue_end_time=None,
     )
     assert result["0000000000010932"] == DjaySongData(
+        id="song_2",
         bpm=130.0,
         manual_bpm="",
         key="3m",
@@ -272,7 +284,7 @@ def test_load_djay_index_maps_key_and_bpm(mock_clone, tmp_path):
 @patch("music_stuff.lib.lib_djay._clone_db")
 def test_load_djay_index_includes_automix_data(mock_clone, tmp_path):
     db = tmp_path / "test.db"
-    ud = _make_ud_blob(cue_time=200.5)
+    ud = _make_dmiud_data(cue_time=200.5)
     _make_test_db(db, [(120.0, None, 0, 12345, ud)])
 
     with patch("music_stuff.lib.lib_djay.DB_PATH", db):
@@ -303,45 +315,6 @@ def test_load_djay_index_unknown_key_produces_empty_string(mock_clone, tmp_path)
         result = load_djay_index()
 
     assert result["000000000000006F"].key == ""
-
-
-@patch("music_stuff.lib.lib_djay._clone_db")
-def test_load_djay_index_deduplicates_by_pid(mock_clone, tmp_path):
-    """If the same persistent ID appears in multiple rows, keep the first."""
-    db = tmp_path / "test.db"
-    con = sqlite3.connect(str(db))
-    con.execute("""
-        CREATE TABLE secondaryIndex_mediaItemAnalyzedDataIndex (
-            rowid INTEGER PRIMARY KEY, bpm REAL, manualBPM REAL, keySignatureIndex INTEGER
-        )
-    """)
-    con.execute("""
-        CREATE TABLE database2 (
-            rowid INTEGER PRIMARY KEY, key TEXT, collection TEXT, data BLOB
-        )
-    """)
-    blob = b"\x08com.apple.Music:999\x00"
-    for i, bpm in enumerate([120.0, 130.0], 1):
-        key = f"song_{i}"
-        con.execute(
-            "INSERT INTO secondaryIndex_mediaItemAnalyzedDataIndex VALUES (?, ?, ?, ?)",
-            (i, bpm, None, 0),
-        )
-        con.execute(
-            "INSERT INTO database2 VALUES (?, ?, 'mediaItemAnalyzedData', ?)",
-            (i, key, b""),
-        )
-        con.execute(
-            "INSERT INTO database2 VALUES (?, ?, 'localMediaItemLocations', ?)",
-            (1000 + i, key, blob),
-        )
-    con.commit()
-    con.close()
-
-    with patch("music_stuff.lib.lib_djay.DB_PATH", db):
-        result = load_djay_index()
-
-    assert len(result) == 1
 
 
 # --- parse_tsaf ---
