@@ -49,7 +49,7 @@ def _load_js_source() -> str:
     return _js_source
 
 
-def _run_jxa(call: str):
+def _run_jxa(call: str, timeout=30):
     script = _load_js_source() + f"\nJSON.stringify({call})"
     try:
         result = subprocess.run(
@@ -57,7 +57,7 @@ def _run_jxa(call: str):
             input=script,
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=timeout,
         )
     except subprocess.TimeoutExpired as e:
         raise RuntimeError("osascript timed out") from e
@@ -84,7 +84,7 @@ def find_song_by_id(song_id: str) -> AppleMusicSong | None:
 
 
 def find_all_songs() -> list[AppleMusicSong]:
-    return [_to_song(r) for r in _run_jxa("findAllTracks()")]
+    return [_to_song(r) for r in _run_jxa("findAllTracks()", 60)]
 
 
 def set_song_bpm(song_id: str, bpm: int) -> None:
