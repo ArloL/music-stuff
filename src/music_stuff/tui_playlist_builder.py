@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime
+import threading
 import time
 from pathlib import Path
 
@@ -111,6 +112,19 @@ def run_tui(
     preview_song_id: list[str | None]                      = [None]
     preview_offset:  list[float]                           = [_PREVIEW_START]
     preview_wall:    list[float]                           = [0.0]
+    _ticker_stop:    list[bool]                            = [False]
+
+    def _start_ticker() -> None:
+        _ticker_stop[0] = False
+        def _tick() -> None:
+            while not _ticker_stop[0]:
+                time.sleep(1.0)
+                if not _ticker_stop[0]:
+                    app.invalidate()
+        threading.Thread(target=_tick, daemon=True).start()
+
+    def _stop_ticker() -> None:
+        _ticker_stop[0] = True
 
     # Channel mode: "stereo" | "left" | "right"
     _CHANNEL_MODES = ["stereo", "left", "right"]
@@ -147,6 +161,7 @@ def run_tui(
         return preview_offset[0] + (time.monotonic() - preview_wall[0])
 
     def _stop_preview() -> None:
+        _stop_ticker()
         if preview_device[0] is not None:
             preview_device[0].stop()
             preview_device[0] = None
@@ -178,6 +193,7 @@ def run_tui(
             preview_song_id[0] = song.id
             preview_offset[0] = offset
             preview_wall[0] = time.monotonic()
+            _start_ticker()
         except miniaudio.MiniaudioError as e:
             status_override[0] = f"Preview error: {e}"
 
