@@ -40,19 +40,18 @@ class _Song:
 # Fixtures
 # ---------------------------------------------------------------------------
 
-def _make_state(seed, pool, played_ids=None, bpm_lo=12.0, bpm_hi=12.0, genres=None, min_rating=80):
+def _make_state(seed, pool, played_ids=None, bpm_range=12.0, genres=None, min_rating=80):
     s = AppState(
         candidate_pool=pool,
         played_ids=played_ids or set(),
         seed=seed,
         history=[seed],
-        bpm_lo=bpm_lo,
-        bpm_hi=bpm_hi,
+        bpm_range=bpm_range,
         genres=genres,
         min_rating=min_rating,
     )
-    from music_stuff.playlist_builder import _recompute
-    return _recompute(s)
+    from music_stuff.playlist_builder import recompute
+    return recompute(s)
 
 
 # ---------------------------------------------------------------------------
