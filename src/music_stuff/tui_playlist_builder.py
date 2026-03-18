@@ -24,6 +24,7 @@ from music_stuff.lib.lib_transitions import calculate_transition_score, get_tran
 from music_stuff.playlist_builder import (
     AppState,
     build_initial_state,
+    playlist_duration,
     recompute,
     save_csv,
     select_candidate,
@@ -78,6 +79,15 @@ def _visible_height() -> int:
         return 30
 
 
+def _fmt_duration(seconds: float) -> str:
+    s = int(seconds)
+    h, rem = divmod(s, 3600)
+    m, sec = divmod(rem, 60)
+    if h:
+        return f"{h}h{m:02d}m"
+    return f"{m}m{sec:02d}s"
+
+
 def run_tui(
     initial_state: AppState | None,
     original_played_ids: set[str],
@@ -87,6 +97,7 @@ def run_tui(
     bpm_range: float,
     genres: set[str] | None,
     min_rating: int,
+    djay_index: dict | None = None,
 ) -> None:
     state_ref: list[AppState | None] = [initial_state]
     original_played_ids_ref: list[set[str]] = [original_played_ids]
@@ -361,7 +372,9 @@ def run_tui(
             prev = state.history[-2]
             ttype = get_transition_type(_song_dict(prev), _song_dict(seed))
         extra = f"  [{ttype}]" if ttype else ""
-        return f" Now: {seed.artist} – {seed.name}  [{seed.bpm:.0f} BPM  {seed.key}]{extra}{_preview_status()}"
+        dur = playlist_duration(state.history, djay_index or {})
+        dur_str = f"  {_fmt_duration(dur)}" if dur > 0 else ""
+        return f" Now: {seed.artist} – {seed.name}  [{seed.bpm:.0f} BPM  {seed.key}]{extra}{dur_str}{_preview_status()}"
 
     def _fmt_status() -> str:
         if status_override[0]:

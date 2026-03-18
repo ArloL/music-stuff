@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from music_stuff.lib.lib_apple_music import AppleMusicSong, find_song_by_id
+from music_stuff.lib.lib_djay import DjaySongData
 from music_stuff.lib.lib_transitions import (
     ALLOWED_KEY_TRANSITIONS,
     calculate_transition_score,
@@ -165,6 +166,32 @@ def save_csv(state: AppState, path: str | Path) -> None:
         writer.writerows(rows)
 
 
+def playlist_duration(
+    history: list[AppleMusicSong],
+    djay_index: dict[str, DjaySongData],
+) -> float:
+    """Calculate playlist duration using djay automix start points.
+
+    Each track (except the last) contributes its automix start point — the
+    position where it begins mixing out and the next track starts.  The last
+    track contributes its full duration.  Falls back to song.duration when
+    djay data is unavailable for a track.
+    """
+    if not history:
+        return 0.0
+    total = 0.0
+    for i, song in enumerate(history):
+        djay = djay_index.get(song.id)
+        if i < len(history) - 1:
+            if djay and djay.cue_start_time is not None:
+                total += djay.cue_start_time
+            else:
+                total += song.duration
+        else:
+            total += song.duration
+    return total
+
+
 def build_initial_state(
     seed: AppleMusicSong,
     pool: list[AppleMusicSong],
@@ -204,6 +231,14 @@ def main() -> None:
     pool = load_playlist(args.playlist)
     exclude_ids = {s.id for s in load_playlist(args.exclude)} if args.exclude else set()
 
+    print("Loading djay library…")
+    djay_index: dict = {}
+    try:
+        from music_stuff.lib.lib_djay import load_djay_index
+        djay_index = load_djay_index()
+    except Exception as e:
+        print(f"Warning: could not load djay library ({e}); duration will use track length")
+
     # Pre-filter: drop songs with empty key
     pool = [s for s in pool if s.key]
 
@@ -232,6 +267,7 @@ def main() -> None:
             bpm_range=args.bpm_range,
             genres=genres,
             min_rating=args.min_rating,
+            djay_index=djay_index,
         )
     else:
         run_tui(
@@ -242,4 +278,5 @@ def main() -> None:
             bpm_range=args.bpm_range,
             genres=genres,
             min_rating=args.min_rating,
+            djay_index=djay_index,
         )
