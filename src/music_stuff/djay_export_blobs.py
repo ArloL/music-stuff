@@ -65,7 +65,7 @@ def export_blobs(output_dir: Path, playlist: str | None) -> None:
                     key_to_song[row["key"]] = (pid, song)
                     break
 
-        allowed_keys: set[str] | None = set(key_to_song) if playlist else None
+        allowed_keys = set(key_to_song)
 
         for collection in COLLECTIONS:
             rows = con.execute(
@@ -74,7 +74,7 @@ def export_blobs(output_dir: Path, playlist: str | None) -> None:
             ).fetchall()
             written = 0
             for row in rows:
-                if allowed_keys is not None and row["key"] not in allowed_keys:
+                if row["key"] not in allowed_keys:
                     continue
                 data_bytes = bytes(row["data"]) if row["data"] is not None else b""
                 out_path = output_dir / f"{row['key']}-{collection}.bin"
@@ -91,7 +91,7 @@ def export_blobs(output_dir: Path, playlist: str | None) -> None:
             WHERE d.collection = 'mediaItemAnalyzedData'
         """).fetchall()
         for row in analyzed_rows:
-            if allowed_keys is not None and row["key"] not in allowed_keys:
+            if row["key"] not in allowed_keys:
                 continue
             entry: dict = {}
             if row["bpm"] is not None:
@@ -108,7 +108,7 @@ def export_blobs(output_dir: Path, playlist: str | None) -> None:
             WHERE d.collection = 'mediaItemUserData'
         """).fetchall()
         for row in userdata_rows:
-            if allowed_keys is not None and row["key"] not in allowed_keys:
+            if row["key"] not in allowed_keys:
                 continue
             entry = {}
             if row["manualBPM"] is not None:
