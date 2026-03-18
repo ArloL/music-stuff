@@ -24,7 +24,7 @@ import sqlite3
 from pathlib import Path
 
 from music_stuff.lib.lib_apple_music import find_all_songs, find_songs_by_playlist_name
-from music_stuff.lib.lib_djay import DB_PATH, _extract_persistent_ids
+from music_stuff.lib.lib_djay import DB_PATH, _parse_apple_music_hex_id
 
 COLLECTIONS = [
     "localMediaItemLocations",
@@ -59,11 +59,11 @@ def export_blobs(output_dir: Path, playlist: str | None) -> None:
         key_to_song: dict[str, object] = {}
         for row in location_rows:
             blob = bytes(row["data"]) if row["data"] is not None else b""
-            for pid in _extract_persistent_ids(blob):
+            pid = _parse_apple_music_hex_id(blob)
+            if pid is not None:
                 song = am_index.get(pid)
                 if song is not None:
                     key_to_song[row["key"]] = (pid, song)
-                    break
 
         allowed_keys = set(key_to_song)
 
