@@ -12,6 +12,7 @@ Per-song JSON contains available secondary-index columns:
   secondaryIndex_mediaItemAnalyzedDataIndex: bpm, keySignatureIndex
   secondaryIndex_mediaItemUserDataIndex:     manualBPM, tags
   (secondaryIndex_mediaItemAnalyzedDataIndex.manualBPM is always NULL — skipped)
+  Apple Music (via localMediaItemLocations blob):  title, artist, appleMusicBpm, duration
 
 Usage:
     uv run djay-export-blobs [--output-dir DIR]
@@ -22,7 +23,8 @@ import json
 import sqlite3
 from pathlib import Path
 
-from music_stuff.lib.lib_djay import DB_PATH
+from music_stuff.lib.lib_apple_music import find_all_songs
+from music_stuff.lib.lib_djay import DB_PATH, _extract_persistent_ids
 
 COLLECTIONS = [
     "localMediaItemLocations",
@@ -34,6 +36,11 @@ COLLECTIONS = [
 
 def export_blobs(output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    print("Loading Apple Music library...")
+    am_index = {song.id: song for song in find_all_songs()}
+    print(f"  {len(am_index)} tracks loaded")
+
     con = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
     con.row_factory = sqlite3.Row
     try:
@@ -79,6 +86,29 @@ def export_blobs(output_dir: Path) -> None:
                 entry["tags"] = row["tags"]
             if entry:
                 index.setdefault(row["key"], {}).update(entry)
+
+        location_rows = con.execute(
+            "SELECT key, data FROM database2 WHERE collection = 'localMediaItemLocations'"
+        ).fetchall()
+        for row in location_rows:
+            blob = bytes(row["data"]) if row["data"] is not None else b""
+            pids = _extract_persistent_ids(blob)
+            for pid in pids:
+                song = am_index.get(pid)
+                if song is None:
+                    continue
+                entry = {}
+                if song.name:
+                    entry["title"] = song.name
+                if song.artist:
+                    entry["artist"] = song.artist
+                if song.bpm:
+                    entry["appleMusicBpm"] = song.bpm
+                if song.duration:
+                    entry["duration"] = song.duration
+                if entry:
+                    index.setdefault(row["key"], {}).update(entry)
+                break  # first matched pid is enough
 
         for song_key, fields in index.items():
             song_path = output_dir / f"{song_key}.json"
