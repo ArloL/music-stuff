@@ -112,6 +112,35 @@ def run_tui(
     preview_offset:  list[float]                           = [_PREVIEW_START]
     preview_wall:    list[float]                           = [0.0]
 
+    # Channel mode: "stereo" | "left" | "right"
+    _CHANNEL_MODES = ["stereo", "left", "right"]
+    channel_mode_ref: list[str] = ["right"]
+
+    def _apply_channel_routing(stream, mode: str):
+        """Wrap a pre-primed stereo SIGNED16 miniaudio stream, zeroing the unwanted channel.
+
+        Mirrors miniaudio's generator protocol: yield b"" to prime, then receive
+        framecount via send() and yield the (possibly modified) chunk.
+        """
+        import array as _array
+        required_frames = yield b""  # initialization yield — mirrors stream_file
+        while True:
+            try:
+                chunk = stream.send(required_frames)
+            except StopIteration:
+                return
+            if mode != "stereo" and chunk:
+                samples = _array.array("h", chunk)
+                # interleaved stereo: even indices = left, odd = right
+                if mode == "left":
+                    for i in range(1, len(samples), 2):
+                        samples[i] = 0
+                else:  # right
+                    for i in range(0, len(samples), 2):
+                        samples[i] = 0
+                chunk = samples.tobytes()
+            required_frames = yield chunk
+
     def _preview_current_offset() -> float:
         if preview_device[0] is None:
             return preview_offset[0]
@@ -136,6 +165,9 @@ def run_tui(
                 sample_rate=info.sample_rate,
                 seek_frame=int(offset * info.sample_rate),
             )
+            if info.nchannels == 2:
+                stream = _apply_channel_routing(stream, channel_mode_ref[0])
+                next(stream)  # prime: consume the b"" initialization yield
             device = miniaudio.PlaybackDevice(
                 output_format=miniaudio.SampleFormat.SIGNED16,
                 nchannels=info.nchannels,
@@ -169,7 +201,9 @@ def run_tui(
         if preview_device[0] is None:
             return ""
         t = int(_preview_current_offset())
-        return f"  ▶ {t // 60}:{t % 60:02d}"
+        mode = channel_mode_ref[0]
+        ch = {"stereo": "stereo", "left": "L", "right": "R"}[mode]
+        return f"  ▶ {t // 60}:{t % 60:02d} [{ch}]"
 
     # ------------------------------------------------------------------ line builders
 
@@ -318,11 +352,11 @@ def run_tui(
             return f"  {status_override[0]}"
         bpm_r = bpm_range_ref[0]
         if state_ref[0] is None:
-            return f"  ↑/↓ navigate  Enter select seed  p preview  ←/→ seek  q quit         {len(seed_pool)} songs  "
+            return f"  ↑/↓ navigate  Enter select seed  p preview  c channel  ←/→ seek  q quit         {len(seed_pool)} songs  "
         n = len(state_ref[0].flat)
         if focus_ref[0] == _FOCUS_PLAYLIST:
-            return f"  ↑/↓ navigate  p preview  ←/→ seek  Tab switch  u undo  s save  q quit         ±{bpm_r:.0f} BPM  "
-        return f"  ↑/↓ navigate  Enter select  p preview  ←/→ seek  Tab switch  u undo  s save  +/- BPM range  q quit         {n} candidates  ±{bpm_r:.0f} BPM  "
+            return f"  ↑/↓ navigate  p preview  c channel  ←/→ seek  Tab switch  u undo  s save  q quit         ±{bpm_r:.0f} BPM  "
+        return f"  ↑/↓ navigate  Enter select  p preview  c channel  ←/→ seek  Tab switch  u undo  s save  +/- BPM  q quit         {n} candidates  ±{bpm_r:.0f} BPM  "
 
     # ------------------------------------------------------------------ widgets
 
@@ -515,6 +549,17 @@ def run_tui(
             song = _focused_song()
             if song:
                 _start_preview(song, _preview_current_offset() + _PREVIEW_SKIP)
+        app.invalidate()
+
+    @kb.add("c")
+    def _cycle_channel(_event):
+        cur = channel_mode_ref[0]
+        channel_mode_ref[0] = _CHANNEL_MODES[(_CHANNEL_MODES.index(cur) + 1) % len(_CHANNEL_MODES)]
+        # Restart preview on the new channel if active
+        if preview_device[0] is not None:
+            song = _focused_song()
+            if song:
+                _start_preview(song, _preview_current_offset())
         app.invalidate()
 
     @kb.add("+")
