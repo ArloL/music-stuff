@@ -21,6 +21,7 @@ class AppleMusicSong:
     key: str
     rating: int = 0
     genre: str = ""
+    duration: float = 0.0
 
 
 def _to_song(raw: dict) -> AppleMusicSong:
@@ -36,6 +37,7 @@ def _to_song(raw: dict) -> AppleMusicSong:
         key=f"{m.group(1)}{m.group(2).lower()}" if m else "",
         rating=raw.get("rating", 0),
         genre=raw.get("genre", ""),
+        duration=raw.get("duration", 0.0),
     )
 
 
