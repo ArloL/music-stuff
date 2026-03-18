@@ -45,44 +45,7 @@ select * from database2 where collection = 'localMediaItemLocations' and instr(d
 
 ### TSAF encoding
 
-TSAF blobs use two encoding modes: **verbose** (string field names) and **compact** (numeric field IDs).
-
-#### Verbose encoding
-
-Fields are encoded as `TYPE_TAG VALUE 0x08 FIELD_NAME 0x00`.  The type tag determines how to read the value:
-
-| type tag | type |
-|---|---|
-| `0x08 … 0x00` | string (the `0x08` is part of the value, no separate type tag) |
-| `0x0B [4 bytes]` | uint32 little-endian |
-| `0x13 [4 bytes]` | float32 little-endian |
-| `0x13 0x00 [4 bytes]` | float32 little-endian (alternate form) |
-| `0x30 0x00 [8 bytes]` | float64 little-endian (Core Data timestamp: seconds since 2001-01-01) |
-| `0x0F [1 byte]` | uint8 |
-| bare byte | raw single-byte value (no type tag) |
-| `0x2B` | entity start marker (followed by `0x08 EntityTypeName 0x00`) |
-
-#### Schema entries
-
-Field names also appear as bare `0x08 FIELD_NAME 0x00` sequences **without** a preceding type tag earlier in the blob. These are schema declarations, not data-carrying fields. The `parse_tsaf()` function in `lib_djay.py` handles this distinction by checking for type tags before values.
-
-#### Compact encoding
-
-After the first occurrence of an entity type, subsequent instances use compact numeric field IDs (`0x05 FIELD_ID`). The `parse_tsaf()` function maintains a schema registry that maps entity type names to their field names from the first verbose occurrence, then uses this to decode compact entities.
-
-The parser handles both encoding modes and returns a list of `TsafEntity` dataclasses with `type_name`, `fields` (dict of field names to values), and `compact` (bool) attributes.
-
-### Automix cue points (`mediaItemUserData`)
-
-Tracks where the DJ has configured automix transition points contain an `ADCCuePoint` entity with:
-
-- **`automixStartPoint`** (`uint32`) — small integer (observed values 4–7), likely a grid position or beat count
-- **`automixEndPoint`** (`uint32`) — same as above for the incoming side
-- **`ADCCuePoint.time`** (`float32`, seconds) — the precise track position for the transition cue
-
-The **time** field is what callers need — the integer automix points are djay's internal grid preferences, not actual time positions. The cue number byte (`0x2E` = 46 = automix-out, `0x2D` = 45 = automix-in) identifies which cue point is which.
-
-The `mediaItemUserData` key is the same as the `localMediaItemLocations` key, so joining on key gives the Apple Music persistent ID.  See `load_automix_index()` in `lib_djay.py`.
+TSAF is a binary format. It contains object structures. See TSAF.md for details.
 
 > **Note**: When searching for a track in a fresh database export, the exact key may not match if the track was added/removed. Use `localMediaItemLocations` to find the correct key first, then query other collections by that key.
 
