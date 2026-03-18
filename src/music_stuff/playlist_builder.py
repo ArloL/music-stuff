@@ -37,8 +37,7 @@ class AppState:
     played_ids: set[str]          # from exclude playlist (never re-added)
     seed: AppleMusicSong
     history: list[AppleMusicSong]
-    bpm_lo: float
-    bpm_hi: float
+    bpm_range: float
     genres: set[str] | None
     min_rating: int
     # computed each time seed changes:
@@ -58,8 +57,8 @@ def compute_candidates(
         matches = filter_candidates(
             state.candidate_pool,
             exclude,
-            state.seed.bpm - state.bpm_lo,
-            state.seed.bpm + state.bpm_hi,
+            state.seed.bpm - state.bpm_range,
+            state.seed.bpm + state.bpm_range,
             keys,
             state.genres,
             state.min_rating,
@@ -73,7 +72,7 @@ def compute_candidates(
     return grouped, flat
 
 
-def _recompute(state: AppState) -> AppState:
+def recompute(state: AppState) -> AppState:
     grouped, flat = compute_candidates(state)
     state.grouped = grouped
     state.flat = flat
@@ -90,12 +89,11 @@ def select_candidate(state: AppState, song: AppleMusicSong) -> AppState:
         played_ids=new_played,
         seed=song,
         history=new_history,
-        bpm_lo=state.bpm_lo,
-        bpm_hi=state.bpm_hi,
+        bpm_range=state.bpm_range,
         genres=state.genres,
         min_rating=state.min_rating,
     )
-    return _recompute(new_state)
+    return recompute(new_state)
 
 
 def undo(state: AppState, original_played_ids: set[str]) -> AppState:
@@ -112,12 +110,11 @@ def undo(state: AppState, original_played_ids: set[str]) -> AppState:
         played_ids=new_played,
         seed=prev_seed,
         history=new_history,
-        bpm_lo=state.bpm_lo,
-        bpm_hi=state.bpm_hi,
+        bpm_range=state.bpm_range,
         genres=state.genres,
         min_rating=state.min_rating,
     )
-    return _recompute(new_state)
+    return recompute(new_state)
 
 
 def save_csv(state: AppState, path: str | Path) -> None:
@@ -172,8 +169,7 @@ def build_initial_state(
     seed: AppleMusicSong,
     pool: list[AppleMusicSong],
     exclude_ids: set[str],
-    bpm_lo: float,
-    bpm_hi: float,
+    bpm_range: float,
     genres: set[str] | None,
     min_rating: int,
 ) -> AppState:
@@ -182,12 +178,11 @@ def build_initial_state(
         played_ids=exclude_ids | {seed.id},
         seed=seed,
         history=[seed],
-        bpm_lo=bpm_lo,
-        bpm_hi=bpm_hi,
+        bpm_range=bpm_range,
         genres=genres,
         min_rating=min_rating,
     )
-    return _recompute(state)
+    return recompute(state)
 
 
 def main() -> None:
@@ -198,16 +193,10 @@ def main() -> None:
     parser.add_argument("--genre", dest="genres", action="append", metavar="GENRE", help="Allowed genre (repeat for multiple: --genre Techno --genre House)")
     parser.add_argument("--min-rating", type=int, default=80)
     parser.add_argument(
-        "--bpm-lo",
+        "--bpm-range",
         type=float,
-        default=4.0,
-        help="Max BPM below seed to include",
-    )
-    parser.add_argument(
-        "--bpm-hi",
-        type=float,
-        default=4.0,
-        help="Max BPM above seed to include",
+        default=3.0,
+        help="±BPM window around seed to include (adjustable at runtime with +/-)",
     )
     args = parser.parse_args()
 
@@ -231,8 +220,7 @@ def main() -> None:
             seed=seed,
             pool=pool,
             exclude_ids=exclude_ids,
-            bpm_lo=args.bpm_lo,
-            bpm_hi=args.bpm_hi,
+            bpm_range=args.bpm_range,
             genres=genres,
             min_rating=args.min_rating,
         )
@@ -241,8 +229,7 @@ def main() -> None:
             original_played_ids=exclude_ids | {seed.id},
             pool=pool,
             exclude_ids=exclude_ids,
-            bpm_lo=args.bpm_lo,
-            bpm_hi=args.bpm_hi,
+            bpm_range=args.bpm_range,
             genres=genres,
             min_rating=args.min_rating,
         )
@@ -252,8 +239,7 @@ def main() -> None:
             original_played_ids=exclude_ids,
             pool=pool,
             exclude_ids=exclude_ids,
-            bpm_lo=args.bpm_lo,
-            bpm_hi=args.bpm_hi,
+            bpm_range=args.bpm_range,
             genres=genres,
             min_rating=args.min_rating,
         )

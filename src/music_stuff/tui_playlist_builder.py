@@ -23,6 +23,7 @@ from music_stuff.lib.lib_transitions import calculate_transition_score, get_tran
 from music_stuff.playlist_builder import (
     AppState,
     build_initial_state,
+    recompute,
     save_csv,
     select_candidate,
     undo,
@@ -82,14 +83,14 @@ def run_tui(
     *,
     pool: list[AppleMusicSong],
     exclude_ids: set[str],
-    bpm_lo: float,
-    bpm_hi: float,
+    bpm_range: float,
     genres: set[str] | None,
     min_rating: int,
 ) -> None:
     state_ref: list[AppState | None] = [initial_state]
     original_played_ids_ref: list[set[str]] = [original_played_ids]
     focus_ref: list[str] = [_FOCUS_CANDIDATES]
+    bpm_range_ref: list[float] = [bpm_range]
 
     # Each pane tracks its own scroll top (index into the pane's line list).
     cand_scroll_ref: list[int] = [0]
@@ -315,12 +316,13 @@ def run_tui(
     def _fmt_status() -> str:
         if status_override[0]:
             return f"  {status_override[0]}"
+        bpm_r = bpm_range_ref[0]
         if state_ref[0] is None:
             return f"  ↑/↓ navigate  Enter select seed  p preview  ←/→ seek  q quit         {len(seed_pool)} songs  "
         n = len(state_ref[0].flat)
         if focus_ref[0] == _FOCUS_PLAYLIST:
-            return "  ↑/↓ navigate  p preview  ←/→ seek  Tab switch  u undo  s save  q quit"
-        return f"  ↑/↓ navigate  Enter select  p preview  ←/→ seek  Tab switch  u undo  s save  q quit         {n} candidates  "
+            return f"  ↑/↓ navigate  p preview  ←/→ seek  Tab switch  u undo  s save  q quit         ±{bpm_r:.0f} BPM  "
+        return f"  ↑/↓ navigate  Enter select  p preview  ←/→ seek  Tab switch  u undo  s save  +/- BPM range  q quit         {n} candidates  ±{bpm_r:.0f} BPM  "
 
     # ------------------------------------------------------------------ widgets
 
@@ -436,8 +438,7 @@ def run_tui(
                 seed=seed,
                 pool=pool,
                 exclude_ids=exclude_ids,
-                bpm_lo=bpm_lo,
-                bpm_hi=bpm_hi,
+                bpm_range=bpm_range_ref[0],
                 genres=genres,
                 min_rating=min_rating,
             )
@@ -465,6 +466,13 @@ def run_tui(
         if state is None:
             return
         if len(state.history) <= 1:
+            # Back to seed selection mode
+            state_ref[0] = None
+            original_played_ids_ref[0] = exclude_ids
+            cand_scroll_ref[0] = 0
+            pl_scroll_ref[0] = 0
+            status_override[0] = None
+            app.invalidate()
             return
         state_ref[0] = undo(state, original_played_ids_ref[0])
         playlist_cursor_ref[0] = max(len(state_ref[0].history) - 1, 0)
@@ -507,6 +515,28 @@ def run_tui(
             song = _focused_song()
             if song:
                 _start_preview(song, _preview_current_offset() + _PREVIEW_SKIP)
+        app.invalidate()
+
+    @kb.add("+")
+    @kb.add("=")
+    def _bpm_range_up(_event):
+        bpm_range_ref[0] += 1
+        state = state_ref[0]
+        if state is not None:
+            state.bpm_range = bpm_range_ref[0]
+            recompute(state)
+        status_override[0] = None
+        app.invalidate()
+
+    @kb.add("-")
+    def _bpm_range_down(_event):
+        if bpm_range_ref[0] > 1:
+            bpm_range_ref[0] -= 1
+            state = state_ref[0]
+            if state is not None:
+                state.bpm_range = bpm_range_ref[0]
+                recompute(state)
+        status_override[0] = None
         app.invalidate()
 
     @kb.add("q")
