@@ -24,7 +24,7 @@ import sqlite3
 from pathlib import Path
 
 from music_stuff.lib.lib_apple_music import find_all_songs, find_songs_by_playlist_name
-from music_stuff.lib.lib_djay import DB_PATH, _parse_apple_music_hex_id
+from music_stuff.lib.lib_djay import DB_PATH, load_djay_index
 
 COLLECTIONS = [
     "localMediaItemLocations",
@@ -46,27 +46,19 @@ def export_blobs(output_dir: Path, playlist: str | None) -> None:
         am_index = {song.id: song for song in find_all_songs()}
         print(f"  {len(am_index)} tracks loaded")
 
-    # Resolve which djay keys belong to the target songs by scanning
-    # localMediaItemLocations blobs for matching Apple Music persistent IDs.
+    # load_djay_index clones the live DB and maps apple_music_hex_id -> DjaySongData.
+    djay_index = load_djay_index()
+    key_to_song: dict[str, object] = {}
+    for apple_id, song_data in djay_index.items():
+        song = am_index.get(apple_id)
+        if song is not None:
+            key_to_song[song_data.id] = (apple_id, song)
+
+    allowed_keys = set(key_to_song)
+
     con = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
     con.row_factory = sqlite3.Row
     try:
-        location_rows = con.execute(
-            "SELECT key, data FROM database2 WHERE collection = 'localMediaItemLocations'"
-        ).fetchall()
-
-        # djay key -> first matched AppleMusicSong
-        key_to_song: dict[str, object] = {}
-        for row in location_rows:
-            blob = bytes(row["data"]) if row["data"] is not None else b""
-            pid = _parse_apple_music_hex_id(blob)
-            if pid is not None:
-                song = am_index.get(pid)
-                if song is not None:
-                    key_to_song[row["key"]] = (pid, song)
-
-        allowed_keys = set(key_to_song)
-
         for collection in COLLECTIONS:
             rows = con.execute(
                 "SELECT key, data FROM database2 WHERE collection = ? ORDER BY key",
