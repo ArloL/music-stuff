@@ -97,7 +97,7 @@ def export_blobs(output_dir: Path) -> None:
                 song = am_index.get(pid)
                 if song is None:
                     continue
-                entry = {}
+                entry: dict = {"appleMusicId": int(pid, 16)}
                 if song.name:
                     entry["title"] = song.name
                 if song.artist:
