@@ -192,7 +192,7 @@ def build_initial_state(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Interactive TUI playlist builder")
-    parser.add_argument("--seed", required=True, help="Apple Music persistent ID of the starting track")
+    parser.add_argument("--seed", help="Apple Music persistent ID of the starting track")
     parser.add_argument("--playlist", default="Would Play", help="Source playlist name")
     parser.add_argument("--exclude", default="Critical Mass Played", help="Exclude playlist name")
     parser.add_argument("--genres", nargs="*", help="Allowed genres (space-separated)")
@@ -211,11 +211,6 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    seed = find_song_by_id(args.seed)
-    if seed is None:
-        print(f"Error: no song found with ID {args.seed}", file=sys.stderr)
-        sys.exit(1)
-
     print("Loading playlists…")
     pool = load_playlist(args.playlist)
     exclude_songs = load_playlist(args.exclude)
@@ -226,15 +221,40 @@ def main() -> None:
 
     genres = set(args.genres) if args.genres else None
 
-    state = build_initial_state(
-        seed=seed,
-        pool=pool,
-        exclude_ids=exclude_ids,
-        bpm_lo=args.bpm_lo,
-        bpm_hi=args.bpm_hi,
-        genres=genres,
-        min_rating=args.min_rating,
-    )
-
     from music_stuff.tui_playlist_builder import run_tui
-    run_tui(state, original_played_ids=exclude_ids | {seed.id})
+
+    if args.seed:
+        seed = find_song_by_id(args.seed)
+        if seed is None:
+            print(f"Error: no song found with ID {args.seed}", file=sys.stderr)
+            sys.exit(1)
+        state = build_initial_state(
+            seed=seed,
+            pool=pool,
+            exclude_ids=exclude_ids,
+            bpm_lo=args.bpm_lo,
+            bpm_hi=args.bpm_hi,
+            genres=genres,
+            min_rating=args.min_rating,
+        )
+        run_tui(
+            initial_state=state,
+            original_played_ids=exclude_ids | {seed.id},
+            pool=pool,
+            exclude_ids=exclude_ids,
+            bpm_lo=args.bpm_lo,
+            bpm_hi=args.bpm_hi,
+            genres=genres,
+            min_rating=args.min_rating,
+        )
+    else:
+        run_tui(
+            initial_state=None,
+            original_played_ids=exclude_ids,
+            pool=pool,
+            exclude_ids=exclude_ids,
+            bpm_lo=args.bpm_lo,
+            bpm_hi=args.bpm_hi,
+            genres=genres,
+            min_rating=args.min_rating,
+        )

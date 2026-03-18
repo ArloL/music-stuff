@@ -18,8 +18,16 @@ from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame
 
+from music_stuff.lib.lib_apple_music import AppleMusicSong
 from music_stuff.lib.lib_transitions import calculate_transition_score, get_transition_type
-from music_stuff.playlist_builder import AppState, save_csv, select_candidate, undo, _song_dict
+from music_stuff.playlist_builder import (
+    AppState,
+    build_initial_state,
+    save_csv,
+    select_candidate,
+    undo,
+    _song_dict,
+)
 
 _STYLE = Style.from_dict(
     {
@@ -68,8 +76,19 @@ def _visible_height() -> int:
         return 30
 
 
-def run_tui(initial_state: AppState, original_played_ids: set[str]) -> None:
-    state_ref: list[AppState] = [initial_state]
+def run_tui(
+    initial_state: AppState | None,
+    original_played_ids: set[str],
+    *,
+    pool: list[AppleMusicSong],
+    exclude_ids: set[str],
+    bpm_lo: float,
+    bpm_hi: float,
+    genres: set[str] | None,
+    min_rating: int,
+) -> None:
+    state_ref: list[AppState | None] = [initial_state]
+    original_played_ids_ref: list[set[str]] = [original_played_ids]
     focus_ref: list[str] = [_FOCUS_CANDIDATES]
 
     # Each pane tracks its own scroll top (index into the pane's line list).
@@ -77,9 +96,13 @@ def run_tui(initial_state: AppState, original_played_ids: set[str]) -> None:
     pl_scroll_ref: list[int] = [0]
 
     # Playlist cursor (row index within history list).
-    playlist_cursor_ref: list[int] = [max(len(initial_state.history) - 1, 0)]
+    playlist_cursor_ref: list[int] = [max(len(initial_state.history) - 1, 0) if initial_state else 0]
 
     status_override: list[str | None] = [None]
+
+    # Seed selection mode: pool sorted by BPM ascending, with its own cursor.
+    seed_pool: list[AppleMusicSong] = sorted(pool, key=lambda s: s.bpm)
+    seed_cursor_ref: list[int] = [0]
 
     # ------------------------------------------------------------------ preview
 
@@ -127,6 +150,11 @@ def run_tui(initial_state: AppState, original_played_ids: set[str]) -> None:
 
     def _focused_song():
         state = state_ref[0]
+        if state is None:
+            # Seed selection mode
+            if seed_pool:
+                return seed_pool[seed_cursor_ref[0]]
+            return None
         if focus_ref[0] == _FOCUS_CANDIDATES:
             if state.flat:
                 return state.flat[state.cursor]
@@ -147,6 +175,8 @@ def run_tui(initial_state: AppState, original_played_ids: set[str]) -> None:
     def _playlist_all_lines() -> list[tuple[str, str]]:
         """All playlist rows as (style, text_no_newline)."""
         state = state_ref[0]
+        if state is None:
+            return [("class:dim", "  Select a seed song →")]
         lines = []
         for i, song in enumerate(state.history):
             num = f"{i + 1:>3}"
@@ -165,9 +195,27 @@ def run_tui(initial_state: AppState, original_played_ids: set[str]) -> None:
     def _candidates_all_lines() -> list[tuple[str, str]]:
         """All candidate rows as (style, text_no_newline)."""
         state = state_ref[0]
+        if state is None:
+            # Seed selection mode: flat BPM-sorted list, no sections
+            if not seed_pool:
+                return [("", "(no songs)")]
+            lines: list[tuple[str, str]] = []
+            for i, song in enumerate(seed_pool):
+                artist = _truncate(song.artist, _ARTIST_WIDTH)
+                name = _truncate(song.name, _NAME_WIDTH)
+                key = song.key.ljust(_KEY_WIDTH)
+                bpm = f"{song.bpm:.0f}".rjust(_BPM_WIDTH)
+                if i == seed_cursor_ref[0]:
+                    style = "class:cursor"
+                    prefix = "▶ "
+                else:
+                    style = ""
+                    prefix = "  "
+                lines.append((style, f"{prefix}{artist}  {name}  {key} {bpm}"))
+            return lines
         if not state.flat:
             return [("", "(no candidates)")]
-        lines: list[tuple[str, str]] = []
+        lines = []
         flat_idx = 0
         first_group = True
         for group_label, songs in state.grouped:
@@ -200,6 +248,8 @@ def run_tui(initial_state: AppState, original_played_ids: set[str]) -> None:
     def _candidates_cursor_abs() -> int:
         """Absolute line index of the selected candidate within _candidates_all_lines()."""
         state = state_ref[0]
+        if state is None:
+            return seed_cursor_ref[0]
         if not state.flat:
             return 0
         flat_idx = 0
@@ -252,6 +302,8 @@ def run_tui(initial_state: AppState, original_played_ids: set[str]) -> None:
 
     def _fmt_header() -> str:
         state = state_ref[0]
+        if state is None:
+            return f" Select seed song{_preview_status()}"
         seed = state.seed
         ttype = ""
         if len(state.history) >= 2:
@@ -263,6 +315,8 @@ def run_tui(initial_state: AppState, original_played_ids: set[str]) -> None:
     def _fmt_status() -> str:
         if status_override[0]:
             return f"  {status_override[0]}"
+        if state_ref[0] is None:
+            return f"  ↑/↓ navigate  Enter select seed  p preview  ←/→ seek  q quit         {len(seed_pool)} songs  "
         n = len(state_ref[0].flat)
         if focus_ref[0] == _FOCUS_PLAYLIST:
             return "  ↑/↓ navigate  p preview  ←/→ seek  Tab switch  u undo  s save  q quit"
@@ -314,6 +368,8 @@ def run_tui(initial_state: AppState, original_played_ids: set[str]) -> None:
 
     @kb.add("tab")
     def _switch_focus(_event):
+        if state_ref[0] is None:
+            return  # no tab in seed selection mode
         if focus_ref[0] == _FOCUS_CANDIDATES:
             focus_ref[0] = _FOCUS_PLAYLIST
             playlist_cursor_ref[0] = max(len(state_ref[0].history) - 1, 0)
@@ -334,10 +390,14 @@ def run_tui(initial_state: AppState, original_played_ids: set[str]) -> None:
     @kb.add("k")
     def _up(_event):
         status_override[0] = None
-        if focus_ref[0] == _FOCUS_PLAYLIST:
+        state = state_ref[0]
+        if state is None:
+            n = len(seed_pool)
+            if n:
+                seed_cursor_ref[0] = (seed_cursor_ref[0] - 1) % n
+        elif focus_ref[0] == _FOCUS_PLAYLIST:
             playlist_cursor_ref[0] = max(playlist_cursor_ref[0] - 1, 0)
         else:
-            state = state_ref[0]
             n = len(state.flat)
             if n:
                 state.cursor = (state.cursor - 1) % n
@@ -348,12 +408,16 @@ def run_tui(initial_state: AppState, original_played_ids: set[str]) -> None:
     @kb.add("j")
     def _down(_event):
         status_override[0] = None
-        if focus_ref[0] == _FOCUS_PLAYLIST:
+        state = state_ref[0]
+        if state is None:
+            n = len(seed_pool)
+            if n:
+                seed_cursor_ref[0] = (seed_cursor_ref[0] + 1) % n
+        elif focus_ref[0] == _FOCUS_PLAYLIST:
             playlist_cursor_ref[0] = min(
-                playlist_cursor_ref[0] + 1, len(state_ref[0].history) - 1
+                playlist_cursor_ref[0] + 1, len(state.flat) - 1
             )
         else:
-            state = state_ref[0]
             n = len(state.flat)
             if n:
                 state.cursor = (state.cursor + 1) % n
@@ -362,9 +426,30 @@ def run_tui(initial_state: AppState, original_played_ids: set[str]) -> None:
 
     @kb.add("enter")
     def _select(_event):
+        state = state_ref[0]
+        if state is None:
+            # Seed selection mode: select seed and enter normal mode
+            if not seed_pool:
+                return
+            seed = seed_pool[seed_cursor_ref[0]]
+            new_state = build_initial_state(
+                seed=seed,
+                pool=pool,
+                exclude_ids=exclude_ids,
+                bpm_lo=bpm_lo,
+                bpm_hi=bpm_hi,
+                genres=genres,
+                min_rating=min_rating,
+            )
+            state_ref[0] = new_state
+            original_played_ids_ref[0] = exclude_ids | {seed.id}
+            playlist_cursor_ref[0] = 0
+            cand_scroll_ref[0] = 0
+            status_override[0] = None
+            app.invalidate()
+            return
         if focus_ref[0] != _FOCUS_CANDIDATES:
             return
-        state = state_ref[0]
         if not state.flat:
             return
         song = state.flat[state.cursor]
@@ -377,18 +462,23 @@ def run_tui(initial_state: AppState, original_played_ids: set[str]) -> None:
     @kb.add("u")
     def _undo(_event):
         state = state_ref[0]
+        if state is None:
+            return
         if len(state.history) <= 1:
             return
-        state_ref[0] = undo(state, original_played_ids)
+        state_ref[0] = undo(state, original_played_ids_ref[0])
         playlist_cursor_ref[0] = max(len(state_ref[0].history) - 1, 0)
         status_override[0] = None
         app.invalidate()
 
     @kb.add("s")
     def _save(_event):
+        state = state_ref[0]
+        if state is None:
+            return
         ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         path = Path(f"playlist_{ts}.csv")
-        save_csv(state_ref[0], path)
+        save_csv(state, path)
         status_override[0] = f"Saved → {path}  (any key to dismiss)"
         app.invalidate()
 
