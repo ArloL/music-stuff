@@ -1,8 +1,3 @@
-import spotipy
-import json
-import requests
-import csv
-from urllib.parse import urlparse
 from music_stuff.lib.lib_spotify import get_sp, user_playlist_by_name, all_playlist_items
 
 def main():
@@ -18,12 +13,10 @@ def main():
     source_playlist = user_playlist_by_name(sp, args.source_playlist_name)
 
     tracks = all_playlist_items(sp, source_playlist['id'])
+    track_ids = [f"spotify:track:{t['item']['id']}" for t in tracks if t.get('item')]
 
-    for i in range(0, len(tracks), 100):
-        sp.playlist_add_items(
-            target_playlist['id'],
-            [t['item']['id'] for t in tracks[i:i+100]]
-        )
+    for i in range(0, len(track_ids), 100):
+        sp.playlist_add_items(target_playlist['id'], track_ids[i:i+100])
 
 if __name__ == '__main__':
     main()

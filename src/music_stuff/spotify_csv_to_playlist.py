@@ -1,9 +1,6 @@
-import json
-import requests
 import pandas as pd
 from pathlib import Path
-from urllib.parse import urlparse
-from music_stuff.lib.lib_spotify import get_sp
+from music_stuff.lib.lib_spotify import get_sp, all_playlist_items
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 
@@ -30,12 +27,7 @@ def main() -> None:
     spotify_mapping = pd.read_csv(DATA_DIR / "spotify-mapping.csv").set_index('apple_music_id')
 
     playlist_id = '74eUXrePcNpIrEYaFBlmbw'
-    results = sp.playlist_items(playlist_id)
-
-    tracks = results['items']
-    while results['next']:
-        results = sp.next(results)
-        tracks.extend(results['items'])
+    tracks = all_playlist_items(sp, playlist_id)
 
     df = pd.read_csv(DATA_DIR / "songs-would-play.csv")
 
