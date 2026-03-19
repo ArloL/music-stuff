@@ -69,7 +69,7 @@ def _write_essentia_cache(cache: dict[int, dict]) -> None:
                 fieldnames.append(k)
                 seen.add(k)
     with open(ESSENTIA_CACHE_PATH, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore", lineterminator='\n')
         writer.writeheader()
         for pid in sorted(cache):
             writer.writerow({"apple_music_id": pid, **cache[pid]})

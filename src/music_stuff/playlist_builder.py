@@ -161,6 +161,7 @@ def save_csv(state: AppState, path: str | Path) -> None:
                 "transition_type",
                 "transition_score",
             ],
+            lineterminator='\n',
         )
         writer.writeheader()
         writer.writerows(rows)

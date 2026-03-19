@@ -163,7 +163,7 @@ def main(source_file, min_length, max_length, time_limit, start_song):
         playlist_df = create_playlist_dataframe(df, best_path)
         print("\nPlaylist:")
         print(playlist_df.to_string(index=False))
-        playlist_df.to_csv(output_file, index=False)
+        playlist_df.to_csv(output_file, index=False, lineterminator='\n')
         print(f"\nPlaylist saved to {output_file}")
     else:
         print("No playlist found meeting the minimum length requirement.")

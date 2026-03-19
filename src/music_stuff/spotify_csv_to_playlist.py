@@ -18,7 +18,7 @@ def find_spotify_id_for_song(sp, song, spotify_mapping):
     else:
         spotify_id = find_spotify_id_for_artist_name(sp, song['artist'], song['name'], spotify_mapping)
         spotify_mapping.loc[amid] = {'spotify_id': spotify_id}
-        spotify_mapping.to_csv(DATA_DIR / "spotify-mapping.csv", index_label='apple_music_id')
+        spotify_mapping.to_csv(DATA_DIR / "spotify-mapping.csv", index_label='apple_music_id', lineterminator='\n')
         return spotify_id
 
 

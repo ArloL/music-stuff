@@ -57,7 +57,7 @@ def main() -> None:
     tracks = all_playlist_items(sp, critical_mass_selection)
 
     with open('songs_spotify.csv', 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
+        writer = csv.writer(csvfile, lineterminator='\n')
         writer.writerow([
             'apple_music_id',
             'key',

@@ -193,7 +193,7 @@ def main(source_file):
         print(playlist_df.to_string(index=False))
 
         # Save to CSV
-        playlist_df.to_csv(output_file, index=False)
+        playlist_df.to_csv(output_file, index=False, lineterminator='\n')
         print(f"\nPlaylist saved to {output_file}")
     else:
         print("No compatible playlist found!")
