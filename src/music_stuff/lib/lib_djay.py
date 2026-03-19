@@ -2,14 +2,13 @@ import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from music_stuff.lib.lib_clonefile import clonefile
-from music_stuff.lib.lib_tsaf_parser import (
-    CompactEntity,
+from djay_tsaf_parser import (
     TSAFParseError,
-    VerboseEntity,
     parse_media_item_user_data,
     parse_tsaf as _tsaf_parse,
 )
+
+from music_stuff.lib.lib_clonefile import clonefile
 
 
 SOURCE_DB = (
@@ -68,7 +67,7 @@ def _parse_apple_music_hex_id(data: bytes) -> str | None:
     except TSAFParseError:
         return None
     for entity in doc.entities:
-        if not isinstance(entity, (VerboseEntity, CompactEntity)):
+        if not hasattr(entity, "fields"):
             continue
         for f in entity.fields:
             if not isinstance(f.value, list):
@@ -95,7 +94,7 @@ def _has_straight_grid(data: bytes) -> bool:
     try:
         doc = _tsaf_parse(data)
         for entity in doc.entities:
-            if isinstance(entity, (VerboseEntity, CompactEntity)):
+            if hasattr(entity, "fields"):
                 for f in entity.fields:
                     if f.name == "isStraightGrid":
                         return True
