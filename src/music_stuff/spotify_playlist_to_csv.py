@@ -1,31 +1,24 @@
-import spotipy
 import json
 import requests
 import csv
 from urllib.parse import urlparse
-from music_stuff.lib.lib_spotify import get_sp
+from music_stuff.lib.lib_spotify import get_sp, all_playlist_items
 
 def get_audio_features(spotify_ids):
-    response = requests.request(
-        'GET',
-        'https://api.reccobeats.com/v1/audio-features',
-        headers={
-            'Accept': 'application/json'
-        },
-        params={
-            'ids': spotify_ids
-        })
-    content = json.loads(response.text)['content']
     features = {}
-    for feature in content:
-        spotify_id = urlparse(feature['href']).path.split("/")[-1]
-        feature['spotify_id'] = spotify_id
-        features[spotify_id] = feature
+    for i in range(0, len(spotify_ids), 100):
+        chunk = spotify_ids[i:i + 100]
+        response = requests.get(
+            'https://api.reccobeats.com/v1/audio-features',
+            headers={'Accept': 'application/json'},
+            params={'ids': chunk},
+        )
+        for feature in json.loads(response.text)['content']:
+            spotify_id = urlparse(feature['href']).path.split("/")[-1]
+            feature['spotify_id'] = spotify_id
+            features[spotify_id] = feature
 
-    result = []
-    for spotify_id in spotify_ids:
-        result.append(features[spotify_id])
-    return result
+    return [features[sid] for sid in spotify_ids]
 
 spotify_to_beatunes_key_map = {
     (-1, -1): -1, # no key detected
@@ -61,12 +54,7 @@ def main() -> None:
     # print(json.dumps(track, indent=1))
 
     critical_mass_selection = '74eUXrePcNpIrEYaFBlmbw'
-    results = sp.playlist_items(critical_mass_selection)
-
-    tracks = results['items']
-    while results['next']:
-        results = sp.next(results)
-        tracks.extend(results['items'])
+    tracks = all_playlist_items(sp, critical_mass_selection)
 
     with open('songs_spotify.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
@@ -90,8 +78,9 @@ def main() -> None:
         features = get_audio_features([t['item']['id'] for t in tracks])
         for i, track in enumerate(tracks):
             track_details = track['item']
+            artist_names = ', '.join(d['name'] for d in track_details['artists'])
             writer.writerow([
-                f'{', '.join([d['name'] for d in track_details['artists']])} - {track_details['name']}',
+                f'{artist_names} - {track_details["name"]}',
                 spotify_to_beatunes_key_map[(features[i]['mode'], features[i]['key'])],
                 features[i]['tempo'],
                 features[i]['id'],
