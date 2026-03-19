@@ -170,6 +170,11 @@ wheels = [
 ]
 
 [[package]]
+name = "djay-tsaf-parser"
+version = "0.1.0"
+source = { git = "https://github.com/ArloL/tsaf-parser.git#ed365e55c8b298e99c5d29104aa5584408909b33" }
+
+[[package]]
 name = "essentia"
 version = "2.1b6.dev1389"
 source = { registry = "https://pypi.org/simple" }
@@ -453,6 +458,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "dash" },
+    { name = "djay-tsaf-parser" },
     { name = "essentia" },
     { name = "matplotlib" },
     { name = "miniaudio" },
@@ -475,6 +481,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "dash", specifier = "==4.0.0" },
+    { name = "djay-tsaf-parser", git = "https://github.com/ArloL/tsaf-parser.git" },
     { name = "essentia", specifier = "==2.1b6.dev1389" },
     { name = "matplotlib", specifier = "==3.10.8" },
     { name = "miniaudio", specifier = "==1.61" },
