@@ -27,7 +27,7 @@ def write_playlist_to_file(playlist_name: str) -> None:
     songs = find_songs_by_playlist_name(playlist_name)
     output = OUTPUT_DIR / filename
     with open(output, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
+        writer = csv.DictWriter(f, fieldnames=FIELDNAMES, lineterminator='\n')
         writer.writeheader()
         for s in songs:
             writer.writerow({
