@@ -77,7 +77,7 @@ def _parse_apple_music_hex_id(data: bytes) -> str | None:
                 if not isinstance(item, str):
                     continue
                 if item.startswith("com.apple.iTunes:"):
-                    raw = item[len(prefix):]
+                    raw = item[len("com.apple.iTunes:"):]
                     try:
                         value = int(raw)
                         if value < 0:
