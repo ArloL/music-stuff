@@ -1,51 +1,6 @@
-import json
-import requests
 import csv
-from urllib.parse import urlparse
 from music_stuff.lib.lib_spotify import get_sp, all_playlist_items
-
-def get_audio_features(spotify_ids):
-    features = {}
-    for i in range(0, len(spotify_ids), 100):
-        chunk = spotify_ids[i:i + 100]
-        response = requests.get(
-            'https://api.reccobeats.com/v1/audio-features',
-            headers={'Accept': 'application/json'},
-            params={'ids': chunk},
-        )
-        for feature in json.loads(response.text)['content']:
-            spotify_id = urlparse(feature['href']).path.split("/")[-1]
-            feature['spotify_id'] = spotify_id
-            features[spotify_id] = feature
-
-    return [features[sid] for sid in spotify_ids]
-
-spotify_to_beatunes_key_map = {
-    (-1, -1): -1, # no key detected
-    (0, 1): 10, # ??: ??
-    (0, 2): 24, # 7A: Pavla, Noura - Don't Owe Me a Thing
-    (0, 3): 14, # 2A: ??
-    (0, 4): 4, # 9A: DAMH - Black Night
-    (0, 5): 18, # 4A: Jamie xx - Sleep Sound
-    (0, 6): 8, # 11A: Youandewan - 1988 - Original Mix
-    (0, 7): 22, # 6A: Guy Gerber, &ME - What To Do - &ME Remix
-    (0, 8): 12, # ??: ??
-    (0, 9): 2, # 8A: Dorisburg - Emotion - Original
-    (0, 10): 16, # 3A: Leon Vynehall - Butterflies
-    (0, 11): 6, # 10A: Robag Wruhme als Die Dub Rolle - Lampetee
-    (1, 0): 1, # 8B: Axel Boman - Purple Drank
-    (1, 1): 15, # 3B: Todd Terje - Ragysh
-    (1, 2): 5, # 10B: Daniel Bortz - Wohin Willst Du?
-    (1, 3): 19, # ??: ??
-    (1, 4): 9, # ??: ??
-    (1, 5): 23, # ??: Albion, Oliver Lieb - Air - Oliver Lieb Remix
-    (1, 6): 13, # 2B: Luvless - Luvmaschine
-    (1, 7): 3, # ??: DJ Koze - I Want To Sleep
-    (1, 8): 17, # 4B: DJ Seinfeld - U
-    (1, 9): 7, # ??: Map.ache - Thank U Again
-    (1, 10): 21, # ??: Jeigo - Pearl Leaf
-    (1, 11): 11, # ??: ??
-}
+from music_stuff.lib.lib_reccobeats import get_audio_features, spotify_key_to_open_key
 
 
 def main() -> None:
@@ -75,13 +30,15 @@ def main() -> None:
             'speechiness',
             'valence'])
 
-        features = get_audio_features([t['item']['id'] for t in tracks])
+        spotify_ids = [t['item']['id'] for t in tracks]
+        features_dict = get_audio_features(spotify_ids)
+        features = [features_dict[sid] for sid in spotify_ids if sid in features_dict]
         for i, track in enumerate(tracks):
             track_details = track['item']
             artist_names = ', '.join(d['name'] for d in track_details['artists'])
             writer.writerow([
                 f'{artist_names} - {track_details["name"]}',
-                spotify_to_beatunes_key_map[(features[i]['mode'], features[i]['key'])],
+                spotify_key_to_open_key(int(features[i]['mode']), int(features[i]['key'])),
                 features[i]['tempo'],
                 features[i]['id'],
                 features[i]['spotify_id'],

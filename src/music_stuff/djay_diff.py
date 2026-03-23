@@ -35,9 +35,22 @@ from music_stuff.lib.lib_beatunes import lookup_songs
 from music_stuff.lib.lib_djay import load_djay_index
 from music_stuff.lib.lib_consensus import consensus_key, essentia_profile_keys
 from music_stuff.lib.lib_essentia import analyse, ESSENTIA_PROFILES
+from music_stuff.lib.lib_reccobeats import get_audio_features, spotify_key_to_open_key
 
 OUTPUT_PATH = Path(__file__).parent.parent.parent / "data" / "songs-djay-diff.csv"
 MANUAL_BPM_PATH = Path(__file__).parent.parent.parent / "data" / "songs-manual.csv"
+SPOTIFY_MAPPING_PATH = Path(__file__).parent.parent.parent / "data" / "spotify-mapping.csv"
+
+
+def _load_spotify_mapping() -> dict[str, str]:
+    """Returns {apple_music_id: spotify_id}."""
+    if not SPOTIFY_MAPPING_PATH.exists():
+        return {}
+    with open(SPOTIFY_MAPPING_PATH, newline="", encoding="utf-8") as f:
+        return {
+            row["apple_music_id"]: row["spotify_id"]
+            for row in csv.DictReader(f)
+        }
 
 
 def _load_manual_overrides() -> dict[str, dict]:
@@ -162,15 +175,27 @@ def main():
     beatunes_index = lookup_songs(hex_ids)
     print(f"  Loaded metadata for {len(beatunes_index)} songs.")
 
+    # --- Reccobeats ---
+    print("Fetching Reccobeats audio features...")
+    spotify_mapping = _load_spotify_mapping()
+    spotify_ids = [spotify_mapping[s.id] for s in songs if s.id in spotify_mapping]
+    reccobeats_index = get_audio_features(spotify_ids)  # {spotify_id: dict}
+    reccobeats_by_pid = {
+        pid: reccobeats_index[spotify_mapping[pid]]
+        for pid in (s.id for s in songs)
+        if pid in spotify_mapping and spotify_mapping[pid] in reccobeats_index
+    }
+    print(f"  Loaded reccobeats data for {len(reccobeats_by_pid)} songs.")
+
     # --- Write CSV ---
     fieldnames = [
         "apple_music_id", "djay_id", "artist", "name",
         "effective_bpm", "consensus_bpm", "djay_bpm_diff", "bpm_diff",
         "djay_bpm", "djay_manual_bpm", "djay_straight_grid", "apple_music_bpm",
-        "beatunes_bpm", "beatunes_bpm_salience",
+        "beatunes_bpm", "beatunes_bpm_salience", "reccobeats_bpm",
         "bpm_rhythm", "bpm_rhythm_confidence", "bpm_percival",
         "effective_key", "consensus_key", "key_diff",
-        "djay_key", "essentia_key", "beatunes_key", "apple_music_key",
+        "djay_key", "essentia_key", "beatunes_key", "reccobeats_key", "apple_music_key",
         "edma_key", "edma_strength", "edmm_key", "edmm_strength",
         "bgate_key", "bgate_strength", "braw_key", "braw_strength",
         "shaath_key", "shaath_strength", "temperley_key", "temperley_strength",
@@ -214,9 +239,15 @@ def main():
         # --- djay ---
         djay_key = djay_data.key
 
+        # --- Reccobeats ---
+        rb = reccobeats_by_pid.get(pid, {})
+        reccobeats_bpm = rb.get("tempo", "")
+        reccobeats_key = spotify_key_to_open_key(int(rb["mode"]), int(rb["key"])) if rb.get("key") is not None else ""
+
         # --- Consensus key across all sources ---
         consensus_key_all = consensus_key(
             djay_key=djay_key, beatunes_key=beatunes_key,
+            reccobeats_key=reccobeats_key,
             essentia_keys=profile_keys_weighted,
         )
 
@@ -225,12 +256,12 @@ def main():
         effective_key = manual.get("key") or consensus_key_all
 
         # --- Diffs ---
-        consensus = _consensus_bpm(djay_data.bpm, beatunes_bpm, bpm_rhythm, bpm_percival)
+        consensus = _consensus_bpm(djay_data.bpm, beatunes_bpm, bpm_rhythm, bpm_percival, reccobeats_bpm)
         effective_bpm = manual.get("bpm") or djay_data.manual_bpm or consensus
         djay_bpm_diff = abs(round(effective_bpm - djay_data.bpm, 0))
-        bpm_diff = _bpm_diff(djay_data.bpm, beatunes_bpm, bpm_rhythm, bpm_percival)
+        bpm_diff = _bpm_diff(djay_data.bpm, beatunes_bpm, bpm_rhythm, bpm_percival, reccobeats_bpm)
         profile_keys = {k: v for k, v in profile_data.items() if k.endswith("_key")}
-        all_keys = [effective_key, djay_key, beatunes_key] + list(profile_keys.values())
+        all_keys = [effective_key, djay_key, beatunes_key, reccobeats_key] + list(profile_keys.values())
         key_diff = _key_diff(*all_keys)
 
 
@@ -238,13 +269,14 @@ def main():
             "apple_music_id": pid, "djay_id": djay_data.id, "artist": song.artist, "name": song.name,
             "djay_bpm": djay_data.bpm, "djay_manual_bpm": djay_data.manual_bpm,
             "djay_straight_grid": djay_data.is_straight_grid,
-            "apple_music_bpm": song.bpm, "beatunes_bpm": beatunes_bpm,
+            "apple_music_bpm": song.bpm, "beatunes_bpm": beatunes_bpm, "reccobeats_bpm": reccobeats_bpm,
             "effective_bpm": effective_bpm, "consensus_bpm": consensus,
             "bpm_rhythm": bpm_rhythm,
             "bpm_rhythm_confidence": bpm_rhythm_confidence, "bpm_percival": bpm_percival,
             "beatunes_bpm_salience": beatunes_bpm_salience, "djay_bpm_diff": djay_bpm_diff, "bpm_diff": bpm_diff,
             "djay_key": djay_key, "essentia_key": essentia_key,
-            "beatunes_key": beatunes_key, "consensus_key": consensus_key_all, "effective_key": effective_key,
+            "beatunes_key": beatunes_key, "reccobeats_key": reccobeats_key,
+            "consensus_key": consensus_key_all, "effective_key": effective_key,
             "apple_music_key": song.key,
             **profile_data, "key_diff": key_diff,
         })
