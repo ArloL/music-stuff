@@ -22,6 +22,12 @@ def main():
     )
     parser.add_argument("target_playlist", help="Playlist name or 'id:<spotify_id>'")
     parser.add_argument("source_playlist", nargs="+", help="Playlist name(s) or 'id:<spotify_id>'")
+    parser.add_argument(
+        "--recommendations",
+        type=int,
+        default=0,
+        help="Add this many recommendation rows (data-testid='recommended-track') instead of playlist tracks",
+    )
     args = parser.parse_args()
 
     sp = get_sp()
@@ -31,9 +37,11 @@ def main():
     copy_playlist_via_browser(
         source_playlist_ids=source_ids,
         target_playlist_name=target_name,
+        recommendations=args.recommendations,
     )
+    label = "Recommendations from" if args.recommendations > 0 else "Tracks from"
     for source in args.source_playlist:
-        print(f"Done. Tracks from '{source}' added to '{args.target_playlist}'.")
+        print(f"Done. {label} '{source}' added to '{args.target_playlist}'.")
 
 
 if __name__ == "__main__":

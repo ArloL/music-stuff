@@ -146,6 +146,49 @@ def test_no_state_file_starts_without_storage(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# copy_recommendations_via_browser
+# ---------------------------------------------------------------------------
+
+
+def test_recommendations_not_found_raises(tmp_path):
+    state_path = tmp_path / "state.json"
+    state_path.write_text("{}")
+
+    mock_pw, mock_browser, mock_context, mock_page = _make_playwright_mocks(submenu_visible=False)
+
+    with patch("music_stuff.lib.lib_spotify_browser.sync_playwright", return_value=mock_pw):
+        with pytest.raises(PlaylistNotFoundError, match="not found in Add-to-playlist submenu"):
+            copy_playlist_via_browser(
+                source_playlist_ids=["abc123"],
+                target_playlist_name="Nonexistent Playlist",
+                browser_state_path=state_path,
+                recommendations=1,
+            )
+
+
+def test_recommendations_successful_copy(tmp_path):
+    state_path = tmp_path / "state.json"
+    state_path.write_text("{}")
+
+    mock_pw, mock_browser, mock_context, mock_page = _make_playwright_mocks(submenu_visible=True)
+
+    with patch("music_stuff.lib.lib_spotify_browser.sync_playwright", return_value=mock_pw):
+        copy_playlist_via_browser(
+            source_playlist_ids=["abc123"],
+            target_playlist_name="My Playlist",
+            browser_state_path=state_path,
+            recommendations=1,
+        )
+
+    container = mock_page.locator.return_value
+    rows = container.locator.return_value
+    calls = rows.last.click.call_args_list
+    assert any(c.kwargs.get("modifiers") == ["Shift"] for c in calls)
+    assert any(c.kwargs.get("button") == "right" for c in calls)
+    mock_browser.close.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
 # Integration test — requires real saved state, skipped in CI
 # ---------------------------------------------------------------------------
 
