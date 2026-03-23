@@ -4,8 +4,9 @@ set -o errexit
 set -o nounset
 set -o xtrace
 
- #uv run python spotify-browser-add-to-playlist "Recommended" 'Played by Jamie xx'
-#uv run python spotify-browser-add-to-playlist "Recommended" "Gerd Janson's track IDs"
+ReleaseRadar="id:37i9dQZEVXbr5m74MUAgNM"
+DiscoverWeekly="id:37i9dQZEVXcJUQATtKZVAY"
+
 andme="id:37i9dQZF1DXdf6bvyXShR3"
 anotr="id:37i9dQZF1DWTfGx5o2qjVb"
 AxelBoman="id:37i9dQZF1DXccw7SlFjeWF"
@@ -31,6 +32,8 @@ PeggyGou="id:7u9B9jIeF5b3IMcm6PqoVu"
 SofiaKourtesis="id:37i9dQZF1DWVFhnU8yozBd"
 
 uv run spotify-browser-add-to-playlist "Recommended" \
+    "${ReleaseRadar}" \
+    "${DiscoverWeekly}" \
     "${andme}" \
     "${anotr}" \
     "${AxelBoman}" \
@@ -55,5 +58,7 @@ uv run spotify-browser-add-to-playlist "Recommended" \
     "${PeggyGou}" \
     "${SofiaKourtesis}"
 
-uv run spotify-playlist-delete-duplicates Recommended
+uv run spotify-browser-add-to-playlist --recommendations 50 "Recommended" "Would Play"
+
 uv run spotify-playlist-delete-present-in-other-playlist Recommended Listened
+uv run spotify-playlist-delete-duplicates Recommended
