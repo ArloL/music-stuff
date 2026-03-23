@@ -10,10 +10,7 @@ class PlaylistNotFoundError(Exception):
 
 
 def ensure_logged_in(context: BrowserContext, browser_state_path: Path = BROWSER_STATE_PATH) -> None:
-    """Check login state in the given context. If not logged in, prompt the user.
-
-    Saves storage state to file when done.
-    """
+    """Check login state. Prompts the user to log in if the session has expired."""
     page = context.new_page()
     page.goto("https://open.spotify.com/")
 
@@ -32,16 +29,14 @@ def copy_playlist_via_browser(
     source_playlist_ids: list[str],
     target_playlist_name: str,
     browser_state_path: Path = BROWSER_STATE_PATH,
+    recommendations: int = 0,
 ) -> None:
-    """Copy all tracks from one or more source playlists to a target playlist via the Spotify Web UI.
+    """Copy tracks from one or more source playlists to a target playlist via the Spotify Web UI.
 
-    Opens a single headed browser session. Checks login state first and prompts
-    if the session has expired. For each source playlist, navigates to it, scrolls
-    to load all tracks in the virtualised list, Shift+clicks the range, right-clicks
-    and uses the "Add to playlist" context menu.
-
-    Raises PlaylistNotFoundError if the target playlist isn't found in the submenu.
+    If recommendations is > 0, copies the recommended tracks shown below the playlist
+    instead of the playlist tracks themselves.
     """
+    container_selector = '[data-testid="recommended-track"]' if recommendations > 0 else '[data-testid="playlist-tracklist"]'
     storage = str(browser_state_path) if browser_state_path.exists() else None
 
     with sync_playwright() as p:
@@ -54,68 +49,72 @@ def copy_playlist_via_browser(
         page = context.new_page()
 
         for source_playlist_id in source_playlist_ids:
-            url = f"https://open.spotify.com/playlist/{source_playlist_id}"
-            page.goto(url)
+            page.goto(f"https://open.spotify.com/playlist/{source_playlist_id}")
 
-            # Wait for tracklist to render
-            page.wait_for_selector('[data-testid="playlist-tracklist"]', timeout=15_000)
-            tracklist = page.locator('[data-testid="playlist-tracklist"]')
+            page.wait_for_selector(container_selector, timeout=15_000)
 
-            # Click first row, scroll to render all virtualised rows, then Shift+click last.
-            # Use bottom-right edge to avoid links (title, artist, album).
-            first_row = tracklist.locator('[data-testid="tracklist-row"]').first
-            first_row.click(position=_bottom_right(first_row))
-            _scroll_to_bottom(page)
-            last_row = tracklist.locator('[data-testid="tracklist-row"]').last
-            last_row.click(modifiers=["Shift"], position=_bottom_right(last_row))
+            remaining = recommendations if recommendations > 0 else 1
+            while remaining > 0:
+                container = page.locator(container_selector).last
+                container.scroll_into_view_if_needed()
 
-            # Right-click the last row (already selected) to open context menu
-            last_row.click(button="right", position=_bottom_right(last_row))
+                # Click position is bottom-right to avoid links (album, etc.)
+                firstRow = container.locator('[data-testid="tracklist-row"]').first
+                firstRow.click(position=_bottom_right(firstRow))
+                _scroll_to_bottom(page, container)
 
-            # Hover "Add to playlist" to reveal submenu
-            page.get_by_role("menuitem", name="Add to playlist").hover()
+                # The list is virtualised, rows.last must be fresh after scrolling
+                lastRow = container.locator('[data-testid="tracklist-row"]').last
 
-            # Click the target playlist by name in submenu
-            submenu_item = page.get_by_role("menuitem", name=target_playlist_name, exact=True)
-            if not submenu_item.is_visible():
-                browser.close()
-                raise PlaylistNotFoundError(
-                    f"Playlist '{target_playlist_name}' not found in Add-to-playlist submenu."
-                )
-            submenu_item.click()
+                lastRow.click(modifiers=["Shift"], position=_bottom_right(lastRow))
+                lastRow.click(button="right", position=_bottom_right(lastRow))
 
-            # Dismiss "Already added" dialog if it appears
-            try:
-                already_added = page.locator('[aria-label="Already added"]')
-                already_added.wait_for(state="visible", timeout=2000)
-                dont_add = already_added.locator("button", has_text="Don't add")
-                add_new = already_added.locator("button", has_text="Add new ones")
-                if dont_add.is_visible():
-                    dont_add.click()
-                elif add_new.is_visible():
-                    add_new.click()
-            except Exception:
-                pass
+                page.get_by_role("menuitem", name="Add to playlist").hover()
 
-            # Pause to confirm action completed before next playlist
-            page.wait_for_timeout(5000)
+                submenu_item = page.get_by_role("menuitem", name=target_playlist_name, exact=True)
+                if not submenu_item.is_visible():
+                    browser.close()
+                    raise PlaylistNotFoundError(
+                        f"Playlist '{target_playlist_name}' not found in Add-to-playlist submenu."
+                    )
+                submenu_item.click()
+
+                # Dismiss "Already added" dialog if it appears
+                try:
+                    already_added = page.locator('[aria-label="Already added"]')
+                    already_added.wait_for(state="visible", timeout=2000)
+                    dont_add = already_added.locator("button", has_text="Don't add")
+                    add_new = already_added.locator("button", has_text="Add new ones")
+                    if dont_add.is_visible():
+                        dont_add.click()
+                    elif add_new.is_visible():
+                        add_new.click()
+                except Exception:
+                    pass
+
+                page.wait_for_timeout(5000)
+                remaining -= 1
+
+                if remaining > 0:
+                    container.locator("button", has_text="Refresh").click()
+                    page.wait_for_selector(container_selector, timeout=15_000)
 
         browser.close()
 
 
 def _bottom_right(locator) -> dict:
-    """Return a click position at the bottom-right edge of a locator, avoiding links."""
+    """Click position at the bottom-right edge of a locator, avoiding links."""
     box = locator.bounding_box()
     return {"x": box["width"] - 5, "y": box["height"] - 5}
 
 
-def _scroll_to_bottom(page) -> None:
-    """Scroll to the bottom of the page, waiting for virtualised content to load."""
+def _scroll_to_bottom(page, element) -> None:
+    """Scroll to the bottom of the element, waiting for virtualised content to load."""
     previous_position = -1
     while True:
-        page.keyboard.press("End")
+        element.evaluate("(element) => element.scrollIntoView(false)")
         page.wait_for_timeout(500)
-        current_position = page.evaluate("() => window.scrollY")
+        current_position = element.evaluate("(element) => element.scrollTop")
         if current_position == previous_position:
             break
         previous_position = current_position
