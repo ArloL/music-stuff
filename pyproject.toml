@@ -23,6 +23,9 @@ dependencies = [
     "prompt-toolkit==3.0.52",
     "miniaudio==1.61",
     "djay-tsaf-parser",
+    "playwright==1.58.0",
+    "greenlet==3.3.2",
+    "pyee==13.0.1",
 ]
 
 [project.scripts]
@@ -41,6 +44,7 @@ spotify-playlist-delete-present-in-other-playlist = "music_stuff.spotify_playlis
 spotify-playlist-to-csv = "music_stuff.spotify_playlist_to_csv:main"
 spotify-csv-to-playlist = "music_stuff.spotify_csv_to_playlist:main"
 playlist-builder = "music_stuff.playlist_builder:main"
+spotify-browser-add-to-playlist = "music_stuff.spotify_browser_add_to_playlist:main"
 
 [dependency-groups]
 dev = [
