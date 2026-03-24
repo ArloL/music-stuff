@@ -134,8 +134,8 @@ def test_successful_copy_calls_ctrl_a_and_submenu(tmp_path):
             browser_state_path=state_path,
         )
 
-    tracklist = mock_page.locator.return_value
-    rows = tracklist.locator.return_value
+    container = mock_page.locator.return_value.last
+    rows = container.locator.return_value
     calls = rows.last.click.call_args_list
     assert any(c.kwargs.get("modifiers") == ["Shift"] for c in calls)
     assert any(c.kwargs.get("button") == "right" for c in calls)
@@ -207,7 +207,7 @@ def test_recommendations_successful_copy(tmp_path):
             recommendations=1,
         )
 
-    container = mock_page.locator.return_value
+    container = mock_page.locator.return_value.last
     rows = container.locator.return_value
     calls = rows.last.click.call_args_list
     assert any(c.kwargs.get("modifiers") == ["Shift"] for c in calls)
