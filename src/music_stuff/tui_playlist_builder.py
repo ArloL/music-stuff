@@ -125,6 +125,12 @@ def run_tui(
     preview_wall:    list[float]                           = [0.0]
     _ticker_stop:    list[bool]                            = [False]
 
+    def _preview_start_for(song: AppleMusicSong) -> float:
+        djay = (djay_index or {}).get(song.id)
+        if djay and djay.cue_start_time is not None:
+            return djay.cue_start_time + 60.0
+        return _PREVIEW_START
+
     def _start_ticker() -> None:
         _ticker_stop[0] = False
         def _tick() -> None:
@@ -449,7 +455,7 @@ def run_tui(
         if preview_device[0] is not None:
             song = _focused_song()
             if song and song.id != preview_song_id[0]:
-                _start_preview(song, _PREVIEW_START)
+                _start_preview(song, _preview_start_for(song))
 
     @kb.add("up")
     @kb.add("k")
@@ -561,7 +567,7 @@ def run_tui(
         if preview_song_id[0] == song.id and preview_device[0] is not None:
             _stop_preview()
         else:
-            _start_preview(song, _PREVIEW_START)
+            _start_preview(song, _preview_start_for(song))
         app.invalidate()
 
     @kb.add("left")
