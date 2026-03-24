@@ -1,7 +1,7 @@
+import json
 import os
 import re
 import subprocess
-import json
 from dataclasses import dataclass
 
 _JS_FILE = os.path.join(os.path.dirname(__file__), "lib_apple_music_jxa.js")
@@ -71,11 +71,17 @@ def find_playlist_by_name(playlist_name: str) -> dict:
 
 
 def find_songs_by_folder_name(folder_name: str) -> list[AppleMusicSong]:
-    return [_to_song(r) for r in _run_jxa(f"findTracksByFolderName({json.dumps(folder_name)})")]
+    return [
+        _to_song(r)
+        for r in _run_jxa(f"findTracksByFolderName({json.dumps(folder_name)})")
+    ]
 
 
 def find_songs_by_playlist_name(playlist_name: str) -> list[AppleMusicSong]:
-    return [_to_song(r) for r in _run_jxa(f"findTracksByPlaylistName({json.dumps(playlist_name)})")]
+    return [
+        _to_song(r)
+        for r in _run_jxa(f"findTracksByPlaylistName({json.dumps(playlist_name)})")
+    ]
 
 
 def find_song_by_id(song_id: str) -> AppleMusicSong | None:

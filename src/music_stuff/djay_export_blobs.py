@@ -111,7 +111,11 @@ def export_blobs(output_dir: Path, playlist: str | None) -> None:
                 index.setdefault(row["key"], {}).update(entry)
 
         for djay_key, (pid, song) in key_to_song.items():
-            entry = {"appleMusicId": int(pid, 16), "title": song.name, "artist": song.artist}
+            entry = {
+                "appleMusicId": int(pid, 16),
+                "title": song.name,
+                "artist": song.artist,
+            }
             if song.bpm:
                 entry["appleMusicBpm"] = song.bpm
             if song.duration:

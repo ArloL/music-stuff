@@ -1,27 +1,23 @@
 """Tests for playlist_builder AppState logic. No TUI instantiation."""
+
 from __future__ import annotations
 
 import csv
-import io
-from dataclasses import dataclass, field
-from pathlib import Path
-
-import pytest
+from dataclasses import dataclass
 
 from music_stuff.playlist_builder import (
     AppState,
-    build_initial_state,
+    _song_dict,
     compute_candidates,
     save_csv,
     select_candidate,
     undo,
-    _song_dict,
 )
-
 
 # ---------------------------------------------------------------------------
 # Minimal song stub — same field names as AppleMusicSong
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class _Song:
@@ -40,7 +36,10 @@ class _Song:
 # Fixtures
 # ---------------------------------------------------------------------------
 
-def _make_state(seed, pool, played_ids=None, bpm_range=12.0, genres=None, min_rating=80):
+
+def _make_state(
+    seed, pool, played_ids=None, bpm_range=12.0, genres=None, min_rating=80
+):
     s = AppState(
         candidate_pool=pool,
         played_ids=played_ids or set(),
@@ -51,12 +50,14 @@ def _make_state(seed, pool, played_ids=None, bpm_range=12.0, genres=None, min_ra
         min_rating=min_rating,
     )
     from music_stuff.playlist_builder import recompute
+
     return recompute(s)
 
 
 # ---------------------------------------------------------------------------
 # _song_dict
 # ---------------------------------------------------------------------------
+
 
 def test_song_dict_returns_key_and_bpm():
     s = _Song("1", 128, "6d")
@@ -66,6 +67,7 @@ def test_song_dict_returns_key_and_bpm():
 # ---------------------------------------------------------------------------
 # compute_candidates grouping
 # ---------------------------------------------------------------------------
+
 
 def test_compute_candidates_groups_by_transition_type():
     seed = _Song("seed", 128.0, "6d")
@@ -115,7 +117,7 @@ def test_compute_candidates_respects_bpm_range():
 def test_compute_candidates_sorted_by_score_within_group():
     seed = _Song("seed", 128.0, "6d")
     # Both are "matching" type (6d); pick BPMs that differ in score
-    best = _Song("best", 128.0, "6d")   # perfect BPM match → highest score
+    best = _Song("best", 128.0, "6d")  # perfect BPM match → highest score
     worse = _Song("worse", 120.0, "6d")  # 8 BPM below → lower score
     state = _make_state(seed, [worse, best])
     grouped, _ = compute_candidates(state)
@@ -134,6 +136,7 @@ def test_compute_candidates_empty_pool():
 # ---------------------------------------------------------------------------
 # select_candidate state transition
 # ---------------------------------------------------------------------------
+
 
 def test_select_candidate_updates_seed():
     seed = _Song("seed", 128.0, "6d")
@@ -182,6 +185,7 @@ def test_select_candidate_cursor_resets():
 # ---------------------------------------------------------------------------
 # undo
 # ---------------------------------------------------------------------------
+
 
 def test_undo_restores_previous_seed():
     seed = _Song("seed", 128.0, "6d")
@@ -237,6 +241,7 @@ def test_undo_chain():
 # save_csv
 # ---------------------------------------------------------------------------
 
+
 def test_save_csv_columns(tmp_path):
     seed = _Song("seed", 128.0, "6d")
     pick = _Song("p1", 129.0, "7d")
@@ -247,8 +252,14 @@ def test_save_csv_columns(tmp_path):
     rows = list(csv.DictReader(out.read_text().splitlines()))
     assert rows
     expected_cols = {
-        "position", "apple_music_id", "artist", "name",
-        "key", "bpm", "transition_type", "transition_score",
+        "position",
+        "apple_music_id",
+        "artist",
+        "name",
+        "key",
+        "bpm",
+        "transition_type",
+        "transition_score",
     }
     assert expected_cols == set(rows[0].keys())
 

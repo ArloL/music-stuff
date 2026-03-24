@@ -6,12 +6,11 @@ from unittest.mock import patch
 import pytest
 
 from music_stuff.lib.lib_djay import (
+    DJAY_KEY_INDEX_TO_OPEN_KEY,
+    DjaySongData,
     _clone_db,
     load_djay_index,
-    DjaySongData,
-    DJAY_KEY_INDEX_TO_OPEN_KEY,
 )
-
 
 # --- DJAY_KEY_INDEX_TO_OPEN_KEY ---
 
@@ -135,7 +134,9 @@ def _make_test_db(db_path, rows):
     """)
     dlmil_rowid_start = 1000
     dmiud_rowid_start = 2000
-    for i, (bpm, manual_bpm, key_index, apple_music_id, dmiud_data) in enumerate(rows, 1):
+    for i, (bpm, manual_bpm, key_index, apple_music_id, dmiud_data) in enumerate(
+        rows, 1
+    ):
         con.execute(
             "INSERT INTO secondaryIndex_mediaItemAnalyzedDataIndex VALUES (?, ?, ?, ?)",
             (i, bpm, None, key_index),

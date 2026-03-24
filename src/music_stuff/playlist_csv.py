@@ -5,6 +5,7 @@ Export an Apple Music playlist to CSV with BPM and key data.
 Usage:
     uv run python playlist-csv.py "Critical Mass 2025-08"
 """
+
 import argparse
 import csv
 import re
@@ -27,22 +28,28 @@ def write_playlist_to_file(playlist_name: str) -> None:
     songs = find_songs_by_playlist_name(playlist_name)
     output = OUTPUT_DIR / filename
     with open(output, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=FIELDNAMES, lineterminator='\n')
+        writer = csv.DictWriter(f, fieldnames=FIELDNAMES, lineterminator="\n")
         writer.writeheader()
         for s in songs:
-            writer.writerow({
-                "apple_music_id": s.id,
-                "artist": s.artist,
-                "name": s.name,
-                "key": s.key,
-                "bpm": s.bpm or "",
-            })
+            writer.writerow(
+                {
+                    "apple_music_id": s.id,
+                    "artist": s.artist,
+                    "name": s.name,
+                    "key": s.key,
+                    "bpm": s.bpm or "",
+                }
+            )
     print(f"  Wrote {len(songs)} songs to {output}")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Export an Apple Music playlist to CSV.")
-    parser.add_argument("playlist", nargs="+", help="Name(s) of Apple Music playlist(s) to export")
+    parser = argparse.ArgumentParser(
+        description="Export an Apple Music playlist to CSV."
+    )
+    parser.add_argument(
+        "playlist", nargs="+", help="Name(s) of Apple Music playlist(s) to export"
+    )
     args = parser.parse_args()
 
     for name in args.playlist:

@@ -1,4 +1,4 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from music_stuff.lib.lib_reccobeats import get_audio_features
 
@@ -25,7 +25,9 @@ def test_get_audio_features_single_chunk(tmp_path):
     ids = [f"id{i}" for i in range(5)]
     features = [_make_feature(sid) for sid in ids]
 
-    with patch("music_stuff.lib.lib_reccobeats.RECCOBEATS_CACHE_PATH", tmp_path / "cache.csv"):
+    with patch(
+        "music_stuff.lib.lib_reccobeats.RECCOBEATS_CACHE_PATH", tmp_path / "cache.csv"
+    ):
         with patch("music_stuff.lib.lib_reccobeats.requests.get") as mock_get:
             mock_get.return_value.json.return_value = {"content": features}
             result = get_audio_features(ids)
@@ -44,8 +46,12 @@ def test_get_audio_features_chunks_at_40(tmp_path):
         resp.json.return_value = {"content": [_make_feature(sid) for sid in chunk]}
         return resp
 
-    with patch("music_stuff.lib.lib_reccobeats.RECCOBEATS_CACHE_PATH", tmp_path / "cache.csv"):
-        with patch("music_stuff.lib.lib_reccobeats.requests.get", side_effect=fake_get) as mock_get:
+    with patch(
+        "music_stuff.lib.lib_reccobeats.RECCOBEATS_CACHE_PATH", tmp_path / "cache.csv"
+    ):
+        with patch(
+            "music_stuff.lib.lib_reccobeats.requests.get", side_effect=fake_get
+        ) as mock_get:
             result = get_audio_features(ids)
 
     assert mock_get.call_count == 3

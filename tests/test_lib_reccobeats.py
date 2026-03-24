@@ -1,30 +1,26 @@
-import json
-from pathlib import Path
-from unittest.mock import patch, MagicMock
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from music_stuff.lib.lib_reccobeats import (
-    spotify_key_to_open_key,
     _load_cache,
     _write_cache,
+    spotify_key_to_open_key,
 )
-
 
 # --- spotify_key_to_open_key ---
 
+
 def test_spotify_key_to_open_key_major():
     # mode=1 => major
-    assert spotify_key_to_open_key(1, 0) == "1d"   # C major
-    assert spotify_key_to_open_key(1, 7) == "2d"   # G major
-    assert spotify_key_to_open_key(1, 9) == "4d"   # A major
+    assert spotify_key_to_open_key(1, 0) == "1d"  # C major
+    assert spotify_key_to_open_key(1, 7) == "2d"  # G major
+    assert spotify_key_to_open_key(1, 9) == "4d"  # A major
     assert spotify_key_to_open_key(1, 5) == "12d"  # F major
 
 
 def test_spotify_key_to_open_key_minor():
     # mode=0 => minor
-    assert spotify_key_to_open_key(0, 9) == "1m"   # A minor
-    assert spotify_key_to_open_key(0, 4) == "2m"   # E minor
+    assert spotify_key_to_open_key(0, 9) == "1m"  # A minor
+    assert spotify_key_to_open_key(0, 4) == "2m"  # E minor
     assert spotify_key_to_open_key(0, 0) == "10m"  # C minor
     assert spotify_key_to_open_key(0, 2) == "12m"  # D minor
 
@@ -36,11 +32,22 @@ def test_spotify_key_to_open_key_unknown_returns_empty():
 
 # --- cache round trip ---
 
+
 def test_cache_round_trip(tmp_path):
     cache_path = tmp_path / "lib_reccobeats_cache.csv"
     cache = {
-        "spotify123": {"reccobeats_id": "rb456", "mode": 1.0, "key": 0.0, "tempo": 128.5},
-        "spotify789": {"reccobeats_id": "rb012", "mode": 0.0, "key": 9.0, "tempo": 95.0},
+        "spotify123": {
+            "reccobeats_id": "rb456",
+            "mode": 1.0,
+            "key": 0.0,
+            "tempo": 128.5,
+        },
+        "spotify789": {
+            "reccobeats_id": "rb012",
+            "mode": 0.0,
+            "key": 9.0,
+            "tempo": 95.0,
+        },
     }
 
     with patch("music_stuff.lib.lib_reccobeats.RECCOBEATS_CACHE_PATH", cache_path):
@@ -53,7 +60,10 @@ def test_cache_round_trip(tmp_path):
 
 
 def test_cache_missing_file_returns_empty(tmp_path):
-    with patch("music_stuff.lib.lib_reccobeats.RECCOBEATS_CACHE_PATH", tmp_path / "nonexistent.csv"):
+    with patch(
+        "music_stuff.lib.lib_reccobeats.RECCOBEATS_CACHE_PATH",
+        tmp_path / "nonexistent.csv",
+    ):
         assert _load_cache() == {}
 
 
@@ -74,6 +84,7 @@ def test_cache_writes_sorted_by_id(tmp_path):
 
 # --- get_audio_features ---
 
+
 def test_get_audio_features_uses_cache(tmp_path):
     """Cached IDs should not trigger any HTTP requests."""
     cache_path = tmp_path / "lib_reccobeats_cache.csv"
@@ -86,6 +97,7 @@ def test_get_audio_features_uses_cache(tmp_path):
 
         with patch("music_stuff.lib.lib_reccobeats.requests.get") as mock_get:
             from music_stuff.lib.lib_reccobeats import get_audio_features
+
             result = get_audio_features(["cached_id"])
             mock_get.assert_not_called()
 
@@ -113,8 +125,11 @@ def test_get_audio_features_fetches_missing(tmp_path):
     mock_response.json.return_value = api_response
 
     with patch("music_stuff.lib.lib_reccobeats.RECCOBEATS_CACHE_PATH", cache_path):
-        with patch("music_stuff.lib.lib_reccobeats.requests.get", return_value=mock_response) as mock_get:
+        with patch(
+            "music_stuff.lib.lib_reccobeats.requests.get", return_value=mock_response
+        ) as mock_get:
             from music_stuff.lib.lib_reccobeats import get_audio_features
+
             result = get_audio_features(["new_spotify_id"])
             mock_get.assert_called_once()
 

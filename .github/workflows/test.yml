@@ -25,10 +25,22 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 # v7.1.6
       - run: uv run pytest
+  format:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 # v7.1.6
+      - run: uv run ruff format --check
+      - run: uv run ruff check
   required-status-check:
     name: test.required-status-check
     needs:
       - test
+      - format
     if: always()
     runs-on: ubuntu-latest
     steps:

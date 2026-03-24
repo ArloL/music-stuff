@@ -1,15 +1,16 @@
 import sqlite3
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from djay_tsaf_parser import (
     TSAFParseError,
     parse_media_item_user_data,
+)
+from djay_tsaf_parser import (
     parse_tsaf as _tsaf_parse,
 )
 
 from music_stuff.lib.lib_clonefile import clonefile
-
 
 SOURCE_DB = (
     Path.home() / "Music/djay/djay Media Library.djayMediaLibrary/MediaLibrary.db"
@@ -76,7 +77,7 @@ def _parse_apple_music_hex_id(data: bytes) -> str | None:
                 if not isinstance(item, str):
                     continue
                 if item.startswith("com.apple.iTunes:"):
-                    raw = item[len("com.apple.iTunes:"):]
+                    raw = item[len("com.apple.iTunes:") :]
                     try:
                         value = int(raw)
                         if value < 0:

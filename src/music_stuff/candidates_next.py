@@ -5,6 +5,7 @@ Find songs to transition TO from a given seed song.
 Usage:
     uv run candidates-next [--seed PERSISTENT_ID]
 """
+
 import argparse
 
 from music_stuff.lib.lib_apple_music import find_song_by_id
@@ -17,8 +18,15 @@ from music_stuff.lib.lib_transitions import (
 )
 
 
-def candidates_next(seed, playlist: str, exclude: str, genres: set[str] | None = None,
-                min_rating: int = 80, bpm_lo: float = BPM_TOLERANCE, bpm_hi: float = BPM_TOLERANCE) -> None:
+def candidates_next(
+    seed,
+    playlist: str,
+    exclude: str,
+    genres: set[str] | None = None,
+    min_rating: int = 80,
+    bpm_lo: float = BPM_TOLERANCE,
+    bpm_hi: float = BPM_TOLERANCE,
+) -> None:
     key = seed.key
     print("\nLoading candidate playlists...")
     candidates = load_playlist(playlist)
@@ -28,8 +36,17 @@ def candidates_next(seed, playlist: str, exclude: str, genres: set[str] | None =
     for label, fwd_map in ALLOWED_KEY_TRANSITIONS.items():
         keys = fwd_map.get(key, set())
         results = (
-            filter_candidates(candidates, played_ids, seed.bpm - bpm_lo, seed.bpm + bpm_hi, keys, genres, min_rating)
-            if keys else []
+            filter_candidates(
+                candidates,
+                played_ids,
+                seed.bpm - bpm_lo,
+                seed.bpm + bpm_hi,
+                keys,
+                genres,
+                min_rating,
+            )
+            if keys
+            else []
         )
         print_table(label.title(), results)
 
@@ -90,7 +107,15 @@ def main() -> None:
         raise SystemExit(f"Seed song with ID {args.seed} not found in library.")
     print(f"  {seed.artist} – {seed.name}")
 
-    candidates_next(seed, args.playlist, args.exclude, set(args.genres) if args.genres else None, args.min_rating, args.bpm_lo, args.bpm_hi)
+    candidates_next(
+        seed,
+        args.playlist,
+        args.exclude,
+        set(args.genres) if args.genres else None,
+        args.min_rating,
+        args.bpm_lo,
+        args.bpm_hi,
+    )
 
 
 if __name__ == "__main__":

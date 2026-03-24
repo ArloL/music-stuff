@@ -1,8 +1,16 @@
-import pandas as pd
-import time
-import sys
 import os
-from music_stuff.lib.lib_transitions import calculate_transition_score, validate_keys, get_transition_type, build_compatibility_graph
+import sys
+import time
+
+import pandas as pd
+
+from music_stuff.lib.lib_transitions import (
+    build_compatibility_graph,
+    calculate_transition_score,
+    get_transition_type,
+    validate_keys,
+)
+
 
 def find_best_path_greedy(graph, scores, start_node, df):
     """Find a good path using greedy approach - faster and often better for small datasets"""
@@ -33,6 +41,7 @@ def find_best_path_greedy(graph, scores, start_node, df):
 
     return path, total_score
 
+
 def find_best_path_dfs(graph, scores, start_node, max_time_seconds=60):
     """Find the best path using DFS with improved scoring"""
     start_time = time.time()
@@ -55,8 +64,9 @@ def find_best_path_dfs(graph, scores, start_node, max_time_seconds=60):
             best_score = path_quality
 
         # Sort neighbors by score (best first)
-        neighbors_with_scores = [(neighbor, scores.get((node, neighbor), 0))
-                                for neighbor in graph[node]]
+        neighbors_with_scores = [
+            (neighbor, scores.get((node, neighbor), 0)) for neighbor in graph[node]
+        ]
         neighbors_with_scores.sort(key=lambda x: x[1], reverse=True)
 
         for neighbor, transition_score in neighbors_with_scores:
@@ -70,6 +80,7 @@ def find_best_path_dfs(graph, scores, start_node, max_time_seconds=60):
     visited_set = {start_node}
     dfs(start_node, [start_node], visited_set, 0)
     return best_path, best_score
+
 
 def find_longest_playlist(df, max_time_seconds=300, use_greedy=True):
     """Find the best playlist using hybrid approach"""
@@ -101,8 +112,9 @@ def find_longest_playlist(df, max_time_seconds=300, use_greedy=True):
 
         # If greedy found a decent path and we have time, try DFS
         if use_greedy and len(greedy_path) >= 3 and i < 10:  # Only DFS on top 10 songs
-            dfs_path, dfs_score = find_best_path_dfs(graph, scores, idx,
-                                                    max_time_seconds // 10)
+            dfs_path, dfs_score = find_best_path_dfs(
+                graph, scores, idx, max_time_seconds // 10
+            )
             if dfs_score > greedy_score:
                 path, score = dfs_path, dfs_score
 
@@ -110,12 +122,15 @@ def find_longest_playlist(df, max_time_seconds=300, use_greedy=True):
             best_playlist = path
             best_score = score
             best_start_song = idx
-            print(f"New best: {len(path)} songs, score: {score:.1f} "
-                  f"(avg: {score/max(len(path)-1, 1):.1f} per transition)")
+            print(
+                f"New best: {len(path)} songs, score: {score:.1f} "
+                f"(avg: {score / max(len(path) - 1, 1):.1f} per transition)"
+            )
             playlist_df = create_playlist_dataframe(df, best_playlist)
             print(playlist_df.to_string(index=False))
 
     return best_playlist, best_start_song
+
 
 def create_playlist_dataframe(df, playlist_indices):
     """Create a DataFrame with the playlist in order, including transition scores"""
@@ -123,10 +138,10 @@ def create_playlist_dataframe(df, playlist_indices):
         return pd.DataFrame()
 
     playlist_df = df.loc[playlist_indices].copy()
-    playlist_df['playlist_position'] = range(1, len(playlist_indices) + 1)
+    playlist_df["playlist_position"] = range(1, len(playlist_indices) + 1)
 
     # Add transition information
-    playlist_df['bpm_diff'] = playlist_df['bpm'].diff().shift(-1)
+    playlist_df["bpm_diff"] = playlist_df["bpm"].diff().shift(-1)
 
     # Calculate transition scores and types
     transition_scores = []
@@ -144,18 +159,29 @@ def create_playlist_dataframe(df, playlist_indices):
     transition_scores.append(None)
     transition_types.append(None)
 
-    playlist_df['transition_score'] = transition_scores
-    playlist_df['transition_type'] = transition_types
+    playlist_df["transition_score"] = transition_scores
+    playlist_df["transition_type"] = transition_types
 
-    columns = ['playlist_position', 'apple_music_id', 'key', 'bpm',
-               'bpm_diff', 'transition_score', 'transition_type']
+    columns = [
+        "playlist_position",
+        "apple_music_id",
+        "key",
+        "bpm",
+        "bpm_diff",
+        "transition_score",
+        "transition_type",
+    ]
     return playlist_df[columns]
 
-def add_suffix(filename, suffix, separator='_'):
-    if '.' in filename[1:] and not (filename.startswith('.') and filename[1:].find('.') == -1):
+
+def add_suffix(filename, suffix, separator="_"):
+    if "." in filename[1:] and not (
+        filename.startswith(".") and filename[1:].find(".") == -1
+    ):
         root, ext = os.path.splitext(filename)
         return f"{root}{separator}{suffix}{ext}"
     return f"{filename}{separator}{suffix}"
+
 
 def main(source_file):
     output_file = add_suffix(source_file, "longest")
@@ -166,13 +192,13 @@ def main(source_file):
         print(f"Loaded {len(df)} songs from {source_file}")
 
         # Check required columns
-        required_columns = ['apple_music_id', 'key', 'bpm']
+        required_columns = ["apple_music_id", "key", "bpm"]
         missing = [col for col in required_columns if col not in df.columns]
         if missing:
             raise ValueError(f"Missing required columns: {missing}")
 
         # Sort by BPM for better initial ordering
-        df = df.sort_values(by=['bpm']).reset_index(drop=True)
+        df = df.sort_values(by=["bpm"]).reset_index(drop=True)
 
     except Exception as e:
         print(f"Error loading data: {e}")
@@ -193,11 +219,14 @@ def main(source_file):
         print(playlist_df.to_string(index=False))
 
         # Save to CSV
-        playlist_df.to_csv(output_file, index=False, lineterminator='\n')
+        playlist_df.to_csv(output_file, index=False, lineterminator="\n")
         print(f"\nPlaylist saved to {output_file}")
     else:
         print("No compatible playlist found!")
-        print("Check that your song keys are valid (e.g. '6d', '1m') and BPMs allow for transitions.")
+        print(
+            "Check that your song keys are valid (e.g. '6d', '1m') and BPMs allow for transitions."
+        )
+
 
 if __name__ == "__main__":
     source_file = sys.argv[1] if len(sys.argv) > 1 else "songs.csv"

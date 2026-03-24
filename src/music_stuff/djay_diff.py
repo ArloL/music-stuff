@@ -25,21 +25,27 @@ Cross-reference key:
   These represent the same value in different bases.
 """
 
-import csv
-import sys
 import argparse
+import csv
 from pathlib import Path
 
-from music_stuff.lib.lib_apple_music import find_songs_by_folder_name, find_songs_by_playlist_name, set_song_bpm, set_song_key
+from music_stuff.lib.lib_apple_music import (
+    find_songs_by_folder_name,
+    find_songs_by_playlist_name,
+    set_song_bpm,
+    set_song_key,
+)
 from music_stuff.lib.lib_beatunes import lookup_songs
-from music_stuff.lib.lib_djay import load_djay_index
 from music_stuff.lib.lib_consensus import consensus_key, essentia_profile_keys
-from music_stuff.lib.lib_essentia import analyse, ESSENTIA_PROFILES
+from music_stuff.lib.lib_djay import load_djay_index
+from music_stuff.lib.lib_essentia import ESSENTIA_PROFILES, analyse
 from music_stuff.lib.lib_reccobeats import get_audio_features, spotify_key_to_open_key
 
 OUTPUT_PATH = Path(__file__).parent.parent.parent / "data" / "songs-djay-diff.csv"
 MANUAL_BPM_PATH = Path(__file__).parent.parent.parent / "data" / "songs-manual.csv"
-SPOTIFY_MAPPING_PATH = Path(__file__).parent.parent.parent / "data" / "spotify-mapping.csv"
+SPOTIFY_MAPPING_PATH = (
+    Path(__file__).parent.parent.parent / "data" / "spotify-mapping.csv"
+)
 
 
 def _load_spotify_mapping() -> dict[str, str]:
@@ -47,10 +53,7 @@ def _load_spotify_mapping() -> dict[str, str]:
     if not SPOTIFY_MAPPING_PATH.exists():
         return {}
     with open(SPOTIFY_MAPPING_PATH, newline="", encoding="utf-8") as f:
-        return {
-            row["apple_music_id"]: row["spotify_id"]
-            for row in csv.DictReader(f)
-        }
+        return {row["apple_music_id"]: row["spotify_id"] for row in csv.DictReader(f)}
 
 
 def _load_manual_overrides() -> dict[str, dict]:
@@ -130,7 +133,11 @@ def _consensus_bpm(*bpms: float | int | str) -> float:
         normalised.append(b)
     normalised.sort()
     n = len(normalised)
-    median = normalised[n // 2] if n % 2 == 1 else (normalised[n // 2 - 1] + normalised[n // 2]) / 2
+    median = (
+        normalised[n // 2]
+        if n % 2 == 1
+        else (normalised[n // 2 - 1] + normalised[n // 2]) / 2
+    )
     # Pick the octave that the majority of original values live in
     votes_high = sum(1 for b in valid if abs(b - median * 2) < abs(b - median))
     if votes_high >= len(valid) / 2:
@@ -142,24 +149,45 @@ def _consensus_bpm(*bpms: float | int | str) -> float:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Export djay BPM data merged with Apple Music metadata.")
+    parser = argparse.ArgumentParser(
+        description="Export djay BPM data merged with Apple Music metadata."
+    )
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("--folder", metavar="NAME",
-                       help="Filter to songs in this Music library folder")
-    group.add_argument("--playlist", metavar="NAME", default="Would Play",
-                       help="Filter to songs in this Music library playlist (default: Would Play)")
-    parser.add_argument("--write-bpm", action="store_true", help="Write effective BPM back to Apple Music")
-    parser.add_argument("--write-key", action="store_true", help="Write effective key back to Apple Music")
+    group.add_argument(
+        "--folder", metavar="NAME", help="Filter to songs in this Music library folder"
+    )
+    group.add_argument(
+        "--playlist",
+        metavar="NAME",
+        default="Would Play",
+        help="Filter to songs in this Music library playlist (default: Would Play)",
+    )
+    parser.add_argument(
+        "--write-bpm",
+        action="store_true",
+        help="Write effective BPM back to Apple Music",
+    )
+    parser.add_argument(
+        "--write-key",
+        action="store_true",
+        help="Write effective key back to Apple Music",
+    )
     args = parser.parse_args()
 
     # --- Load Music metadata ---
     if args.playlist:
         desc = f"playlist '{args.playlist}'"
-        loader = lambda: find_songs_by_playlist_name(args.playlist)
+
+        def loader():
+            return find_songs_by_playlist_name(args.playlist)
     else:
         desc = f"folder '{args.folder}'"
-        loader = lambda: find_songs_by_folder_name(args.folder)
+
+        def loader():
+            return find_songs_by_folder_name(args.folder)
+
     print(f"Loading Apple Music metadata for {desc}...")
     songs = loader()
     print(f"  Loaded metadata for {len(songs)} songs.")
@@ -189,17 +217,46 @@ def main():
 
     # --- Write CSV ---
     fieldnames = [
-        "apple_music_id", "djay_id", "artist", "name",
-        "effective_bpm", "consensus_bpm", "djay_bpm_diff", "bpm_diff",
-        "djay_bpm", "djay_manual_bpm", "djay_straight_grid", "apple_music_bpm",
-        "beatunes_bpm", "beatunes_bpm_salience", "reccobeats_bpm",
-        "bpm_rhythm", "bpm_rhythm_confidence", "bpm_percival",
-        "effective_key", "consensus_key", "key_diff",
-        "djay_key", "essentia_key", "beatunes_key", "reccobeats_key", "apple_music_key",
-        "edma_key", "edma_strength", "edmm_key", "edmm_strength",
-        "bgate_key", "bgate_strength", "braw_key", "braw_strength",
-        "shaath_key", "shaath_strength", "temperley_key", "temperley_strength",
-        "noland_key", "noland_strength",
+        "apple_music_id",
+        "djay_id",
+        "artist",
+        "name",
+        "effective_bpm",
+        "consensus_bpm",
+        "djay_bpm_diff",
+        "bpm_diff",
+        "djay_bpm",
+        "djay_manual_bpm",
+        "djay_straight_grid",
+        "apple_music_bpm",
+        "beatunes_bpm",
+        "beatunes_bpm_salience",
+        "reccobeats_bpm",
+        "bpm_rhythm",
+        "bpm_rhythm_confidence",
+        "bpm_percival",
+        "effective_key",
+        "consensus_key",
+        "key_diff",
+        "djay_key",
+        "essentia_key",
+        "beatunes_key",
+        "reccobeats_key",
+        "apple_music_key",
+        "edma_key",
+        "edma_strength",
+        "edmm_key",
+        "edmm_strength",
+        "bgate_key",
+        "bgate_strength",
+        "braw_key",
+        "braw_strength",
+        "shaath_key",
+        "shaath_strength",
+        "temperley_key",
+        "temperley_strength",
+        "noland_key",
+        "noland_strength",
     ]
 
     # --- Load manual overrides ---
@@ -233,7 +290,9 @@ def main():
         # --- beaTunes ---
         bt_song = beatunes_index.get(pid)
         beatunes_bpm = bt_song.exactbpm if bt_song and bt_song.exactbpm else ""
-        beatunes_bpm_salience = bt_song.exactbpmsalience if bt_song and bt_song.exactbpmsalience else ""
+        beatunes_bpm_salience = (
+            bt_song.exactbpmsalience if bt_song and bt_song.exactbpmsalience else ""
+        )
         beatunes_key = bt_song.key if bt_song else ""
 
         # --- djay ---
@@ -242,11 +301,16 @@ def main():
         # --- Reccobeats ---
         rb = reccobeats_by_pid.get(pid, {})
         reccobeats_bpm = rb.get("tempo", "")
-        reccobeats_key = spotify_key_to_open_key(int(rb["mode"]), int(rb["key"])) if rb.get("key") is not None else ""
+        reccobeats_key = (
+            spotify_key_to_open_key(int(rb["mode"]), int(rb["key"]))
+            if rb.get("key") is not None
+            else ""
+        )
 
         # --- Consensus key across all sources ---
         consensus_key_all = consensus_key(
-            djay_key=djay_key, beatunes_key=beatunes_key,
+            djay_key=djay_key,
+            beatunes_key=beatunes_key,
             reccobeats_key=reccobeats_key,
             essentia_keys=profile_keys_weighted,
         )
@@ -256,30 +320,51 @@ def main():
         effective_key = manual.get("key") or consensus_key_all
 
         # --- Diffs ---
-        consensus = _consensus_bpm(djay_data.bpm, beatunes_bpm, bpm_rhythm, bpm_percival, reccobeats_bpm)
+        consensus = _consensus_bpm(
+            djay_data.bpm, beatunes_bpm, bpm_rhythm, bpm_percival, reccobeats_bpm
+        )
         effective_bpm = manual.get("bpm") or djay_data.manual_bpm or consensus
         djay_bpm_diff = abs(round(effective_bpm - djay_data.bpm, 0))
-        bpm_diff = _bpm_diff(djay_data.bpm, beatunes_bpm, bpm_rhythm, bpm_percival, reccobeats_bpm)
+        bpm_diff = _bpm_diff(
+            djay_data.bpm, beatunes_bpm, bpm_rhythm, bpm_percival, reccobeats_bpm
+        )
         profile_keys = {k: v for k, v in profile_data.items() if k.endswith("_key")}
-        all_keys = [effective_key, djay_key, beatunes_key, reccobeats_key] + list(profile_keys.values())
+        all_keys = [effective_key, djay_key, beatunes_key, reccobeats_key] + list(
+            profile_keys.values()
+        )
         key_diff = _key_diff(*all_keys)
 
-
-        csv_rows.append({
-            "apple_music_id": pid, "djay_id": djay_data.id, "artist": song.artist, "name": song.name,
-            "djay_bpm": djay_data.bpm, "djay_manual_bpm": djay_data.manual_bpm,
-            "djay_straight_grid": djay_data.is_straight_grid,
-            "apple_music_bpm": song.bpm, "beatunes_bpm": beatunes_bpm, "reccobeats_bpm": reccobeats_bpm,
-            "effective_bpm": effective_bpm, "consensus_bpm": consensus,
-            "bpm_rhythm": bpm_rhythm,
-            "bpm_rhythm_confidence": bpm_rhythm_confidence, "bpm_percival": bpm_percival,
-            "beatunes_bpm_salience": beatunes_bpm_salience, "djay_bpm_diff": djay_bpm_diff, "bpm_diff": bpm_diff,
-            "djay_key": djay_key, "essentia_key": essentia_key,
-            "beatunes_key": beatunes_key, "reccobeats_key": reccobeats_key,
-            "consensus_key": consensus_key_all, "effective_key": effective_key,
-            "apple_music_key": song.key,
-            **profile_data, "key_diff": key_diff,
-        })
+        csv_rows.append(
+            {
+                "apple_music_id": pid,
+                "djay_id": djay_data.id,
+                "artist": song.artist,
+                "name": song.name,
+                "djay_bpm": djay_data.bpm,
+                "djay_manual_bpm": djay_data.manual_bpm,
+                "djay_straight_grid": djay_data.is_straight_grid,
+                "apple_music_bpm": song.bpm,
+                "beatunes_bpm": beatunes_bpm,
+                "reccobeats_bpm": reccobeats_bpm,
+                "effective_bpm": effective_bpm,
+                "consensus_bpm": consensus,
+                "bpm_rhythm": bpm_rhythm,
+                "bpm_rhythm_confidence": bpm_rhythm_confidence,
+                "bpm_percival": bpm_percival,
+                "beatunes_bpm_salience": beatunes_bpm_salience,
+                "djay_bpm_diff": djay_bpm_diff,
+                "bpm_diff": bpm_diff,
+                "djay_key": djay_key,
+                "essentia_key": essentia_key,
+                "beatunes_key": beatunes_key,
+                "reccobeats_key": reccobeats_key,
+                "consensus_key": consensus_key_all,
+                "effective_key": effective_key,
+                "apple_music_key": song.key,
+                **profile_data,
+                "key_diff": key_diff,
+            }
+        )
 
     csv_rows.sort(
         key=lambda r: (
@@ -291,7 +376,9 @@ def main():
 
     written = 0
     with open(OUTPUT_PATH, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore", lineterminator='\n')
+        writer = csv.DictWriter(
+            f, fieldnames=fieldnames, extrasaction="ignore", lineterminator="\n"
+        )
         writer.writeheader()
         for row in csv_rows:
             writer.writerow(row)
@@ -303,24 +390,36 @@ def main():
     # --- Write effective BPM back to Apple Music ---
     if args.write_bpm:
         updates = [
-            r for r in csv_rows
-            if r["effective_bpm"] != "" and int(round(float(r["effective_bpm"]))) != r["apple_music_bpm"]
+            r
+            for r in csv_rows
+            if r["effective_bpm"] != ""
+            and int(round(float(r["effective_bpm"]))) != r["apple_music_bpm"]
         ]
         print(f"Writing BPM to Apple Music for {len(updates)} songs...")
         for i, row in enumerate(updates, 1):
             bpm = int(round(float(row["effective_bpm"])))
             set_song_bpm(row["apple_music_id"], bpm)
-            print(f"  [{i}/{len(updates)}] {row['artist']} - {row['name']}: {row['apple_music_bpm']} -> {bpm}", end="\r")
+            print(
+                f"  [{i}/{len(updates)}] {row['artist']} - {row['name']}: {row['apple_music_bpm']} -> {bpm}",
+                end="\r",
+            )
         if updates:
             print()
 
     # --- Write effective key back to Apple Music ---
     if args.write_key:
-        updates = [r for r in csv_rows if r["effective_key"] and r["effective_key"] != r["apple_music_key"]]
+        updates = [
+            r
+            for r in csv_rows
+            if r["effective_key"] and r["effective_key"] != r["apple_music_key"]
+        ]
         print(f"Writing key to Apple Music for {len(updates)} songs...")
         for i, row in enumerate(updates, 1):
             set_song_key(row["apple_music_id"], row["effective_key"])
-            print(f"  [{i}/{len(updates)}] {row['artist']} - {row['name']}: {row['apple_music_key']} -> {row['effective_key']}", end="\r")
+            print(
+                f"  [{i}/{len(updates)}] {row['artist']} - {row['name']}: {row['apple_music_key']} -> {row['effective_key']}",
+                end="\r",
+            )
         if updates:
             print()
 

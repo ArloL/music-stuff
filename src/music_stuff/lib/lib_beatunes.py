@@ -12,9 +12,7 @@ def _find_h2_jar() -> Path:
     """Find the H2 jar file in the beaTunes application bundle."""
     matches = sorted(H2_JAR_DIR.glob("h2-*.jar"))
     if not matches:
-        raise FileNotFoundError(
-            f"No H2 jar found matching h2-*.jar in {H2_JAR_DIR}"
-        )
+        raise FileNotFoundError(f"No H2 jar found matching h2-*.jar in {H2_JAR_DIR}")
     return matches[-1]
 
 
@@ -32,7 +30,7 @@ def hex_id_to_beatunes_id(hex_id: str) -> int:
     """Convert an Apple Music hex persistent ID to a beaTunes ID."""
     value = int(hex_id, 16)
     if value >= (1 << 63):
-        value -= (1 << 64)
+        value -= 1 << 64
     return value ^ (-(1 << 63))
 
 
@@ -40,7 +38,7 @@ def beatunes_id_to_hex_id(beatunes_id: int) -> str:
     """Convert a beaTunes ID to an Apple Music hex persistent ID."""
     value = beatunes_id ^ (-(1 << 63))
     if value < 0:
-        value += (1 << 64)
+        value += 1 << 64
     return format(value, "016X")
 
 
@@ -71,9 +69,16 @@ def _run_sql(sql: str, db_path: Path) -> list[dict]:
     jdbc_path = str(db_path).replace(".h2.db", "")
     result = subprocess.run(
         [
-            "java", "-cp", str(_find_h2_jar()), "org.h2.tools.Shell",
-            "-url", f"jdbc:h2:{jdbc_path};ACCESS_MODE_DATA=r",
-            "-user", "sa", "-password", "",
+            "java",
+            "-cp",
+            str(_find_h2_jar()),
+            "org.h2.tools.Shell",
+            "-url",
+            f"jdbc:h2:{jdbc_path};ACCESS_MODE_DATA=r",
+            "-user",
+            "sa",
+            "-password",
+            "",
         ],
         input=f"list\n{sql};\n",
         capture_output=True,
@@ -93,7 +98,7 @@ def _parse_h2_list_output(output: str) -> list[dict]:
     marker = "Result list mode is now on"
     idx = output.find(marker)
     if idx != -1:
-        output = output[idx + len(marker):]
+        output = output[idx + len(marker) :]
 
     rows = []
     current: dict[str, str] = {}
@@ -138,12 +143,20 @@ def lookup_songs(hex_ids: list[str]) -> dict[str, BeaTunesSong]:
         exactbpm_raw = row.get("EXACTBPM", "").strip()
         exactbpmsalience_raw = row.get("EXACTBPMSALIENCE", "").strip()
         tonalkey_raw = row.get("TONALKEY", "").strip()
-        tonalkey = int(tonalkey_raw) if tonalkey_raw and tonalkey_raw != "null" else None
+        tonalkey = (
+            int(tonalkey_raw) if tonalkey_raw and tonalkey_raw != "null" else None
+        )
         result[hex_id] = BeaTunesSong(
             hex_id=hex_id,
-            exactbpm=float(exactbpm_raw) if exactbpm_raw and exactbpm_raw != "null" else None,
-            exactbpmsalience=float(exactbpmsalience_raw) if exactbpmsalience_raw and exactbpmsalience_raw != "null" else None,
-            key=f"{(tonalkey + 1) // 2}{'d' if tonalkey % 2 != 0 else 'm'}" if tonalkey else "",
+            exactbpm=float(exactbpm_raw)
+            if exactbpm_raw and exactbpm_raw != "null"
+            else None,
+            exactbpmsalience=float(exactbpmsalience_raw)
+            if exactbpmsalience_raw and exactbpmsalience_raw != "null"
+            else None,
+            key=f"{(tonalkey + 1) // 2}{'d' if tonalkey % 2 != 0 else 'm'}"
+            if tonalkey
+            else "",
             artist=row.get("ARTIST", "").strip(),
             name=row.get("NAME", "").strip(),
         )

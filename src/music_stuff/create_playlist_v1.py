@@ -1,11 +1,17 @@
 import pandas as pd
 import pulp
-from collections import defaultdict
-from music_stuff.lib.lib_transitions import calculate_transition_score, build_compatibility_graph, validate_keys, get_transition_type
+
+from music_stuff.lib.lib_transitions import (
+    build_compatibility_graph,
+    calculate_transition_score,
+    get_transition_type,
+    validate_keys,
+)
+
 
 def main(source_file, min_songs, max_songs):
     # Load dataset
-    songs = pd.read_csv(source_file).set_index('apple_music_id')
+    songs = pd.read_csv(source_file).set_index("apple_music_id")
     song_ids = songs.index.tolist()
     n_songs = len(song_ids)
 
@@ -32,39 +38,47 @@ def main(source_file, min_songs, max_songs):
     s = pulp.LpVariable.dicts("s", song_ids, cat=pulp.LpBinary)
 
     # Position variables for MTZ subtour elimination: u[i] = position of song i in path
-    u = pulp.LpVariable.dicts("u", song_ids, lowBound=0, upBound=n_songs-1, cat=pulp.LpInteger)
+    u = pulp.LpVariable.dicts(
+        "u", song_ids, lowBound=0, upBound=n_songs - 1, cat=pulp.LpInteger
+    )
 
     # Objective: maximize sum of transition scores
-    prob += pulp.lpSum(scores[i,j] * x[i,j] for (i,j) in scores.keys())
+    prob += pulp.lpSum(scores[i, j] * x[i, j] for (i, j) in scores.keys())
 
     # Link selection and transition variables
     for node in song_ids:
-        out_edges = [(i,j) for (i,j) in scores.keys() if i == node]
-        in_edges = [(i,j) for (i,j) in scores.keys() if j == node]
+        out_edges = [(i, j) for (i, j) in scores.keys() if i == node]
+        in_edges = [(i, j) for (i, j) in scores.keys() if j == node]
 
         # Song is selected if it has any outgoing or incoming transition
         if out_edges or in_edges:
-            prob += s[node] <= pulp.lpSum(x[i,j] for (i,j) in out_edges) + pulp.lpSum(x[i,j] for (i,j) in in_edges)
-            prob += pulp.lpSum(x[i,j] for (i,j) in out_edges) + pulp.lpSum(x[i,j] for (i,j) in in_edges) <= s[node] * 2
+            prob += s[node] <= pulp.lpSum(x[i, j] for (i, j) in out_edges) + pulp.lpSum(
+                x[i, j] for (i, j) in in_edges
+            )
+            prob += (
+                pulp.lpSum(x[i, j] for (i, j) in out_edges)
+                + pulp.lpSum(x[i, j] for (i, j) in in_edges)
+                <= s[node] * 2
+            )
 
     # Flow conservation constraints for simple path
     for node in song_ids:
-        out_edges = [(i,j) for (i,j) in scores.keys() if i == node]
-        in_edges = [(i,j) for (i,j) in scores.keys() if j == node]
+        out_edges = [(i, j) for (i, j) in scores.keys() if i == node]
+        in_edges = [(i, j) for (i, j) in scores.keys() if j == node]
 
         # Each selected song has at most 1 outgoing and 1 incoming edge
         if out_edges:
-            prob += pulp.lpSum(x[i,j] for (i,j) in out_edges) <= 1
+            prob += pulp.lpSum(x[i, j] for (i, j) in out_edges) <= 1
         if in_edges:
-            prob += pulp.lpSum(x[i,j] for (i,j) in in_edges) <= 1
+            prob += pulp.lpSum(x[i, j] for (i, j) in in_edges) <= 1
 
     # Exactly one start node (no incoming edges) and one end node (no outgoing edges)
     start_indicators = []
     end_indicators = []
 
     for node in song_ids:
-        out_edges = [(i,j) for (i,j) in scores.keys() if i == node]
-        in_edges = [(i,j) for (i,j) in scores.keys() if j == node]
+        out_edges = [(i, j) for (i, j) in scores.keys() if i == node]
+        in_edges = [(i, j) for (i, j) in scores.keys() if j == node]
 
         if out_edges and in_edges:
             # Internal node: if selected, must have exactly 1 in and 1 out (or be start/end)
@@ -72,9 +86,9 @@ def main(source_file, min_songs, max_songs):
             is_end = pulp.LpVariable(f"end_{node}", cat=pulp.LpBinary)
 
             # If selected and not start, must have incoming edge
-            prob += pulp.lpSum(x[i,j] for (i,j) in in_edges) >= s[node] - is_start
+            prob += pulp.lpSum(x[i, j] for (i, j) in in_edges) >= s[node] - is_start
             # If selected and not end, must have outgoing edge
-            prob += pulp.lpSum(x[i,j] for (i,j) in out_edges) >= s[node] - is_end
+            prob += pulp.lpSum(x[i, j] for (i, j) in out_edges) >= s[node] - is_end
 
             start_indicators.append(is_start)
             end_indicators.append(is_end)
@@ -98,11 +112,11 @@ def main(source_file, min_songs, max_songs):
         prob += pulp.lpSum(end_indicators) == 1
 
     # MTZ subtour elimination constraints
-    for (i, j) in scores.keys():
-        prob += u[j] >= u[i] + 1 - n_songs * (1 - x[i,j])
+    for i, j in scores.keys():
+        prob += u[j] >= u[i] + 1 - n_songs * (1 - x[i, j])
 
     # Length constraints
-    total_transitions = pulp.lpSum(x[i,j] for (i,j) in scores.keys())
+    total_transitions = pulp.lpSum(x[i, j] for (i, j) in scores.keys())
     prob += total_transitions >= min_songs - 1  # n songs = n-1 transitions
     prob += total_transitions <= max_songs - 1
 
@@ -152,17 +166,26 @@ def main(source_file, min_songs, max_songs):
             next_song = playlist[i + 1]
             score = calculate_transition_score(song, next_song)
             transition_type = get_transition_type(song, next_song)
-            print(f"{i + 1}. {song['artist']} - {song['name']} (BPM: {song['bpm']}) → {score:.2f} ({transition_type})")
+            print(
+                f"{i + 1}. {song['artist']} - {song['name']} (BPM: {song['bpm']}) → {score:.2f} ({transition_type})"
+            )
         else:
             print(f"{i + 1}. {song['artist']} - {song['name']} (BPM: {song['bpm']})")
+
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Generate optimal music playlist")
-    parser.add_argument("source_file", nargs="?", default="songs.csv", help="CSV file with song data")
-    parser.add_argument("--min-songs", type=int, default=10, help="Minimum playlist length")
-    parser.add_argument("--max-songs", type=int, default=25, help="Maximum playlist length")
+    parser.add_argument(
+        "source_file", nargs="?", default="songs.csv", help="CSV file with song data"
+    )
+    parser.add_argument(
+        "--min-songs", type=int, default=10, help="Minimum playlist length"
+    )
+    parser.add_argument(
+        "--max-songs", type=int, default=25, help="Maximum playlist length"
+    )
 
     args = parser.parse_args()
     main(args.source_file, args.min_songs, args.max_songs)

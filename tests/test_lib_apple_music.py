@@ -1,16 +1,17 @@
 import json
 import shutil
 import subprocess
+from unittest.mock import MagicMock, patch
 
 import pytest
-from unittest.mock import patch, MagicMock
+
 from music_stuff.lib.lib_apple_music import (
     AppleMusicSong,
     _to_song,
     find_playlist_by_name,
-    find_songs_by_playlist_name,
-    find_songs_by_folder_name,
     find_song_by_id,
+    find_songs_by_folder_name,
+    find_songs_by_playlist_name,
     set_song_bpm,
     set_song_key,
 )
@@ -29,8 +30,13 @@ def _try_launch_music() -> bool:
         )
         # Probe that the library is actually queryable, not just that the app launched
         result = subprocess.run(
-            ["osascript", "-l", "JavaScript", "-e",
-             'Application("Music").playlists.length'],
+            [
+                "osascript",
+                "-l",
+                "JavaScript",
+                "-e",
+                'Application("Music").playlists.length',
+            ],
             capture_output=True,
             text=True,
             timeout=10,
@@ -48,32 +54,68 @@ needs_osascript = pytest.mark.skipif(
 
 # --- _to_song ---
 
+
 def test_to_song_extracts_key_from_comment():
-    raw = {"persistentID": "ABC", "name": "T", "artist": "A", "comment": "Key 6d", "bpm": 120, "location": ""}
+    raw = {
+        "persistentID": "ABC",
+        "name": "T",
+        "artist": "A",
+        "comment": "Key 6d",
+        "bpm": 120,
+        "location": "",
+    }
     song = _to_song(raw)
     assert song.key == "6d"
 
 
 def test_to_song_extracts_minor_key():
-    raw = {"persistentID": "ABC", "name": "T", "artist": "A", "comment": "Key 3M", "bpm": 120, "location": ""}
+    raw = {
+        "persistentID": "ABC",
+        "name": "T",
+        "artist": "A",
+        "comment": "Key 3M",
+        "bpm": 120,
+        "location": "",
+    }
     song = _to_song(raw)
     assert song.key == "3m"
 
 
 def test_to_song_key_embedded_in_comment():
-    raw = {"persistentID": "ABC", "name": "T", "artist": "A", "comment": "some text Key 11d more text", "bpm": 120, "location": ""}
+    raw = {
+        "persistentID": "ABC",
+        "name": "T",
+        "artist": "A",
+        "comment": "some text Key 11d more text",
+        "bpm": 120,
+        "location": "",
+    }
     song = _to_song(raw)
     assert song.key == "11d"
 
 
 def test_to_song_empty_key_when_no_comment():
-    raw = {"persistentID": "ABC", "name": "T", "artist": "A", "comment": "", "bpm": 120, "location": ""}
+    raw = {
+        "persistentID": "ABC",
+        "name": "T",
+        "artist": "A",
+        "comment": "",
+        "bpm": 120,
+        "location": "",
+    }
     song = _to_song(raw)
     assert song.key == ""
 
 
 def test_to_song_empty_key_when_comment_has_no_key():
-    raw = {"persistentID": "ABC", "name": "T", "artist": "A", "comment": "ignore", "bpm": 120, "location": ""}
+    raw = {
+        "persistentID": "ABC",
+        "name": "T",
+        "artist": "A",
+        "comment": "ignore",
+        "bpm": 120,
+        "location": "",
+    }
     song = _to_song(raw)
     assert song.key == ""
 
@@ -115,9 +157,12 @@ def test_to_song_maps_all_fields():
 
 # --- set_song_key ---
 
+
 def test_set_song_key_passes_id_and_key_to_jxa():
     mock = MagicMock(returncode=0, stdout="null")
-    with patch("music_stuff.lib.lib_apple_music.subprocess.run", return_value=mock) as mock_run:
+    with patch(
+        "music_stuff.lib.lib_apple_music.subprocess.run", return_value=mock
+    ) as mock_run:
         set_song_key("DEADBEEF", "6d")
     script = mock_run.call_args.kwargs["input"]
     assert json.dumps("DEADBEEF") in script
@@ -125,7 +170,9 @@ def test_set_song_key_passes_id_and_key_to_jxa():
 
 
 def test_set_song_key_raises_on_error():
-    mock = MagicMock(returncode=1, stderr="execution error: Comment contains more than a key (-2700)")
+    mock = MagicMock(
+        returncode=1, stderr="execution error: Comment contains more than a key (-2700)"
+    )
     with patch("music_stuff.lib.lib_apple_music.subprocess.run", return_value=mock):
         with pytest.raises(RuntimeError, match="Comment contains more than a key"):
             set_song_key("DEADBEEF", "6d")
@@ -140,7 +187,9 @@ def test_run_jxa_raises_on_nonzero_returncode():
 
 def test_find_song_by_id_passes_id_as_string_to_jxa():
     mock = MagicMock(returncode=0, stdout="null")
-    with patch("music_stuff.lib.lib_apple_music.subprocess.run", return_value=mock) as mock_run:
+    with patch(
+        "music_stuff.lib.lib_apple_music.subprocess.run", return_value=mock
+    ) as mock_run:
         find_song_by_id("966EC6D01F2DED99")
     script = mock_run.call_args.kwargs["input"]
     assert json.dumps("966EC6D01F2DED99") in script
