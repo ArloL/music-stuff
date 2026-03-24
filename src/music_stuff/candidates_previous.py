@@ -6,6 +6,7 @@ tolerance and harmonic key compatibility.
 Usage:
     uv run candidates-previous [--seed PERSISTENT_ID]
 """
+
 import argparse
 
 from music_stuff.lib.lib_apple_music import find_song_by_id
@@ -18,8 +19,15 @@ from music_stuff.lib.lib_transitions import (
 )
 
 
-def candidates_previous(seed, playlist: str, exclude: str, genres: set[str] | None = None,
-                    min_rating: int = 80, bpm_lo: float = BPM_TOLERANCE, bpm_hi: float = BPM_TOLERANCE) -> None:
+def candidates_previous(
+    seed,
+    playlist: str,
+    exclude: str,
+    genres: set[str] | None = None,
+    min_rating: int = 80,
+    bpm_lo: float = BPM_TOLERANCE,
+    bpm_hi: float = BPM_TOLERANCE,
+) -> None:
     key = seed.key
     print("\nLoading candidate playlists...")
     candidates = load_playlist(playlist)
@@ -29,8 +37,17 @@ def candidates_previous(seed, playlist: str, exclude: str, genres: set[str] | No
     for label, rev_map in REVERSE_KEY_TRANSITIONS.items():
         keys = rev_map.get(key, set())
         results = (
-            filter_candidates(candidates, played_ids, seed.bpm - bpm_lo, seed.bpm + bpm_hi, keys, genres, min_rating)
-            if keys else []
+            filter_candidates(
+                candidates,
+                played_ids,
+                seed.bpm - bpm_lo,
+                seed.bpm + bpm_hi,
+                keys,
+                genres,
+                min_rating,
+            )
+            if keys
+            else []
         )
         print_table(label.title(), results)
 
@@ -91,7 +108,15 @@ def main() -> None:
         raise SystemExit(f"Seed song with ID {args.seed} not found in library.")
     print(f"  {seed.artist} – {seed.name}")
 
-    candidates_previous(seed, args.playlist, args.exclude, set(args.genres) if args.genres else None, args.min_rating, args.bpm_lo, args.bpm_hi)
+    candidates_previous(
+        seed,
+        args.playlist,
+        args.exclude,
+        set(args.genres) if args.genres else None,
+        args.min_rating,
+        args.bpm_lo,
+        args.bpm_hi,
+    )
 
 
 if __name__ == "__main__":

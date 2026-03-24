@@ -1,11 +1,15 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
-from music_stuff.lib.lib_spotify import all_items, all_playlist_items, user_playlist_by_name
-
+from music_stuff.lib.lib_spotify import (
+    all_items,
+    all_playlist_items,
+    user_playlist_by_name,
+)
 
 # --- all_items ---
+
 
 def test_all_items_single_page():
     sp = MagicMock()
@@ -34,6 +38,7 @@ def test_all_items_empty():
 
 
 # --- user_playlist_by_name ---
+
 
 def test_user_playlist_by_name_found():
     sp = MagicMock()
@@ -74,12 +79,16 @@ def test_user_playlist_by_name_paginated():
 
 def test_user_playlist_by_name_uses_max_limit():
     sp = MagicMock()
-    sp.current_user_playlists.return_value = {"items": [{"name": "X", "id": "1"}], "next": None}
+    sp.current_user_playlists.return_value = {
+        "items": [{"name": "X", "id": "1"}],
+        "next": None,
+    }
     user_playlist_by_name(sp, "X")
     sp.current_user_playlists.assert_called_once_with(limit=50)
 
 
 # --- all_playlist_items ---
+
 
 def test_all_playlist_items_uses_limit_100():
     sp = MagicMock()

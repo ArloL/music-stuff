@@ -185,20 +185,21 @@ ALLOWED_KEY_TRANSITIONS = {
     },
 }
 
-TRANSITIONS_WEIGHTS ={
-    "matching": 100,           # Perfect harmonic match
-    "boost": 95,               # Good energy increase
-    "boost boost": 85,         # Moderate energy jump
-    "boost boost boost": 50,   # Large energy jump
-    "drop": 80,                # Good for breakdowns
-    "drop drop": 40,           # Moderate energy drop
-    "drop drop drop": 30       # Large energy drop
+TRANSITIONS_WEIGHTS = {
+    "matching": 100,  # Perfect harmonic match
+    "boost": 95,  # Good energy increase
+    "boost boost": 85,  # Moderate energy jump
+    "boost boost boost": 50,  # Large energy jump
+    "drop": 80,  # Good for breakdowns
+    "drop drop": 40,  # Moderate energy drop
+    "drop drop drop": 30,  # Large energy drop
 }
+
 
 def calculate_transition_score(song1, song2, bpm_tolerance=20):
     """Calculate a weighted score for the transition between two songs"""
 
-    bpm_diff = song2['bpm'] - song1['bpm']
+    bpm_diff = song2["bpm"] - song1["bpm"]
     abs_bpm_diff = abs(bpm_diff)
 
     if abs_bpm_diff > bpm_tolerance:
@@ -219,7 +220,7 @@ def calculate_transition_score(song1, song2, bpm_tolerance=20):
 
     transition_type = get_transition_type(song1, song2)
     # No valid key transition found
-    if transition_type == 'incompatible':
+    if transition_type == "incompatible":
         return 0
     key_score = TRANSITIONS_WEIGHTS[transition_type]
 
@@ -235,19 +236,21 @@ def validate_keys(df):
     for transitions in ALLOWED_KEY_TRANSITIONS.values():
         all_valid_keys.update(transitions.keys())
 
-    invalid_keys = set(df['key']) - all_valid_keys
+    invalid_keys = set(df["key"]) - all_valid_keys
     if invalid_keys:
         print(f"Warning: Found invalid keys in dataset: {invalid_keys}")
         print("These songs will have no valid transitions")
 
     return len(invalid_keys) == 0
 
+
 def get_transition_type(song1, song2):
     for transition_type, transitions in ALLOWED_KEY_TRANSITIONS.items():
-        if song1['key'] in transitions:
-            if song2['key'] in transitions[song1['key']]:
+        if song1["key"] in transitions:
+            if song2["key"] in transitions[song1["key"]]:
                 return transition_type
-    return 'incompatible'
+    return "incompatible"
+
 
 def build_compatibility_graph(df):
     """Build a weighted graph of compatible song transitions"""
@@ -270,7 +273,7 @@ def build_compatibility_graph(df):
             bpm_tolerance += 1
 
     for i, song1 in df.iterrows():
-        if len(graph[i]) == 0 and not i in reachable_songs:
+        if len(graph[i]) == 0 and i not in reachable_songs:
             print(f"{i} is unreachable")
 
     return graph, scores
@@ -305,10 +308,18 @@ def is_relevant(song, genres: set[str] | None = None, min_rating: int = 80) -> b
     return True
 
 
-def filter_candidates(candidates, played_ids: set[str], from_bpm: float, to_bpm: float,
-                      keys: set[str], genres: set[str] | None = None, min_rating: int = 80):
+def filter_candidates(
+    candidates,
+    played_ids: set[str],
+    from_bpm: float,
+    to_bpm: float,
+    keys: set[str],
+    genres: set[str] | None = None,
+    min_rating: int = 80,
+):
     return [
-        s for s in candidates
+        s
+        for s in candidates
         if s.id not in played_ids
         and is_relevant(s, genres, min_rating)
         and from_bpm <= s.bpm <= to_bpm
@@ -321,8 +332,8 @@ def print_table(title: str, songs) -> None:
     if not songs:
         print("  (none)")
         return
-    col_id   = max(len(s.id) for s in songs)
-    col_art  = max((len(s.artist) for s in songs), default=6)
+    col_id = max(len(s.id) for s in songs)
+    col_art = max((len(s.artist) for s in songs), default=6)
     col_name = max((len(s.name) for s in songs), default=4)
     row = f"{{:<{col_id}}}  {{:<{col_art}}}  {{:<{col_name}}}  {{:<7}}  {{:<8}}"
     header = row.format("ID", "Artist", "Name", "BPM", "Key")
@@ -334,4 +345,5 @@ def print_table(title: str, songs) -> None:
 
 def load_playlist(name: str):
     from music_stuff.lib.lib_apple_music import find_songs_by_playlist_name
+
     return find_songs_by_playlist_name(name)

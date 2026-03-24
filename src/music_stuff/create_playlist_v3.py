@@ -1,13 +1,16 @@
+import argparse
 import heapq
 import itertools
-import time
 import os
-import sys
-import argparse
+import time
+
 import pandas as pd
+
 from music_stuff.lib.lib_transitions import (
-    calculate_transition_score, validate_keys,
-    get_transition_type, build_compatibility_graph,
+    build_compatibility_graph,
+    calculate_transition_score,
+    get_transition_type,
+    validate_keys,
 )
 
 
@@ -61,7 +64,9 @@ def astar_search(graph, scores, min_length, max_length, time_limit, start_nodes)
             if new_f <= best_complete_score:
                 continue
             new_visited = visited | {neighbor}
-            heapq.heappush(heap, (-new_f, next(counter), new_g, path + [neighbor], new_visited))
+            heapq.heappush(
+                heap, (-new_f, next(counter), new_g, path + [neighbor], new_visited)
+            )
 
     return best_path, best_complete_score
 
@@ -72,10 +77,10 @@ def create_playlist_dataframe(df, playlist_indices):
         return pd.DataFrame()
 
     playlist_df = df.loc[playlist_indices].copy()
-    playlist_df['playlist_position'] = range(1, len(playlist_indices) + 1)
+    playlist_df["playlist_position"] = range(1, len(playlist_indices) + 1)
 
     # Add transition information
-    playlist_df['bpm_diff'] = playlist_df['bpm'].diff().shift(-1)
+    playlist_df["bpm_diff"] = playlist_df["bpm"].diff().shift(-1)
 
     # Calculate transition scores and types
     transition_scores = []
@@ -93,16 +98,27 @@ def create_playlist_dataframe(df, playlist_indices):
     transition_scores.append(None)
     transition_types.append(None)
 
-    playlist_df['transition_score'] = transition_scores
-    playlist_df['transition_type'] = transition_types
+    playlist_df["transition_score"] = transition_scores
+    playlist_df["transition_type"] = transition_types
 
-    columns = ['playlist_position', 'apple_music_id', 'artist', 'name', 'key', 'bpm',
-               'bpm_diff', 'transition_score', 'transition_type']
+    columns = [
+        "playlist_position",
+        "apple_music_id",
+        "artist",
+        "name",
+        "key",
+        "bpm",
+        "bpm_diff",
+        "transition_score",
+        "transition_type",
+    ]
     return playlist_df[columns]
 
 
-def add_suffix(filename, suffix, separator='_'):
-    if '.' in filename[1:] and not (filename.startswith('.') and filename[1:].find('.') == -1):
+def add_suffix(filename, suffix, separator="_"):
+    if "." in filename[1:] and not (
+        filename.startswith(".") and filename[1:].find(".") == -1
+    ):
         root, ext = os.path.splitext(filename)
         return f"{root}{separator}{suffix}{ext}"
     return f"{filename}{separator}{suffix}"
@@ -115,12 +131,12 @@ def main(source_file, min_length, max_length, time_limit, start_song):
         df = pd.read_csv(source_file)
         print(f"Loaded {len(df)} songs from {source_file}")
 
-        required_columns = ['apple_music_id', 'key', 'bpm']
+        required_columns = ["apple_music_id", "key", "bpm"]
         missing = [col for col in required_columns if col not in df.columns]
         if missing:
             raise ValueError(f"Missing required columns: {missing}")
 
-        df = df.sort_values(by=['bpm']).reset_index(drop=True)
+        df = df.sort_values(by=["bpm"]).reset_index(drop=True)
 
     except Exception as e:
         print(f"Error loading data: {e}")
@@ -139,7 +155,7 @@ def main(source_file, min_length, max_length, time_limit, start_song):
 
     # Determine start nodes
     if start_song is not None:
-        matches = df.index[df['apple_music_id'] == start_song].tolist()
+        matches = df.index[df["apple_music_id"] == start_song].tolist()
         if not matches:
             print(f"Error: song_id '{start_song}' not found in {source_file}")
             return
@@ -147,8 +163,10 @@ def main(source_file, min_length, max_length, time_limit, start_song):
     else:
         start_nodes = list(df.index)
 
-    print(f"Running A* search (min_length={min_length}, max_length={max_length}, "
-          f"time_limit={time_limit}s, {len(start_nodes)} start node(s))...")
+    print(
+        f"Running A* search (min_length={min_length}, max_length={max_length}, "
+        f"time_limit={time_limit}s, {len(start_nodes)} start node(s))..."
+    )
 
     search_start = time.time()
     best_path, best_score = astar_search(
@@ -158,16 +176,20 @@ def main(source_file, min_length, max_length, time_limit, start_song):
     print(f"Search completed in {elapsed:.2f} seconds")
 
     if best_path:
-        print(f"\nPlaylist found: {len(best_path)} songs, score: {best_score:.1f} "
-              f"(avg: {best_score / max(len(best_path) - 1, 1):.1f} per transition)")
+        print(
+            f"\nPlaylist found: {len(best_path)} songs, score: {best_score:.1f} "
+            f"(avg: {best_score / max(len(best_path) - 1, 1):.1f} per transition)"
+        )
         playlist_df = create_playlist_dataframe(df, best_path)
         print("\nPlaylist:")
         print(playlist_df.to_string(index=False))
-        playlist_df.to_csv(output_file, index=False, lineterminator='\n')
+        playlist_df.to_csv(output_file, index=False, lineterminator="\n")
         print(f"\nPlaylist saved to {output_file}")
     else:
         print("No playlist found meeting the minimum length requirement.")
-        print(f"Try reducing --min-length (currently {min_length}) or increasing --time-limit.")
+        print(
+            f"Try reducing --min-length (currently {min_length}) or increasing --time-limit."
+        )
 
 
 if __name__ == "__main__":
@@ -179,4 +201,10 @@ if __name__ == "__main__":
     parser.add_argument("--start-song", type=str, default=None)
     args = parser.parse_args()
 
-    main(args.source_file, args.min_length, args.max_length, args.time_limit, args.start_song)
+    main(
+        args.source_file,
+        args.min_length,
+        args.max_length,
+        args.time_limit,
+        args.start_song,
+    )

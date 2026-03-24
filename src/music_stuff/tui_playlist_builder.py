@@ -1,4 +1,5 @@
 """prompt_toolkit TUI for the interactive playlist builder."""
+
 from __future__ import annotations
 
 import datetime
@@ -7,7 +8,6 @@ import time
 from pathlib import Path
 
 import miniaudio
-
 from prompt_toolkit import Application
 from prompt_toolkit.application import get_app
 from prompt_toolkit.data_structures import Point
@@ -20,16 +20,19 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame
 
 from music_stuff.lib.lib_apple_music import AppleMusicSong
-from music_stuff.lib.lib_transitions import calculate_transition_score, get_transition_type
+from music_stuff.lib.lib_transitions import (
+    calculate_transition_score,
+    get_transition_type,
+)
 from music_stuff.playlist_builder import (
     AppState,
+    _song_dict,
     build_initial_state,
     playlist_duration,
     recompute,
     save_csv,
     select_candidate,
     undo,
-    _song_dict,
 )
 
 _STYLE = Style.from_dict(
@@ -55,8 +58,8 @@ _FOCUS_CANDIDATES = "candidates"
 # Overhead rows: header(1) + status(1) + frame borders(2) + VSplit border(0) + padding
 _CHROME_ROWS = 5
 
-_PREVIEW_START = 60.0   # seconds into the track to begin playback
-_PREVIEW_SKIP  = 15.0   # seconds to jump per left/right keypress
+_PREVIEW_START = 60.0  # seconds into the track to begin playback
+_PREVIEW_SKIP = 15.0  # seconds to jump per left/right keypress
 
 
 def _bpm_delta(seed_bpm: float, cand_bpm: float) -> str:
@@ -109,7 +112,9 @@ def run_tui(
     pl_scroll_ref: list[int] = [0]
 
     # Playlist cursor (row index within history list).
-    playlist_cursor_ref: list[int] = [max(len(initial_state.history) - 1, 0) if initial_state else 0]
+    playlist_cursor_ref: list[int] = [
+        max(len(initial_state.history) - 1, 0) if initial_state else 0
+    ]
 
     status_override: list[str | None] = [None]
 
@@ -119,11 +124,11 @@ def run_tui(
 
     # ------------------------------------------------------------------ preview
 
-    preview_device:  list[miniaudio.PlaybackDevice | None] = [None]
-    preview_song_id: list[str | None]                      = [None]
-    preview_offset:  list[float]                           = [_PREVIEW_START]
-    preview_wall:    list[float]                           = [0.0]
-    _ticker_stop:    list[bool]                            = [False]
+    preview_device: list[miniaudio.PlaybackDevice | None] = [None]
+    preview_song_id: list[str | None] = [None]
+    preview_offset: list[float] = [_PREVIEW_START]
+    preview_wall: list[float] = [0.0]
+    _ticker_stop: list[bool] = [False]
 
     def _preview_start_for(song: AppleMusicSong) -> float:
         djay = (djay_index or {}).get(song.id)
@@ -133,11 +138,13 @@ def run_tui(
 
     def _start_ticker() -> None:
         _ticker_stop[0] = False
+
         def _tick() -> None:
             while not _ticker_stop[0]:
                 time.sleep(1.0)
                 if not _ticker_stop[0]:
                     app.invalidate()
+
         threading.Thread(target=_tick, daemon=True).start()
 
     def _stop_ticker() -> None:
@@ -154,6 +161,7 @@ def run_tui(
         framecount via send() and yield the (possibly modified) chunk.
         """
         import array as _array
+
         required_frames = yield b""  # initialization yield — mirrors stream_file
         while True:
             try:
@@ -254,7 +262,11 @@ def run_tui(
             key = song.key.ljust(3)
             text = f"{num}  {artist}  {name}  {bpm}  {key}"
             if i == playlist_cursor_ref[0]:
-                style = "class:cursor" if focus_ref[0] == _FOCUS_PLAYLIST else "class:cursor-inactive"
+                style = (
+                    "class:cursor"
+                    if focus_ref[0] == _FOCUS_PLAYLIST
+                    else "class:cursor-inactive"
+                )
             else:
                 style = ""
             lines.append((style, text))
@@ -304,12 +316,21 @@ def run_tui(
                     calculate_transition_score(_song_dict(state.seed), _song_dict(song))
                 )
                 if flat_idx == state.cursor:
-                    style = "class:cursor" if focus_ref[0] == _FOCUS_CANDIDATES else "class:cursor-inactive"
+                    style = (
+                        "class:cursor"
+                        if focus_ref[0] == _FOCUS_CANDIDATES
+                        else "class:cursor-inactive"
+                    )
                     prefix = "▶ "
                 else:
                     style = ""
                     prefix = "  "
-                lines.append((style, f"{prefix}{artist}  {name}  {key} {bpm}  {delta}  {score:>3}"))
+                lines.append(
+                    (
+                        style,
+                        f"{prefix}{artist}  {name}  {key} {bpm}  {delta}  {score:>3}",
+                    )
+                )
                 flat_idx += 1
         return lines
 
@@ -352,7 +373,7 @@ def run_tui(
             top = cursor_abs - vh + 1
         top = max(0, min(top, max(len(all_lines) - vh, 0)))
         scroll_ref[0] = top
-        return all_lines[top: top + vh]
+        return all_lines[top : top + vh]
 
     # ------------------------------------------------------------------ text functions
 
@@ -406,7 +427,9 @@ def run_tui(
         text=_fmt_playlist,
         get_cursor_position=lambda: Point(
             x=0,
-            y=max(0, min(playlist_cursor_ref[0] - pl_scroll_ref[0], _visible_height() - 1)),
+            y=max(
+                0, min(playlist_cursor_ref[0] - pl_scroll_ref[0], _visible_height() - 1)
+            ),
         ),
     )
     playlist_win = Window(content=playlist_ctrl, wrap_lines=False)
@@ -416,7 +439,12 @@ def run_tui(
         text=_fmt_candidates,
         get_cursor_position=lambda: Point(
             x=0,
-            y=max(0, min(_candidates_cursor_abs() - cand_scroll_ref[0], _visible_height() - 1)),
+            y=max(
+                0,
+                min(
+                    _candidates_cursor_abs() - cand_scroll_ref[0], _visible_height() - 1
+                ),
+            ),
         ),
     )
     candidates_win = Window(content=candidates_ctrl, wrap_lines=False)
@@ -589,7 +617,9 @@ def run_tui(
     @kb.add("c")
     def _cycle_channel(_event):
         cur = channel_mode_ref[0]
-        channel_mode_ref[0] = _CHANNEL_MODES[(_CHANNEL_MODES.index(cur) + 1) % len(_CHANNEL_MODES)]
+        channel_mode_ref[0] = _CHANNEL_MODES[
+            (_CHANNEL_MODES.index(cur) + 1) % len(_CHANNEL_MODES)
+        ]
         # Restart preview on the new channel if active
         if preview_device[0] is not None:
             song = _focused_song()

@@ -21,7 +21,9 @@ def main():
         description="Copy all tracks from one playlist to another via the Spotify Web UI."
     )
     parser.add_argument("target_playlist", help="Playlist name or 'id:<spotify_id>'")
-    parser.add_argument("source_playlist", nargs="+", help="Playlist name(s) or 'id:<spotify_id>'")
+    parser.add_argument(
+        "source_playlist", nargs="+", help="Playlist name(s) or 'id:<spotify_id>'"
+    )
     parser.add_argument(
         "--recommendations",
         type=int,

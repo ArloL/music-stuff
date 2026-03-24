@@ -9,7 +9,9 @@ class PlaylistNotFoundError(Exception):
     pass
 
 
-def ensure_logged_in(context: BrowserContext, browser_state_path: Path = BROWSER_STATE_PATH) -> None:
+def ensure_logged_in(
+    context: BrowserContext, browser_state_path: Path = BROWSER_STATE_PATH
+) -> None:
     """Check login state. Prompts the user to log in if the session has expired."""
     page = context.new_page()
     page.goto("https://open.spotify.com/")
@@ -36,7 +38,11 @@ def copy_playlist_via_browser(
     If recommendations is > 0, copies the recommended tracks shown below the playlist
     instead of the playlist tracks themselves.
     """
-    container_selector = '[data-testid="recommended-track"]' if recommendations > 0 else '[data-testid="playlist-tracklist"]'
+    container_selector = (
+        '[data-testid="recommended-track"]'
+        if recommendations > 0
+        else '[data-testid="playlist-tracklist"]'
+    )
     storage = str(browser_state_path) if browser_state_path.exists() else None
 
     with sync_playwright() as p:
@@ -71,7 +77,9 @@ def copy_playlist_via_browser(
 
                 page.get_by_role("menuitem", name="Add to playlist").hover()
 
-                submenu_item = page.get_by_role("menuitem", name=target_playlist_name, exact=True)
+                submenu_item = page.get_by_role(
+                    "menuitem", name=target_playlist_name, exact=True
+                )
                 if not submenu_item.is_visible():
                     browser.close()
                     raise PlaylistNotFoundError(

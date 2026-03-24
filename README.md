@@ -15,6 +15,15 @@ uv run pytest
 
 That's it. If the tests pass you're ready.
 
+## Formatting
+
+```bash
+uv run ruff format       # format code
+uv run ruff check --fix  # fix lint issues
+```
+
+CI rejects unformatted code. Run these before pushing.
+
 ## Project layout
 
 ```

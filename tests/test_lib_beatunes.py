@@ -1,20 +1,19 @@
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-import subprocess
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-FAKE_DB_PATH = Path("/tmp/beaTunes-FAKE.h2.db")
-
 from music_stuff.lib.lib_beatunes import (
-    hex_id_to_beatunes_id,
-    beatunes_id_to_hex_id,
-    lookup_songs,
-    lookup_song,
-    BeaTunesSong,
     SOURCE_DB_DIR,
+    BeaTunesSong,
     _parse_h2_list_output,
+    beatunes_id_to_hex_id,
+    hex_id_to_beatunes_id,
+    lookup_song,
+    lookup_songs,
 )
+
+FAKE_DB_PATH = Path("/tmp/beaTunes-FAKE.h2.db")
 
 
 def test_hex_id_to_beatunes_id_high_bit_set():
@@ -71,8 +70,7 @@ PREAMBLE = (
 
 def test_parse_h2_list_output_single_row():
     output = (
-        PREAMBLE
-        + "sql> ID      : 3583567841378501214\n"
+        PREAMBLE + "sql> ID      : 3583567841378501214\n"
         "EXACTBPM: 115.02\n"
         "TONALKEY: 24\n"
         "ARTIST  : Dorothy's Ghost\n"
@@ -90,8 +88,7 @@ def test_parse_h2_list_output_single_row():
 
 def test_parse_h2_list_output_multiple_rows():
     output = (
-        PREAMBLE
-        + "sql> ID      : 111\n"
+        PREAMBLE + "sql> ID      : 111\n"
         "EXACTBPM: 120.0\n"
         "TONALKEY: 1\n"
         "ARTIST  : Artist A\n"
@@ -124,8 +121,7 @@ def test_parse_h2_list_output_no_data_rows():
 # --- lookup tests with mocked subprocess ---
 
 H2_OUTPUT = (
-    PREAMBLE
-    + "sql> ID      : 3583567841378501214\n"
+    PREAMBLE + "sql> ID      : 3583567841378501214\n"
     "EXACTBPM: 115.02\n"
     "TONALKEY: 24\n"
     "ARTIST  : Dorothy's Ghost\n"
@@ -164,9 +160,7 @@ def test_lookup_song(mock_run, mock_clone, mock_jar):
 @patch("music_stuff.lib.lib_beatunes._clone_db", return_value=FAKE_DB_PATH)
 @patch("subprocess.run")
 def test_lookup_song_not_found(mock_run, mock_clone, mock_jar):
-    mock_run.return_value = MagicMock(
-        stdout=PREAMBLE + "sql> (0 rows, 3 ms)\n"
-    )
+    mock_run.return_value = MagicMock(stdout=PREAMBLE + "sql> (0 rows, 3 ms)\n")
     song = lookup_song("0000000000000001")
     assert song is None
 
@@ -181,8 +175,7 @@ def test_lookup_songs_empty():
 @patch("subprocess.run")
 def test_lookup_songs_null_fields(mock_run, mock_clone, mock_jar):
     output = (
-        PREAMBLE
-        + "sql> ID      : 3583567841378501214\n"
+        PREAMBLE + "sql> ID      : 3583567841378501214\n"
         "EXACTBPM: null\n"
         "TONALKEY: null\n"
         "ARTIST  : Dorothy's Ghost\n"
@@ -197,6 +190,7 @@ def test_lookup_songs_null_fields(mock_run, mock_clone, mock_jar):
 
 
 # --- Integration test (skipped if DB not present) ---
+
 
 @pytest.mark.skipif(
     not any(SOURCE_DB_DIR.glob("beaTunes-*.h2.db")),

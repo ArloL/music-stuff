@@ -1,4 +1,5 @@
 """Interactive playlist builder — AppState, logic, and CLI entry point."""
+
 from __future__ import annotations
 
 import argparse
@@ -35,7 +36,7 @@ def _song_dict(s: AppleMusicSong) -> dict:
 @dataclass
 class AppState:
     candidate_pool: list[AppleMusicSong]
-    played_ids: set[str]          # from exclude playlist (never re-added)
+    played_ids: set[str]  # from exclude playlist (never re-added)
     seed: AppleMusicSong
     history: list[AppleMusicSong]
     bpm_range: float
@@ -65,7 +66,9 @@ def compute_candidates(
             state.min_rating,
         )
         matches.sort(
-            key=lambda c: calculate_transition_score(_song_dict(state.seed), _song_dict(c)),
+            key=lambda c: calculate_transition_score(
+                _song_dict(state.seed), _song_dict(c)
+            ),
             reverse=True,
         )
         grouped.append((ttype, matches))
@@ -161,7 +164,7 @@ def save_csv(state: AppState, path: str | Path) -> None:
                 "transition_type",
                 "transition_score",
             ],
-            lineterminator='\n',
+            lineterminator="\n",
         )
         writer.writeheader()
         writer.writerows(rows)
@@ -215,10 +218,18 @@ def build_initial_state(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Interactive TUI playlist builder")
-    parser.add_argument("--seed", help="Apple Music persistent ID of the starting track")
+    parser.add_argument(
+        "--seed", help="Apple Music persistent ID of the starting track"
+    )
     parser.add_argument("--playlist", default="Would Play", help="Source playlist name")
     parser.add_argument("--exclude", default=None, help="Exclude playlist name")
-    parser.add_argument("--genre", dest="genres", action="append", metavar="GENRE", help="Allowed genre (repeat for multiple: --genre Techno --genre House)")
+    parser.add_argument(
+        "--genre",
+        dest="genres",
+        action="append",
+        metavar="GENRE",
+        help="Allowed genre (repeat for multiple: --genre Techno --genre House)",
+    )
     parser.add_argument("--min-rating", type=int, default=80)
     parser.add_argument(
         "--bpm-range",
@@ -236,9 +247,12 @@ def main() -> None:
     djay_index: dict = {}
     try:
         from music_stuff.lib.lib_djay import load_djay_index
+
         djay_index = load_djay_index()
     except Exception as e:
-        print(f"Warning: could not load djay library ({e}); duration will use track length")
+        print(
+            f"Warning: could not load djay library ({e}); duration will use track length"
+        )
 
     # Pre-filter: drop songs with empty key
     pool = [s for s in pool if s.key]
