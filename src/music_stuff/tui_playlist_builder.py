@@ -514,7 +514,7 @@ def run_tui(
                 seed_cursor_ref[0] = (seed_cursor_ref[0] + 1) % n
         elif focus_ref[0] == _FOCUS_PLAYLIST:
             playlist_cursor_ref[0] = min(
-                playlist_cursor_ref[0] + 1, len(state.flat) - 1
+                playlist_cursor_ref[0] + 1, len(state.history) - 1
             )
         else:
             n = len(state.flat)
