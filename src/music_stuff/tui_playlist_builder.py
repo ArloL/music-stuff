@@ -161,7 +161,7 @@ def run_tui(
     channel_mode_ref: list[str] = ["right"]
 
     def _apply_channel_routing(stream, mode: str):
-        """Wrap a pre-primed stereo SIGNED16 miniaudio stream, zeroing the unwanted channel.
+        """Wrap a pre-primed stereo SIGNED16 miniaudio stream, mixing to mono and routing to the selected channel.
 
         Mirrors miniaudio's generator protocol: yield b"" to prime, then receive
         framecount via send() and yield the (possibly modified) chunk.
@@ -177,12 +177,17 @@ def run_tui(
             if mode != "stereo" and chunk:
                 samples = _array.array("h", chunk)
                 # interleaved stereo: even indices = left, odd = right
-                if mode == "left":
-                    for i in range(1, len(samples), 2):
+                # Mix to mono and route to selected channel only
+                for i in range(0, len(samples), 2):
+                    left = samples[i]
+                    right = samples[i + 1]
+                    mono = (left + right) // 2
+                    if mode == "left":
+                        samples[i] = mono
+                        samples[i + 1] = 0
+                    else:  # right
                         samples[i] = 0
-                else:  # right
-                    for i in range(0, len(samples), 2):
-                        samples[i] = 0
+                        samples[i + 1] = mono
                 chunk = samples.tobytes()
             required_frames = yield chunk
 
@@ -208,16 +213,15 @@ def run_tui(
             stream = miniaudio.stream_file(
                 song.location,
                 output_format=miniaudio.SampleFormat.SIGNED16,
-                nchannels=info.nchannels,
+                nchannels=2,
                 sample_rate=info.sample_rate,
                 seek_frame=int(offset * info.sample_rate),
             )
-            if info.nchannels == 2:
-                stream = _apply_channel_routing(stream, channel_mode_ref[0])
-                next(stream)  # prime: consume the b"" initialization yield
+            stream = _apply_channel_routing(stream, channel_mode_ref[0])
+            next(stream)  # prime: consume the b"" initialization yield
             device = miniaudio.PlaybackDevice(
                 output_format=miniaudio.SampleFormat.SIGNED16,
-                nchannels=info.nchannels,
+                nchannels=2,
                 sample_rate=info.sample_rate,
             )
             device.start(stream)
