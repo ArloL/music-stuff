@@ -544,6 +544,7 @@ def run_tui(
             playlist_cursor_ref[0] = 0
             cand_scroll_ref[0] = 0
             status_override[0] = None
+            _maybe_switch_preview()
             app.invalidate()
             return
         if focus_ref[0] != _FOCUS_CANDIDATES:
@@ -569,11 +570,13 @@ def run_tui(
             cand_scroll_ref[0] = 0
             pl_scroll_ref[0] = 0
             status_override[0] = None
+            _maybe_switch_preview()
             app.invalidate()
             return
         state_ref[0] = undo(state, original_played_ids_ref[0])
         playlist_cursor_ref[0] = max(len(state_ref[0].history) - 1, 0)
         status_override[0] = None
+        _maybe_switch_preview()
         app.invalidate()
 
     @kb.add("s")
