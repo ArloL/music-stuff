@@ -129,6 +129,12 @@ def run_tui(
     preview_offset: list[float] = [_PREVIEW_START]
     preview_wall: list[float] = [0.0]
     _ticker_stop: list[bool] = [False]
+    _preview_timer: list[threading.Timer | None] = [None]
+
+    def _cancel_preview_timer() -> None:
+        if _preview_timer[0] is not None:
+            _preview_timer[0].cancel()
+            _preview_timer[0] = None
 
     def _preview_start_for(song: AppleMusicSong) -> float:
         djay = (djay_index or {}).get(song.id)
@@ -186,6 +192,7 @@ def run_tui(
         return preview_offset[0] + (time.monotonic() - preview_wall[0])
 
     def _stop_preview() -> None:
+        _cancel_preview_timer()
         _stop_ticker()
         if preview_device[0] is not None:
             preview_device[0].stop()
@@ -479,11 +486,22 @@ def run_tui(
         app.invalidate()
 
     def _maybe_switch_preview() -> None:
-        """If a preview is active, restart it for the newly focused song."""
-        if preview_device[0] is not None:
-            song = _focused_song()
-            if song and song.id != preview_song_id[0]:
-                _start_preview(song, _preview_start_for(song))
+        """If a preview is active, debounce-restart it for the newly focused song."""
+        if preview_device[0] is None and _preview_timer[0] is None:
+            return
+        song = _focused_song()
+        if song is None or song.id == preview_song_id[0]:
+            return
+        _cancel_preview_timer()
+
+        def _fire():
+            _preview_timer[0] = None
+            _start_preview(song, _preview_start_for(song))
+            app.invalidate()
+
+        _preview_timer[0] = threading.Timer(0.15, _fire)
+        _preview_timer[0].daemon = True
+        _preview_timer[0].start()
 
     @kb.add("up")
     @kb.add("k")
