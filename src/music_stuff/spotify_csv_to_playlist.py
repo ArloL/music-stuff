@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from music_stuff.lib.lib_spotify import all_playlist_items, get_sp, get_playlist_id
+from music_stuff.lib.lib_spotify import all_playlist_items, get_playlist_id, get_sp
 
 ROOT_DIR = Path(__file__).parent.parent.parent
 
@@ -30,6 +30,7 @@ def find_spotify_id_for_song(sp, song, spotify_mapping):
         )
         return spotify_id
 
+
 def main() -> None:
     import argparse
 
@@ -49,7 +50,9 @@ def main() -> None:
     args = parser.parse_args()
 
     sp = get_sp()
-    spotify_mapping = pd.read_csv(ROOT_DIR / "data/spotify-mapping.csv").set_index("apple_music_id")
+    spotify_mapping = pd.read_csv(ROOT_DIR / "data/spotify-mapping.csv").set_index(
+        "apple_music_id"
+    )
 
     playlist_id = get_playlist_id(sp, args.target_playlist)
     tracks = all_playlist_items(sp, playlist_id)
