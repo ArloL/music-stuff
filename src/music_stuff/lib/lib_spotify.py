@@ -34,3 +34,9 @@ def user_playlist_by_name(sp, playlist_name):
 
 def all_playlist_items(sp, playlist_id):
     return all_items(sp, sp.playlist_items(playlist_id, limit=100))
+
+
+def get_playlist_id(sp, playlist_name_or_id_with_prefix):
+    if playlist_name_or_id_with_prefix.startswith("id:"):
+        return playlist_name_or_id_with_prefix[3:]
+    return user_playlist_by_name(sp, playlist_name_or_id_with_prefix)["id"]
