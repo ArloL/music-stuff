@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from music_stuff.lib.lib_spotify import all_playlist_items, get_sp
+from music_stuff.lib.lib_spotify import all_playlist_items, get_sp, get_playlist_id
 
-DATA_DIR = Path(__file__).parent.parent.parent / "data"
+ROOT_DIR = Path(__file__).parent.parent.parent
 
 
 def find_spotify_id_for_artist_name(sp, artist, name, spotify_mapping):
@@ -24,23 +24,37 @@ def find_spotify_id_for_song(sp, song, spotify_mapping):
         )
         spotify_mapping.loc[amid] = {"spotify_id": spotify_id}
         spotify_mapping.to_csv(
-            DATA_DIR / "spotify-mapping.csv",
+            ROOT_DIR / "data/spotify-mapping.csv",
             index_label="apple_music_id",
             lineterminator="\n",
         )
         return spotify_id
 
-
 def main() -> None:
-    sp = get_sp()
-    spotify_mapping = pd.read_csv(DATA_DIR / "spotify-mapping.csv").set_index(
-        "apple_music_id"
-    )
+    import argparse
 
-    playlist_id = "74eUXrePcNpIrEYaFBlmbw"
+    parser = argparse.ArgumentParser(
+        description="Add all tracks from a csv to a spotify playlist"
+    )
+    parser.add_argument(
+        "source_csv",
+        type=str,
+        help="Source csv",
+    )
+    parser.add_argument(
+        "target_playlist",
+        type=str,
+        help="Playlist name or 'id:<spotify_id>'",
+    )
+    args = parser.parse_args()
+
+    sp = get_sp()
+    spotify_mapping = pd.read_csv(ROOT_DIR / "data/spotify-mapping.csv").set_index("apple_music_id")
+
+    playlist_id = get_playlist_id(sp, args.target_playlist)
     tracks = all_playlist_items(sp, playlist_id)
 
-    df = pd.read_csv(DATA_DIR / "songs-would-play.csv")
+    df = pd.read_csv(ROOT_DIR / args.source_csv)
 
     existing_ids = {track["item"]["id"] for track in tracks if track.get("item")}
     to_add = []
