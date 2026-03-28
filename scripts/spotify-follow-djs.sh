@@ -58,6 +58,7 @@ uv run spotify-browser-add-to-playlist "Recommended" \
     "${PeggyGou}" \
     "${SofiaKourtesis}"
 
+uv run spotify-browser-add-to-playlist --recommendations 50 "Recommended" "Candidates"
 uv run spotify-browser-add-to-playlist --recommendations 50 "Recommended" "Would Play"
 
 uv run spotify-playlist-delete-present-in-other-playlist Recommended Listened
