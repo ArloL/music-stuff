@@ -61,5 +61,7 @@ uv run spotify-browser-add-to-playlist "Recommended" \
 uv run spotify-browser-add-to-playlist --recommendations 50 "Recommended" "Candidates"
 uv run spotify-browser-add-to-playlist --recommendations 50 "Recommended" "Would Play"
 
+uv run spotify-browser-track-radio-to-playlist "Recommended" "Would Play"
+
 uv run spotify-playlist-delete-present-in-other-playlist Recommended Listened
 uv run spotify-playlist-delete-duplicates Recommended
