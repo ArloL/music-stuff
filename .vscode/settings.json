@@ -3,4 +3,5 @@
         "editor.formatOnSave": true,
         "editor.wordBasedSuggestions": "off",
     },
+    "python.terminal.activateEnvironment": false,
 }
