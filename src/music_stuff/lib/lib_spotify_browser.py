@@ -110,6 +110,70 @@ def copy_playlist_via_browser(
         browser.close()
 
 
+def copy_track_radios_via_browser(
+    track_ids: list[str],
+    target_playlist_name: str,
+    browser_state_path: Path = BROWSER_STATE_PATH,
+) -> None:
+    """For each track ID, navigate to its song radio and copy all tracks to target playlist."""
+    storage = str(browser_state_path) if browser_state_path.exists() else None
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False, slow_mo=500)
+        kwargs = {"storage_state": storage} if storage else {}
+        context = browser.new_context(**kwargs)
+
+        ensure_logged_in(context, browser_state_path)
+        page = context.new_page()
+
+        for track_id in track_ids:
+            page.goto(f"https://open.spotify.com/track/{track_id}")
+            page.locator(
+                '[data-testid="action-bar-row"] [data-testid="more-button"]'
+            ).click()
+            page.get_by_role("menuitem", name="Go to song radio").click()
+            page.wait_for_selector('[data-testid="playlist-tracklist"]', timeout=15_000)
+
+            container = page.locator('[data-testid="playlist-tracklist"]').last
+            container.scroll_into_view_if_needed()
+
+            firstRow = container.locator('[data-testid="tracklist-row"]').first
+            firstRow.click(position=_bottom_right(firstRow))
+            _scroll_to_bottom(page, container)
+
+            lastRow = container.locator('[data-testid="tracklist-row"]').last
+            lastRow.click(modifiers=["Shift"], position=_bottom_right(lastRow))
+            lastRow.click(button="right", position=_bottom_right(lastRow))
+
+            page.get_by_role("menuitem", name="Add to playlist").hover()
+
+            submenu_item = page.get_by_role(
+                "menuitem", name=target_playlist_name, exact=True
+            )
+            if not submenu_item.is_visible():
+                browser.close()
+                raise PlaylistNotFoundError(
+                    f"Playlist '{target_playlist_name}' not found in Add-to-playlist submenu."
+                )
+            submenu_item.click()
+
+            try:
+                already_added = page.locator('[aria-label="Already added"]')
+                already_added.wait_for(state="visible", timeout=2000)
+                dont_add = already_added.locator("button", has_text="Don't add")
+                add_new = already_added.locator("button", has_text="Add new ones")
+                if dont_add.is_visible():
+                    dont_add.click()
+                elif add_new.is_visible():
+                    add_new.click()
+            except Exception:
+                pass
+
+            page.wait_for_timeout(5000)
+
+        browser.close()
+
+
 def _bottom_right(locator) -> dict:
     """Click position at the bottom-right edge of a locator, avoiding links."""
     box = locator.bounding_box()
