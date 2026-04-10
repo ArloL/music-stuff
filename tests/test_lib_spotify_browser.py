@@ -47,7 +47,7 @@ def _make_playwright_mocks(submenu_visible=True):
     mock_pw.__exit__ = MagicMock(return_value=False)
     mock_pw.chromium = mock_chromium
 
-    return mock_pw, mock_browser, mock_context, mock_page
+    return mock_pw, mock_browser, mock_context, mock_page, mock_chromium
 
 
 # ---------------------------------------------------------------------------
@@ -100,8 +100,8 @@ def test_playlist_not_found_raises(tmp_path):
     state_path = tmp_path / "state.json"
     state_path.write_text("{}")
 
-    mock_pw, mock_browser, mock_context, mock_page = _make_playwright_mocks(
-        submenu_visible=False
+    mock_pw, mock_browser, mock_context, mock_page, mock_chromium = (
+        _make_playwright_mocks(submenu_visible=False)
     )
 
     with patch(
@@ -121,8 +121,8 @@ def test_successful_copy_calls_ctrl_a_and_submenu(tmp_path):
     state_path = tmp_path / "state.json"
     state_path.write_text("{}")
 
-    mock_pw, mock_browser, mock_context, mock_page = _make_playwright_mocks(
-        submenu_visible=True
+    mock_pw, mock_browser, mock_context, mock_page, mock_chromium = (
+        _make_playwright_mocks(submenu_visible=True)
     )
 
     with patch(
@@ -145,8 +145,8 @@ def test_successful_copy_calls_ctrl_a_and_submenu(tmp_path):
 def test_no_state_file_starts_without_storage(tmp_path):
     state_path = tmp_path / "nonexistent.json"
 
-    mock_pw, mock_browser, mock_context, mock_page = _make_playwright_mocks(
-        submenu_visible=True
+    mock_pw, mock_browser, mock_context, mock_page, mock_chromium = (
+        _make_playwright_mocks(submenu_visible=True)
     )
 
     with patch(
@@ -171,8 +171,8 @@ def test_recommendations_not_found_raises(tmp_path):
     state_path = tmp_path / "state.json"
     state_path.write_text("{}")
 
-    mock_pw, mock_browser, mock_context, mock_page = _make_playwright_mocks(
-        submenu_visible=False
+    mock_pw, mock_browser, mock_context, mock_page, mock_chromium = (
+        _make_playwright_mocks(submenu_visible=False)
     )
 
     with patch(
@@ -193,8 +193,8 @@ def test_recommendations_successful_copy(tmp_path):
     state_path = tmp_path / "state.json"
     state_path.write_text("{}")
 
-    mock_pw, mock_browser, mock_context, mock_page = _make_playwright_mocks(
-        submenu_visible=True
+    mock_pw, mock_browser, mock_context, mock_page, mock_chromium = (
+        _make_playwright_mocks(submenu_visible=True)
     )
 
     with patch(
@@ -225,3 +225,24 @@ def test_integration_copy_playlist_via_browser():
     """Smoke test: navigate to a real playlist and verify no error is raised.
     Requires secrets/spotify-browser-state.json to exist."""
     pass
+
+
+def test_headless_mode_sets_headless_and_no_slow_mo(tmp_path):
+    state_path = tmp_path / "state.json"
+    state_path.write_text("{}")
+
+    mock_pw, mock_browser, mock_context, mock_page, mock_chromium = (
+        _make_playwright_mocks(submenu_visible=True)
+    )
+
+    with patch(
+        "music_stuff.lib.lib_spotify_browser.sync_playwright", return_value=mock_pw
+    ):
+        copy_playlist_via_browser(
+            source_playlist_ids=["abc123"],
+            target_playlist_name="My Playlist",
+            browser_state_path=state_path,
+            headless=True,
+        )
+
+    mock_chromium.launch.assert_called_once_with(headless=True, slow_mo=0)
