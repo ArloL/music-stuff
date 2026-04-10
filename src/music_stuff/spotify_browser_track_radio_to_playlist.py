@@ -18,6 +18,11 @@ def main():
     parser.add_argument(
         "source_playlist", help="Playlist name or 'id:<spotify_id>' to read tracks from"
     )
+    parser.add_argument(
+        "--headless",
+        action="store_true",
+        help="Run browser in headless mode (no visible window)",
+    )
     args = parser.parse_args()
 
     sp = get_sp()
@@ -30,6 +35,7 @@ def main():
     copy_track_radios_via_browser(
         track_ids=track_ids,
         target_playlist_name=target_name,
+        headless=args.headless,
     )
     print(
         f"Done. Song radio for {len(track_ids)} tracks from '{args.source_playlist}' added to '{args.target_playlist}'."

@@ -30,6 +30,11 @@ def main():
         default=0,
         help="Add this many recommendation rows (data-testid='recommended-track') instead of playlist tracks",
     )
+    parser.add_argument(
+        "--headless",
+        action="store_true",
+        help="Run browser in headless mode (no visible window)",
+    )
     args = parser.parse_args()
 
     sp = get_sp()
@@ -40,6 +45,7 @@ def main():
         source_playlist_ids=source_ids,
         target_playlist_name=target_name,
         recommendations=args.recommendations,
+        headless=args.headless,
     )
     label = "Recommendations from" if args.recommendations > 0 else "Tracks from"
     for source in args.source_playlist:
