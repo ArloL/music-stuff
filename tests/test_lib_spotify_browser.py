@@ -25,6 +25,7 @@ def _make_page_mock(submenu_visible=True, has_video=False):
 
     mock_last_row = MagicMock()
     mock_last_row.bounding_box.return_value = {"width": 100, "height": 50}
+    mock_last_row.element_handle.return_value = mock_last_row
 
     mock_rows_locator = MagicMock()
     mock_rows_locator.last = mock_last_row
@@ -102,7 +103,7 @@ def test_ensure_logged_in_waits_when_user_widget_not_visible(tmp_path):
 
     ensure_logged_in(mock_page, browser_state_path=state_path)
 
-    mock_user_widget.wait_for.assert_any_call(state="visible", timeout=120_000)
+    mock_user_widget.wait_for.assert_any_call(timeout=120_000)
     mock_page.context.storage_state.assert_called_once()
 
 
