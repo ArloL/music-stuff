@@ -50,7 +50,7 @@ spotify-browser-track-radio-to-playlist = "music_stuff.spotify_browser_track_rad
 [dependency-groups]
 dev = [
     "pytest==9.0.3",
-    "ruff==0.15.7",
+    "ruff==0.15.10",
 ]
 
 [tool.ruff]
