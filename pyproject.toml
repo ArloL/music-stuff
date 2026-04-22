@@ -7,7 +7,7 @@ name = "music-stuff"
 version = "0.1.0"
 description = "A dashboard to visualize song relations"
 readme = "README.md"
-requires-python = "==3.11.14"
+requires-python = "==3.14.4"
 dependencies = [
     "dash==4.1.0",
     "matplotlib==3.10.8",
