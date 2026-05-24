@@ -4,9 +4,6 @@ set -o errexit
 set -o nounset
 set -o xtrace
 
-ReleaseRadar="id:37i9dQZEVXbr5m74MUAgNM"
-DiscoverWeekly="id:37i9dQZEVXcJUQATtKZVAY"
-
 andme="id:37i9dQZF1DXdf6bvyXShR3"
 anotr="id:37i9dQZF1DWTfGx5o2qjVb"
 AxelBoman="id:37i9dQZF1DXccw7SlFjeWF"
@@ -33,8 +30,6 @@ SofiaKourtesis="id:37i9dQZF1DWVFhnU8yozBd"
 
 uv run spotify-browser-add-to-playlist --headless \
     "Recommended" \
-    "${ReleaseRadar}" \
-    "${DiscoverWeekly}" \
     "${andme}" \
     "${anotr}" \
     "${AxelBoman}" \
@@ -58,23 +53,3 @@ uv run spotify-browser-add-to-playlist --headless \
     "${NinaKraviz}" \
     "${PeggyGou}" \
     "${SofiaKourtesis}"
-
-uv run spotify-browser-add-to-playlist \
-    --headless \
-    --recommendations 50 \
-    "Recommended" "Candidates"
-
-uv run spotify-browser-add-to-playlist \
-    --headless \
-    --recommendations 50 \
-    "Recommended" "Would Play"
-
-uv run spotify-browser-track-radio-to-playlist \
-    --headless \
-    "Recommended" "Would Play"
-
-uv run spotify-playlist-delete-present-in-other-playlist \
-    Recommended Listened
-
-uv run spotify-playlist-delete-duplicates \
-    Recommended
