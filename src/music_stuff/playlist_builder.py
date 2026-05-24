@@ -174,23 +174,20 @@ def playlist_duration(
     history: list[AppleMusicSong],
     djay_index: dict[str, DjaySongData],
 ) -> float:
-    """Calculate playlist duration using djay automix start points.
+    """Calculate playlist duration using djay automix cue points.
 
-    Each track (except the last) contributes its automix start point — the
-    position where it begins mixing out and the next track starts.  The last
-    track contributes its full duration.  Falls back to song.duration when
-    djay data is unavailable for a track.
+    Each track contributes the length of its playable region between the IN
+    cue (automix_start_point) and OUT cue (automix_end_point).  Falls back to
+    song.duration when djay cue data is unavailable.  Crossfade overlap is
+    ignored — the estimate is intentionally an upper bound.
     """
     if not history:
         return 0.0
     total = 0.0
-    for i, song in enumerate(history):
+    for song in history:
         djay = djay_index.get(song.id)
-        if i < len(history) - 1:
-            if djay and djay.cue_start_time is not None:
-                total += djay.cue_start_time
-            else:
-                total += song.duration
+        if djay and djay.cue_start_time is not None and djay.cue_end_time is not None:
+            total += max(0.0, djay.cue_end_time - djay.cue_start_time)
         else:
             total += song.duration
     return total
