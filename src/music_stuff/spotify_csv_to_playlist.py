@@ -40,11 +40,15 @@ def main() -> None:
     parser.add_argument(
         "source_csv",
         type=str,
+        nargs="?",
+        default="./data/songs-would-play.csv",
         help="Source csv",
     )
     parser.add_argument(
         "target_playlist",
         type=str,
+        nargs="?",
+        default="Would Play",
         help="Playlist name or 'id:<spotify_id>'",
     )
     args = parser.parse_args()
