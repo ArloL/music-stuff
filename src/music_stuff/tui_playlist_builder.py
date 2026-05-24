@@ -130,6 +130,15 @@ def run_tui(
     preview_wall: list[float] = [0.0]
     _ticker_stop: list[bool] = [False]
     _preview_timer: list[threading.Timer | None] = [None]
+    # Whether the user has previewing turned on (p key). Track selection only
+    # follows the cursor while this is True. Kept separate from preview_device
+    # so a momentarily-stopped device (mid-restart) doesn't disable following.
+    preview_enabled: list[bool] = [False]
+    # Serialises device start/stop so overlapping restarts (a debounce timer
+    # firing while a seek keypress also restarts) can never leave two audio
+    # devices playing at once. Navigation does not touch this lock, so row
+    # rendering stays snappy.
+    _preview_lock = threading.RLock()
 
     def _cancel_preview_timer() -> None:
         if _preview_timer[0] is not None:
@@ -196,42 +205,51 @@ def run_tui(
             return preview_offset[0]
         return preview_offset[0] + (time.monotonic() - preview_wall[0])
 
+    def _stop_playback() -> None:
+        """Stop the audio device and ticker, but leave any pending debounce
+        timer alone — a firing timer must not cancel a newer scheduled one."""
+        with _preview_lock:
+            _stop_ticker()
+            if preview_device[0] is not None:
+                preview_device[0].stop()
+                preview_device[0] = None
+
     def _stop_preview() -> None:
         _cancel_preview_timer()
-        _stop_ticker()
-        if preview_device[0] is not None:
-            preview_device[0].stop()
-            preview_device[0] = None
+        _stop_playback()
 
     def _start_preview(song, offset: float) -> None:
-        _stop_preview()
-        if not song.location:
-            return
-        offset = max(0.0, offset)
-        try:
-            info = miniaudio.get_file_info(song.location)
-            stream = miniaudio.stream_file(
-                song.location,
-                output_format=miniaudio.SampleFormat.SIGNED16,
-                nchannels=2,
-                sample_rate=info.sample_rate,
-                seek_frame=int(offset * info.sample_rate),
-            )
-            stream = _apply_channel_routing(stream, channel_mode_ref[0])
-            next(stream)  # prime: consume the b"" initialization yield
-            device = miniaudio.PlaybackDevice(
-                output_format=miniaudio.SampleFormat.SIGNED16,
-                nchannels=2,
-                sample_rate=info.sample_rate,
-            )
-            device.start(stream)
-            preview_device[0] = device
-            preview_song_id[0] = song.id
-            preview_offset[0] = offset
-            preview_wall[0] = time.monotonic()
-            _start_ticker()
-        except miniaudio.MiniaudioError as e:
-            status_override[0] = f"Preview error: {e}"
+        # Held across the whole start so a concurrent restart waits its turn
+        # and stops this device before starting its own — never two at once.
+        with _preview_lock:
+            _stop_playback()
+            if not song.location:
+                return
+            offset = max(0.0, offset)
+            try:
+                info = miniaudio.get_file_info(song.location)
+                stream = miniaudio.stream_file(
+                    song.location,
+                    output_format=miniaudio.SampleFormat.SIGNED16,
+                    nchannels=2,
+                    sample_rate=info.sample_rate,
+                    seek_frame=int(offset * info.sample_rate),
+                )
+                stream = _apply_channel_routing(stream, channel_mode_ref[0])
+                next(stream)  # prime: consume the b"" initialization yield
+                device = miniaudio.PlaybackDevice(
+                    output_format=miniaudio.SampleFormat.SIGNED16,
+                    nchannels=2,
+                    sample_rate=info.sample_rate,
+                )
+                device.start(stream)
+                preview_device[0] = device
+                preview_song_id[0] = song.id
+                preview_offset[0] = offset
+                preview_wall[0] = time.monotonic()
+                _start_ticker()
+            except miniaudio.MiniaudioError as e:
+                status_override[0] = f"Preview error: {e}"
 
     def _focused_song():
         state = state_ref[0]
@@ -490,22 +508,29 @@ def run_tui(
         app.invalidate()
 
     def _maybe_switch_preview() -> None:
-        """If a preview is active, debounce-restart it for the newly focused song."""
-        if preview_device[0] is None and _preview_timer[0] is None:
+        """If previewing is enabled, debounce-restart it for the newly focused song."""
+        if not preview_enabled[0]:
             return
         song = _focused_song()
-        if song is None or song.id == preview_song_id[0]:
+        if song is None:
             return
-        _cancel_preview_timer()
+        _cancel_preview_timer()  # always drop any stale pending timer
+        if song.id == preview_song_id[0] and preview_device[0] is not None:
+            return  # focused song is already playing
 
-        def _fire():
+        def _fire() -> None:
+            # Runs on the timer's own thread so the slow audio-file load never
+            # blocks UI rendering. Skip if a newer timer has superseded this one.
+            if _preview_timer[0] is not timer:
+                return
             _preview_timer[0] = None
             _start_preview(song, _preview_start_for(song))
             app.invalidate()
 
-        _preview_timer[0] = threading.Timer(0.15, _fire)
-        _preview_timer[0].daemon = True
-        _preview_timer[0].start()
+        timer = threading.Timer(0.15, _fire)
+        timer.daemon = True
+        _preview_timer[0] = timer
+        timer.start()
 
     @kb.add("up")
     @kb.add("k")
@@ -618,8 +643,10 @@ def run_tui(
         if song is None:
             return
         if preview_song_id[0] == song.id and preview_device[0] is not None:
+            preview_enabled[0] = False
             _stop_preview()
         else:
+            preview_enabled[0] = True
             _start_preview(song, _preview_start_for(song))
         app.invalidate()
 
@@ -661,6 +688,7 @@ def run_tui(
             state.bpm_range = bpm_range_ref[0]
             recompute(state)
         status_override[0] = None
+        _maybe_switch_preview()
         app.invalidate()
 
     @kb.add("-")
@@ -672,6 +700,7 @@ def run_tui(
                 state.bpm_range = bpm_range_ref[0]
                 recompute(state)
         status_override[0] = None
+        _maybe_switch_preview()
         app.invalidate()
 
     @kb.add("q")
