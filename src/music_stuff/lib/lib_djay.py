@@ -117,8 +117,8 @@ class DjaySongData:
     manual_bpm: float | str
     key: str
     is_straight_grid: bool | str
-    cue_start_time: float | None  # seconds from track start where transition begins
-    cue_end_time: float | None  # seconds from track start where transition ends
+    cue_start_time: float | None  # automix IN cue (seconds from track start)
+    cue_end_time: float | None  # automix OUT cue (seconds from track start)
 
 
 def load_djay_index() -> dict[str, DjaySongData]:
