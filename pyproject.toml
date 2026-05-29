@@ -43,6 +43,7 @@ spotify-playlist-delete-duplicates = "music_stuff.spotify_playlist_delete_duplic
 spotify-playlist-delete-present-in-other-playlist = "music_stuff.spotify_playlist_delete_present_in_other_playlist:main"
 spotify-playlist-to-csv = "music_stuff.spotify_playlist_to_csv:main"
 spotify-csv-to-playlist = "music_stuff.spotify_csv_to_playlist:main"
+spotify-mapping-fill = "music_stuff.spotify_mapping_fill:main"
 playlist-builder = "music_stuff.playlist_builder:main"
 spotify-browser-add-to-playlist = "music_stuff.spotify_browser_add_to_playlist:main"
 spotify-browser-track-radio-to-playlist = "music_stuff.spotify_browser_track_radio_to_playlist:main"
