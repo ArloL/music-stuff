@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-import csv
 from dataclasses import dataclass
+from unittest.mock import patch
 
 from music_stuff.playlist_builder import (
     AppState,
     _song_dict,
     compute_candidates,
-    save_csv,
+    save_apple_music,
     select_candidate,
     undo,
 )
@@ -238,63 +238,21 @@ def test_undo_chain():
 
 
 # ---------------------------------------------------------------------------
-# save_csv
+# save_apple_music
 # ---------------------------------------------------------------------------
 
 
-def test_save_csv_columns(tmp_path):
-    seed = _Song("seed", 128.0, "6d")
-    pick = _Song("p1", 129.0, "7d")
-    state = _make_state(seed, [pick])
-    state2 = select_candidate(state, pick)
-    out = tmp_path / "out.csv"
-    save_csv(state2, out)
-    rows = list(csv.DictReader(out.read_text().splitlines()))
-    assert rows
-    expected_cols = {
-        "position",
-        "apple_music_id",
-        "artist",
-        "name",
-        "key",
-        "bpm",
-        "transition_type",
-        "transition_score",
-    }
-    assert expected_cols == set(rows[0].keys())
-
-
-def test_save_csv_history_order(tmp_path):
+def test_save_apple_music_passes_name_and_history_ids_in_order():
     seed = _Song("seed", 128.0, "6d")
     p1 = _Song("p1", 128.0, "7d")
     p2 = _Song("p2", 128.0, "8d")
     state = _make_state(seed, [p1, p2])
     state2 = select_candidate(state, p1)
     state3 = select_candidate(state2, p2)
-    out = tmp_path / "out.csv"
-    save_csv(state3, out)
-    rows = list(csv.DictReader(out.read_text().splitlines()))
-    ids = [r["apple_music_id"] for r in rows]
-    assert ids == ["seed", "p1", "p2"]
-
-
-def test_save_csv_transition_type_recorded(tmp_path):
-    seed = _Song("seed", 128.0, "6d")
-    p1 = _Song("p1", 128.0, "7d")  # boost from 6d→7d
-    state = _make_state(seed, [p1])
-    state2 = select_candidate(state, p1)
-    out = tmp_path / "out.csv"
-    save_csv(state2, out)
-    rows = list(csv.DictReader(out.read_text().splitlines()))
-    # second row is p1; transition from seed (6d) to p1 (7d) = boost
-    assert rows[1]["transition_type"] == "boost"
-
-
-def test_save_csv_empty_history(tmp_path):
-    seed = _Song("seed", 128.0, "6d")
-    state = _make_state(seed, [])
-    out = tmp_path / "out.csv"
-    save_csv(state, out)
-    rows = list(csv.DictReader(out.read_text().splitlines()))
-    # seed is in history[0], so one row
-    assert len(rows) == 1
+    with patch(
+        "music_stuff.playlist_builder.create_playlist",
+        return_value={"name": "My Set", "trackCount": 3},
+    ) as mock_create:
+        result = save_apple_music(state3, "My Set")
+    mock_create.assert_called_once_with("My Set", ["seed", "p1", "p2"])
+    assert result["trackCount"] == 3
