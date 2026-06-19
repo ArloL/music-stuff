@@ -93,6 +93,23 @@ def find_all_songs() -> list[AppleMusicSong]:
     return [_to_song(r) for r in _run_jxa("findAllTracks()", 60)]
 
 
+def create_playlist(name: str, song_ids: list[str]) -> dict:
+    """Create a new Apple Music playlist *name* containing *song_ids* in order.
+
+    Returns the new playlist's name, persistent ID, and track count. Allow a
+    generous timeout: duplicating many tracks one at a time is not instant.
+    """
+    return _run_jxa(
+        f"createPlaylist({json.dumps(name)}, {json.dumps(song_ids)})",
+        timeout=max(30, len(song_ids)),
+    )
+
+
+def delete_playlist(playlist_id: str) -> None:
+    """Delete the playlist with the given persistent ID."""
+    _run_jxa(f"deletePlaylist({json.dumps(playlist_id)})")
+
+
 def set_song_bpm(song_id: str, bpm: int) -> None:
     _run_jxa(f"setTrackBpm({json.dumps(song_id)}, {json.dumps(bpm)})")
 

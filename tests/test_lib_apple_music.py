@@ -1,6 +1,7 @@
 import json
 import shutil
 import subprocess
+import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -8,6 +9,8 @@ import pytest
 from music_stuff.lib.lib_apple_music import (
     AppleMusicSong,
     _to_song,
+    create_playlist,
+    delete_playlist,
     find_playlist_by_name,
     find_song_by_id,
     find_songs_by_folder_name,
@@ -153,6 +156,78 @@ def test_to_song_maps_all_fields():
     assert song.rating == 100
     assert song.genre == "Techno"
     assert song.key == "9m"
+
+
+# --- create_playlist ---
+
+
+def test_create_playlist_passes_name_and_ids_to_jxa():
+    mock = MagicMock(
+        returncode=0,
+        stdout=json.dumps({"name": "My Set", "persistentID": "P1", "trackCount": 2}),
+    )
+    with patch(
+        "music_stuff.lib.lib_apple_music.subprocess.run", return_value=mock
+    ) as mock_run:
+        result = create_playlist("My Set", ["AAA", "BBB"])
+    script = mock_run.call_args.kwargs["input"]
+    assert json.dumps("My Set") in script
+    assert json.dumps(["AAA", "BBB"]) in script
+    assert result["trackCount"] == 2
+
+
+def test_create_playlist_raises_on_error():
+    mock = MagicMock(
+        returncode=1, stderr="execution error: Error: Track not found: ZZZ (-2700)"
+    )
+    with patch("music_stuff.lib.lib_apple_music.subprocess.run", return_value=mock):
+        with pytest.raises(RuntimeError, match="Track not found"):
+            create_playlist("My Set", ["ZZZ"])
+
+
+def test_delete_playlist_passes_id_to_jxa():
+    mock = MagicMock(returncode=0, stdout="null")
+    with patch(
+        "music_stuff.lib.lib_apple_music.subprocess.run", return_value=mock
+    ) as mock_run:
+        delete_playlist("P1")
+    script = mock_run.call_args.kwargs["input"]
+    assert json.dumps("P1") in script
+
+
+def test_delete_playlist_raises_on_error():
+    mock = MagicMock(
+        returncode=1, stderr="execution error: Error: Playlist not found: P1 (-2700)"
+    )
+    with patch("music_stuff.lib.lib_apple_music.subprocess.run", return_value=mock):
+        with pytest.raises(RuntimeError, match="Playlist not found"):
+            delete_playlist("P1")
+
+
+@needs_osascript
+def test_create_playlist_creates_populates_and_deletes():
+    """End-to-end: build a real playlist, verify its tracks (in order), then
+    delete it. Uses a unique name so it never collides with the live library."""
+    songs = find_songs_by_folder_name("Test Folder")
+    assert len(songs) >= 2, "Test Folder needs at least two tracks"
+    track_ids = [songs[0].id, songs[1].id]
+    name = f"music-stuff test {uuid.uuid4().hex[:8]}"
+
+    result = create_playlist(name, track_ids)
+    try:
+        assert result["name"] == name
+        assert result["trackCount"] == 2
+        assert result["persistentID"]
+        # Tracks land in the playlist in the order they were added.
+        added = find_songs_by_playlist_name(name)
+        assert [s.id for s in added] == track_ids
+    finally:
+        delete_playlist(result["persistentID"])
+
+    # The playlist is gone (find_playlist_by_name raises when there are no
+    # matches, since playlists[0] is undefined).
+    with pytest.raises(RuntimeError):
+        find_playlist_by_name(name)
 
 
 # --- set_song_key ---

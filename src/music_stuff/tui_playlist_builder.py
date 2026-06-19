@@ -5,19 +5,28 @@ from __future__ import annotations
 import datetime
 import threading
 import time
-from pathlib import Path
 
 import miniaudio
 from prompt_toolkit import Application
 from prompt_toolkit.application import get_app
 from prompt_toolkit.data_structures import Point
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout.containers import HSplit, VSplit, Window
+from prompt_toolkit.filters import Condition
+from prompt_toolkit.key_binding import (
+    ConditionalKeyBindings,
+    KeyBindings,
+    merge_key_bindings,
+)
+from prompt_toolkit.layout.containers import (
+    ConditionalContainer,
+    HSplit,
+    VSplit,
+    Window,
+)
 from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.dimension import Dimension as D
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.styles import Style
-from prompt_toolkit.widgets import Frame
+from prompt_toolkit.widgets import Frame, TextArea
 
 from music_stuff.lib.lib_apple_music import AppleMusicSong
 from music_stuff.lib.lib_transitions import (
@@ -30,7 +39,7 @@ from music_stuff.playlist_builder import (
     build_initial_state,
     playlist_duration,
     recompute,
-    save_csv,
+    save_apple_music,
     select_candidate,
     undo,
 )
@@ -117,6 +126,11 @@ def run_tui(
     ]
 
     status_override: list[str | None] = [None]
+
+    # Inline playlist-name prompt: a single-line TextArea (created below in the
+    # widgets section) shown only while saving. input_mode_ref gates the main
+    # key bindings off so editing keys reach the TextArea.
+    input_mode_ref: list[bool] = [False]
 
     # Seed selection mode: pool sorted by BPM ascending, with its own cursor.
     seed_pool: list[AppleMusicSong] = sorted(pool, key=lambda s: s.bpm)
@@ -433,6 +447,8 @@ def run_tui(
         return f" Now: {seed.artist} – {seed.name}  [{seed.bpm:.0f} BPM  {seed.key}]{extra}{dur_str}{_preview_status()}"
 
     def _fmt_status() -> str:
+        if input_mode_ref[0]:
+            return "  Enter save · Esc cancel"
         if status_override[0]:
             return f"  {status_override[0]}"
         bpm_r = bpm_range_ref[0]
@@ -440,8 +456,8 @@ def run_tui(
             return f"  ↑/↓ navigate  Enter select seed  p preview  c channel  ←/→ seek  q quit         {len(seed_pool)} songs  "
         n = len(state_ref[0].flat)
         if focus_ref[0] == _FOCUS_PLAYLIST:
-            return f"  ↑/↓ navigate  p preview  c channel  ←/→ seek  Tab switch  u undo  s save  q quit         ±{bpm_r:.0f} BPM  "
-        return f"  ↑/↓ navigate  Enter select  p preview  c channel  ←/→ seek  Tab switch  u undo  s save  +/- BPM  q quit         {n} candidates  ±{bpm_r:.0f} BPM  "
+            return f"  ↑/↓ navigate  p preview  c channel  ←/→ seek  Tab switch  u undo  s save→Music  q quit         ±{bpm_r:.0f} BPM  "
+        return f"  ↑/↓ navigate  Enter select  p preview  c channel  ←/→ seek  Tab switch  u undo  s save→Music  +/- BPM  q quit         {n} candidates  ±{bpm_r:.0f} BPM  "
 
     # ------------------------------------------------------------------ widgets
 
@@ -485,8 +501,56 @@ def run_tui(
         style="class:status",
     )
 
+    def _do_save(name: str) -> None:
+        state = state_ref[0]
+        if state is None:
+            return
+        try:
+            result = save_apple_music(state, name)
+        except Exception as e:
+            status_override[0] = f"Apple Music error: {e}  (any key to dismiss)"
+            app.invalidate()
+            return
+        count = result.get("trackCount", len(state.history))
+        status_override[0] = (
+            f"Saved {count} tracks → “{name}” in Apple Music  (any key to dismiss)"
+        )
+        app.invalidate()
+
+    def _accept_name(_buffer) -> bool:
+        name = name_input.text.strip()
+        _exit_input_mode()
+        if not name:
+            status_override[0] = "Save cancelled (empty name)"
+            app.invalidate()
+        else:
+            _do_save(name)
+        return False  # clear the buffer for next time
+
+    name_input = TextArea(
+        multiline=False,
+        prompt="Playlist name: ",
+        accept_handler=_accept_name,
+        style="class:status",
+    )
+    name_input_container = ConditionalContainer(
+        content=name_input,
+        filter=Condition(lambda: input_mode_ref[0]),
+    )
+
+    def _exit_input_mode() -> None:
+        input_mode_ref[0] = False
+        app.layout.focus(candidates_win)
+
     layout = Layout(
-        HSplit([header_win, VSplit([left_frame, right_frame]), status_win]),
+        HSplit(
+            [
+                header_win,
+                VSplit([left_frame, right_frame]),
+                name_input_container,
+                status_win,
+            ]
+        ),
         focused_element=candidates_win,
     )
 
@@ -628,13 +692,16 @@ def run_tui(
 
     @kb.add("s")
     def _save(_event):
-        state = state_ref[0]
-        if state is None:
+        if state_ref[0] is None:
             return
+        # Open the inline name prompt, pre-filled with a timestamped default and
+        # the cursor at the end so the user can edit or just hit Enter.
         ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        path = Path(f"playlist_{ts}.csv")
-        save_csv(state, path)
-        status_override[0] = f"Saved → {path}  (any key to dismiss)"
+        name_input.text = f"DJ Set {ts}"
+        name_input.buffer.cursor_position = len(name_input.text)
+        input_mode_ref[0] = True
+        status_override[0] = None
+        app.layout.focus(name_input)
         app.invalidate()
 
     @kb.add("p")
@@ -709,9 +776,31 @@ def run_tui(
         _stop_preview()
         app.exit()
 
+    # ------------------------------------------------------------------ name prompt
+    # While the name prompt is open the main bindings above are suppressed, so
+    # text editing keys reach the focused TextArea. Enter is handled by the
+    # TextArea's accept handler; these only add cancel.
+
+    input_kb = KeyBindings()
+
+    @input_kb.add("escape")
+    @input_kb.add("c-c")
+    def _input_cancel(_event):
+        _exit_input_mode()
+        status_override[0] = None
+        app.invalidate()
+
+    in_input_mode = Condition(lambda: input_mode_ref[0])
+    app_kb = merge_key_bindings(
+        [
+            ConditionalKeyBindings(kb, ~in_input_mode),
+            ConditionalKeyBindings(input_kb, in_input_mode),
+        ]
+    )
+
     app = Application(
         layout=layout,
-        key_bindings=kb,
+        key_bindings=app_kb,
         style=_STYLE,
         full_screen=True,
         mouse_support=False,

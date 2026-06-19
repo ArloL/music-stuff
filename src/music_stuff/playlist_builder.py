@@ -3,18 +3,19 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import sys
 from dataclasses import dataclass, field
-from pathlib import Path
 
-from music_stuff.lib.lib_apple_music import AppleMusicSong, find_song_by_id
+from music_stuff.lib.lib_apple_music import (
+    AppleMusicSong,
+    create_playlist,
+    find_song_by_id,
+)
 from music_stuff.lib.lib_djay import DjaySongData
 from music_stuff.lib.lib_transitions import (
     ALLOWED_KEY_TRANSITIONS,
     calculate_transition_score,
     filter_candidates,
-    get_transition_type,
     load_playlist,
 )
 
@@ -121,53 +122,13 @@ def undo(state: AppState, original_played_ids: set[str]) -> AppState:
     return recompute(new_state)
 
 
-def save_csv(state: AppState, path: str | Path) -> None:
-    """Write the current history to a CSV file.
+def save_apple_music(state: AppState, name: str) -> dict:
+    """Create a new Apple Music playlist from the current history, in order.
 
-    history[0] is always the original seed (no incoming transition).
-    Transitions are recorded between consecutive entries.
+    Returns the result dict from :func:`create_playlist` (name, persistentID,
+    trackCount).
     """
-    rows = []
-    for i, song in enumerate(state.history):
-        if i == 0:
-            ttype = ""
-            score = ""
-        else:
-            prev_song = state.history[i - 1]
-            ttype = get_transition_type(_song_dict(prev_song), _song_dict(song))
-            score = round(
-                calculate_transition_score(_song_dict(prev_song), _song_dict(song)), 2
-            )
-        rows.append(
-            {
-                "position": i + 1,
-                "apple_music_id": song.id,
-                "artist": song.artist,
-                "name": song.name,
-                "key": song.key,
-                "bpm": song.bpm,
-                "transition_type": ttype,
-                "transition_score": score,
-            }
-        )
-
-    with open(path, "w", newline="") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=[
-                "position",
-                "apple_music_id",
-                "artist",
-                "name",
-                "key",
-                "bpm",
-                "transition_type",
-                "transition_score",
-            ],
-            lineterminator="\n",
-        )
-        writer.writeheader()
-        writer.writerows(rows)
+    return create_playlist(name, [s.id for s in state.history])
 
 
 def playlist_duration(

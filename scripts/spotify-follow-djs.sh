@@ -31,6 +31,7 @@ Modeselektor="id:37i9dQZF1DWXl7Y0piXYnl"
 NinaKraviz="id:37i9dQZF1DX717gvXLoUJP"
 PeggyGou="id:7u9B9jIeF5b3IMcm6PqoVu"
 SofiaKourtesis="id:37i9dQZF1DWVFhnU8yozBd"
+PrettyGirl="id:47J8wIe2PvDr4WFahACfIQ"
 
 uv run spotify-browser-add-to-playlist --headless \
     "Recommended" \
@@ -60,4 +61,5 @@ uv run spotify-browser-add-to-playlist --headless \
     "${Modeselektor}" \
     "${NinaKraviz}" \
     "${PeggyGou}" \
+    "${PrettyGirl}" \
     "${SofiaKourtesis}"

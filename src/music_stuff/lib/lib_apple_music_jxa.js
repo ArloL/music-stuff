@@ -81,6 +81,33 @@ function findAllTracks() {
         .map(_mapTrackProperties);
 }
 
+function createPlaylist(name, hexIds) {
+    const music = Application("Music");
+    const playlist = music.make({ new: "playlist", withProperties: { name: name } });
+    for (const hexId of hexIds) {
+        const tracks = music.tracks.whose({ persistentID: { _equals: hexId } });
+        if (tracks.length === 0) {
+            throw new Error("Track not found: " + hexId);
+        }
+        music.duplicate(tracks[0], { to: playlist });
+    }
+    return {
+        name: playlist.name(),
+        persistentID: playlist.persistentID(),
+        trackCount: hexIds.length,
+    };
+}
+
+function deletePlaylist(hexId) {
+    const music = Application("Music");
+    const playlists = music.playlists.whose({ persistentID: { _equals: hexId } });
+    if (playlists.length === 0) {
+        throw new Error("Playlist not found: " + hexId);
+    }
+    music.delete(playlists[0]);
+    return null;
+}
+
 function setTrackBpm(hexId, bpm) {
     const music = Application("Music");
     const tracks = music.tracks.whose({ persistentID: { _equals: hexId } });
