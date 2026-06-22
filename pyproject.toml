@@ -19,7 +19,7 @@ dependencies = [
     "pyvis==0.3.2",
     "scikit-learn==1.9.0",
     "spotipy==2.26.0",
-    "essentia==2.1b6.dev1389",
+    "essentia==2.1b6.dev1438",
     "prompt-toolkit==3.0.52",
     "miniaudio==1.71",
     "djay-tsaf-parser",
