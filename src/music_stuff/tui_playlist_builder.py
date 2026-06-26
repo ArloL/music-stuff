@@ -110,6 +110,7 @@ def run_tui(
     genres: set[str] | None,
     min_rating: int,
     djay_index: dict | None = None,
+    hidden_ids: set[str] | None = None,
 ) -> None:
     state_ref: list[AppState | None] = [initial_state]
     original_played_ids_ref: list[set[str]] = [original_played_ids]
@@ -135,6 +136,20 @@ def run_tui(
     # Seed selection mode: pool sorted by BPM ascending, with its own cursor.
     seed_pool: list[AppleMusicSong] = sorted(pool, key=lambda s: s.bpm)
     seed_cursor_ref: list[int] = [0]
+
+    # Session-only hidden songs (h key). Shared by reference with every AppState
+    # so a hide survives selecting, undoing, and reseeding. Also filters the
+    # seed-selection list below.
+    hidden_ids_ref: list[set[str]] = [hidden_ids if hidden_ids is not None else set()]
+
+    def _visible_seed_pool() -> list[AppleMusicSong]:
+        """Seed-selection list with hidden songs removed."""
+        return [s for s in seed_pool if s.id not in hidden_ids_ref[0]]
+
+    # Confirm-hide prompt state: while active the main key bindings are gated
+    # off and a y/n prompt is shown in the status bar.
+    confirm_mode_ref: list[bool] = [False]
+    confirm_target_ref: list[AppleMusicSong | None] = [None]
 
     # ------------------------------------------------------------------ preview
 
@@ -269,8 +284,10 @@ def run_tui(
         state = state_ref[0]
         if state is None:
             # Seed selection mode
-            if seed_pool:
-                return seed_pool[seed_cursor_ref[0]]
+            visible = _visible_seed_pool()
+            if visible:
+                idx = min(seed_cursor_ref[0], len(visible) - 1)
+                return visible[idx]
             return None
         if focus_ref[0] == _FOCUS_CANDIDATES:
             if state.flat:
@@ -320,10 +337,11 @@ def run_tui(
         state = state_ref[0]
         if state is None:
             # Seed selection mode: flat BPM-sorted list, no sections
-            if not seed_pool:
+            visible = _visible_seed_pool()
+            if not visible:
                 return [("", "(no songs)")]
             lines: list[tuple[str, str]] = []
-            for i, song in enumerate(seed_pool):
+            for i, song in enumerate(visible):
                 artist = _truncate(song.artist, _ARTIST_WIDTH)
                 name = _truncate(song.name, _NAME_WIDTH)
                 key = song.key.ljust(_KEY_WIDTH)
@@ -447,17 +465,21 @@ def run_tui(
         return f" Now: {seed.artist} – {seed.name}  [{seed.bpm:.0f} BPM  {seed.key}]{extra}{dur_str}{_preview_status()}"
 
     def _fmt_status() -> str:
+        if confirm_mode_ref[0]:
+            target = confirm_target_ref[0]
+            if target is not None:
+                return f"  Hide {target.artist} – {target.name}?  y/n"
         if input_mode_ref[0]:
             return "  Enter save · Esc cancel"
         if status_override[0]:
             return f"  {status_override[0]}"
         bpm_r = bpm_range_ref[0]
         if state_ref[0] is None:
-            return f"  ↑/↓ navigate  Enter select seed  p preview  c channel  ←/→ seek  q quit         {len(seed_pool)} songs  "
+            return f"  ↑/↓ navigate  Enter select seed  p preview  c channel  ←/→ seek  h hide  q quit         {len(_visible_seed_pool())} songs  "
         n = len(state_ref[0].flat)
         if focus_ref[0] == _FOCUS_PLAYLIST:
             return f"  ↑/↓ navigate  p preview  c channel  ←/→ seek  Tab switch  u undo  s save→Music  q quit         ±{bpm_r:.0f} BPM  "
-        return f"  ↑/↓ navigate  Enter select  p preview  c channel  ←/→ seek  Tab switch  u undo  s save→Music  +/- BPM  q quit         {n} candidates  ±{bpm_r:.0f} BPM  "
+        return f"  ↑/↓ navigate  Enter select  p preview  c channel  ←/→ seek  Tab switch  u undo  h hide  s save→Music  +/- BPM  q quit         {n} candidates  ±{bpm_r:.0f} BPM  "
 
     # ------------------------------------------------------------------ widgets
 
@@ -602,9 +624,9 @@ def run_tui(
         status_override[0] = None
         state = state_ref[0]
         if state is None:
-            n = len(seed_pool)
+            n = len(_visible_seed_pool())
             if n:
-                seed_cursor_ref[0] = (seed_cursor_ref[0] - 1) % n
+                seed_cursor_ref[0] = (min(seed_cursor_ref[0], n - 1) - 1) % n
         elif focus_ref[0] == _FOCUS_PLAYLIST:
             playlist_cursor_ref[0] = max(playlist_cursor_ref[0] - 1, 0)
         else:
@@ -620,9 +642,9 @@ def run_tui(
         status_override[0] = None
         state = state_ref[0]
         if state is None:
-            n = len(seed_pool)
+            n = len(_visible_seed_pool())
             if n:
-                seed_cursor_ref[0] = (seed_cursor_ref[0] + 1) % n
+                seed_cursor_ref[0] = (min(seed_cursor_ref[0], n - 1) + 1) % n
         elif focus_ref[0] == _FOCUS_PLAYLIST:
             playlist_cursor_ref[0] = min(
                 playlist_cursor_ref[0] + 1, len(state.history) - 1
@@ -639,9 +661,10 @@ def run_tui(
         state = state_ref[0]
         if state is None:
             # Seed selection mode: select seed and enter normal mode
-            if not seed_pool:
+            visible = _visible_seed_pool()
+            if not visible:
                 return
-            seed = seed_pool[seed_cursor_ref[0]]
+            seed = visible[min(seed_cursor_ref[0], len(visible) - 1)]
             new_state = build_initial_state(
                 seed=seed,
                 pool=pool,
@@ -649,6 +672,7 @@ def run_tui(
                 bpm_range=bpm_range_ref[0],
                 genres=genres,
                 min_rating=min_rating,
+                hidden_ids=hidden_ids_ref[0],
             )
             state_ref[0] = new_state
             original_played_ids_ref[0] = exclude_ids | {seed.id}
@@ -688,6 +712,20 @@ def run_tui(
         playlist_cursor_ref[0] = max(len(state_ref[0].history) - 1, 0)
         status_override[0] = None
         _maybe_switch_preview()
+        app.invalidate()
+
+    @kb.add("h")
+    def _hide(_event):
+        # Only meaningful for a focused candidate or a seed-selection row; a
+        # song already in the playlist can't be "not shown again".
+        if state_ref[0] is not None and focus_ref[0] != _FOCUS_CANDIDATES:
+            return
+        song = _focused_song()
+        if song is None:
+            return
+        confirm_target_ref[0] = song
+        confirm_mode_ref[0] = True
+        status_override[0] = None
         app.invalidate()
 
     @kb.add("s")
@@ -790,11 +828,50 @@ def run_tui(
         status_override[0] = None
         app.invalidate()
 
+    # ------------------------------------------------------------------ confirm hide
+    # While the confirm prompt is open the main bindings are suppressed; only
+    # y (hide) and n/Esc (cancel) are live.
+
+    confirm_kb = KeyBindings()
+
+    def _exit_confirm_mode() -> None:
+        confirm_mode_ref[0] = False
+        confirm_target_ref[0] = None
+
+    @confirm_kb.add("y")
+    def _confirm_hide(_event):
+        song = confirm_target_ref[0]
+        _exit_confirm_mode()
+        if song is not None:
+            hidden_ids_ref[0].add(song.id)
+            state = state_ref[0]
+            if state is not None:
+                # state.hidden_ids is the same object as hidden_ids_ref[0], so
+                # the song now drops out of the recomputed candidates.
+                recompute(state)
+                cand_scroll_ref[0] = 0
+            else:
+                # Seed-selection mode: the visible list shrank by one.
+                visible = _visible_seed_pool()
+                seed_cursor_ref[0] = min(seed_cursor_ref[0], max(len(visible) - 1, 0))
+            status_override[0] = f"Hidden {song.artist} – {song.name}"
+        app.invalidate()
+
+    @confirm_kb.add("n")
+    @confirm_kb.add("escape")
+    @confirm_kb.add("c-c")
+    def _cancel_hide(_event):
+        _exit_confirm_mode()
+        status_override[0] = None
+        app.invalidate()
+
     in_input_mode = Condition(lambda: input_mode_ref[0])
+    in_confirm_mode = Condition(lambda: confirm_mode_ref[0])
     app_kb = merge_key_bindings(
         [
-            ConditionalKeyBindings(kb, ~in_input_mode),
+            ConditionalKeyBindings(kb, ~in_input_mode & ~in_confirm_mode),
             ConditionalKeyBindings(input_kb, in_input_mode),
+            ConditionalKeyBindings(confirm_kb, in_confirm_mode),
         ]
     )
 
