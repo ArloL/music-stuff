@@ -1,6 +1,7 @@
 spotify_id,id,href,isrc,acousticness,danceability,energy,instrumentalness,key,liveness,loudness,mode,speechiness,tempo,valence
 01PY4CRWbH1Js0lAPy71eN,e8188b74-7eca-4331-80a4-7a45841ff771,https://open.spotify.com/track/01PY4CRWbH1Js0lAPy71eN,SE2WJ1100304,0.1,0.778,0.592,0.873,2.0,0.0584,-13.181,1.0,0.0866,126.017,0.262
 01UmrAiSyFKUXQRODUuJsH,6342c3b3-00b7-46ea-98df-b2f47d7b038a,https://open.spotify.com/track/01UmrAiSyFKUXQRODUuJsH,DEY472275449,0.125,0.778,0.587,0.852,4.0,0.132,-12.07,0.0,0.204,124.002,0.272
+031MRnGJqlmhd27mWgog2P,00a10211-61cc-4ddd-93e9-a587bf1beef7,https://open.spotify.com/track/031MRnGJqlmhd27mWgog2P,DEH742421470,0.000548,0.803,0.713,0.828,11.0,0.0605,-9.755,0.0,0.0585,126.997,0.684
 031eVTZG0DoOt1AAQJ9490,12110200-4e42-4e8b-9455-07f3d61d1957,https://open.spotify.com/track/031eVTZG0DoOt1AAQJ9490,DEPL91204805,0.109,0.785,0.683,0.698,4.0,0.0951,-10.659,0.0,0.0639,121.004,0.822
 03GHLf15eAt5bSWssIrFbx,e8d95285-1fdf-4e78-8d83-4d33f0cb172a,https://open.spotify.com/track/03GHLf15eAt5bSWssIrFbx,FR6V80005137,0.000896,0.69,0.975,0.639,3.0,0.338,-4.44,0.0,0.0559,128.046,0.689
 03ccKKeYtrjlcRG9khtNrg,63cf3e13-5a5f-49cc-8791-034afc290c63,https://open.spotify.com/track/03ccKKeYtrjlcRG9khtNrg,DEMM11300060,0.296,0.743,0.705,0.902,6.0,0.0661,-12.187,0.0,0.0556,124.007,0.348
@@ -11,6 +12,7 @@ spotify_id,id,href,isrc,acousticness,danceability,energy,instrumentalness,key,li
 07ihiCmDshXFcqK9cq7Ulf,dbb55a9b-c3c3-46e7-af36-6e5a69d30827,https://open.spotify.com/track/07ihiCmDshXFcqK9cq7Ulf,DEY472473661,0.0019,0.771,0.476,0.894,8.0,0.086,-10.873,1.0,0.0454,124.003,0.508
 0AQsiSsoBY3CdvrQc0TePC,8473f376-574a-4aec-a05b-82d7d95c26cd,https://open.spotify.com/track/0AQsiSsoBY3CdvrQc0TePC,DEY472088426,0.00269,0.711,0.464,0.904,9.0,0.108,-13.561,0.0,0.0435,118.001,0.61
 0AZTusI2KJaTbZxrSDvfi5,a90b4eda-47e7-4a6c-a76f-496789ecb92f,https://open.spotify.com/track/0AZTusI2KJaTbZxrSDvfi5,GB6LY1500001,0.0489,0.808,0.459,0.531,11.0,0.0811,-12.488,0.0,0.0458,123.997,0.14
+0Ag65EjpYKzQJPZAiavZxa,ce855f33-f52d-4116-9cd1-f41430b218ed,https://open.spotify.com/track/0Ag65EjpYKzQJPZAiavZxa,DEU671300083,0.0502,0.688,0.536,0.894,8.0,0.133,-12.25,1.0,0.0331,120.001,0.144
 0D97FOu7UqZvatcSCOtZfJ,bbf8f7f5-5223-439e-a8e2-521f6a979971,https://open.spotify.com/track/0D97FOu7UqZvatcSCOtZfJ,DECY61500040,0.00182,0.725,0.661,0.849,2.0,0.685,-10.158,1.0,0.0411,123.02,0.213
 0DG9ERJIKpFXk5n8uldiuM,40a74b7a-b523-462c-91bb-2dfafcf4c948,https://open.spotify.com/track/0DG9ERJIKpFXk5n8uldiuM,DEMM11500007,0.0229,0.707,0.748,0.768,7.0,0.106,-11.088,1.0,0.0479,118.022,0.159
 0E8YKGyZVKz5tkYftHRrWV,358a7a4d-307d-40aa-afc1-07b44c15feef,https://open.spotify.com/track/0E8YKGyZVKz5tkYftHRrWV,DECY62100098,0.000771,0.704,0.719,0.827,0.0,0.0661,-8.859,1.0,0.0587,121.984,0.436
@@ -28,6 +30,7 @@ spotify_id,id,href,isrc,acousticness,danceability,energy,instrumentalness,key,li
 0W4522kMykidUIBpOoI8oP,32874fbb-05f8-4b14-92d8-0f431bc1e276,https://open.spotify.com/track/0W4522kMykidUIBpOoI8oP,GBCFB2300439,0.000532,0.715,0.847,0.265,6.0,0.2,-9.978,0.0,0.044,121.981,0.709
 0WaE4hwbs61kxInry9s9GH,86a6d9bf-9336-46ef-a953-120f3e7cda5e,https://open.spotify.com/track/0WaE4hwbs61kxInry9s9GH,DEMM11400013,0.000365,0.832,0.421,0.197,11.0,0.0585,-9.566,1.0,0.165,116.07,0.76
 0Wi0UaDUPC7G4pmrgbLrSs,23edbbbf-772f-405e-a6b0-59faa0f28092,https://open.spotify.com/track/0Wi0UaDUPC7G4pmrgbLrSs,DECY51114081,0.000301,0.652,0.554,0.922,5.0,0.0792,-10.84,0.0,0.0336,120.019,0.225
+0Xa2cPBp5CVL7yRbhMESJh,15c73694-e406-4caf-97fa-3931dc1aad9a,https://open.spotify.com/track/0Xa2cPBp5CVL7yRbhMESJh,GBCPZ2221517,0.00219,0.76,0.878,0.741,7.0,0.072,-6.355,0.0,0.145,128.994,0.395
 0YQ3Egr6p6MHgZGaQI7EWc,ec6a9575-c339-40ee-9065-1aa72f8752a2,https://open.spotify.com/track/0YQ3Egr6p6MHgZGaQI7EWc,DEU671002245,0.0527,0.803,0.79,0.849,8.0,0.202,-5.588,1.0,0.0416,125.001,0.808
 0aegbRrg4oVF2kSMZwmnq8,f3929842-31bb-44ae-9a8a-7a3cd3db058d,https://open.spotify.com/track/0aegbRrg4oVF2kSMZwmnq8,GBCFB2100332,0.313,0.704,0.613,0.16,8.0,0.0952,-12.355,0.0,0.0713,132.036,0.251
 0bzXi8viwZsxlGabtLlJz9,5eb3acb8-d71d-439e-92d9-7d56940f566c,https://open.spotify.com/track/0bzXi8viwZsxlGabtLlJz9,DEHE41100002,0.000245,0.812,0.674,0.906,0.0,0.105,-13.035,1.0,0.0557,122.021,0.863
@@ -78,10 +81,12 @@ spotify_id,id,href,isrc,acousticness,danceability,energy,instrumentalness,key,li
 1Ue7Kj1fW6l8Mhuub1JNWq,d9912f50-c7e3-4513-8621-9515d7a69926,https://open.spotify.com/track/1Ue7Kj1fW6l8Mhuub1JNWq,GBCPZ2220825,0.0005,0.749,0.74,0.154,10.0,0.112,-8.528,0.0,0.0313,128.012,0.887
 1VMd7iCviE7xOFSuKKy4cY,a5fd2c53-f285-420b-9032-300acb35efef,https://open.spotify.com/track/1VMd7iCviE7xOFSuKKy4cY,GBKPL2289290,0.602,0.546,0.465,0.928,11.0,0.084,-16.023,0.0,0.0317,112.004,0.379
 1XBCc9nBoYRVgkJOQEy24t,999882cc-ccfd-4448-a10c-bc38a607a944,https://open.spotify.com/track/1XBCc9nBoYRVgkJOQEy24t,DEMM11900025,0.0223,0.866,0.725,0.943,0.0,0.0515,-12.501,1.0,0.0919,122.007,0.108
+1XvNkXo2iNQgNNxxqX7pIe,7ec637d9-e2b6-4132-9c21-33e59d199c50,https://open.spotify.com/track/1XvNkXo2iNQgNNxxqX7pIe,AUMSZ2100023,0.0764,0.749,0.889,0.719,5.0,0.392,-7.526,0.0,0.0442,127.021,0.67
 1YZfONGrZy7ChnfnaGjbHO,bdda8320-d1df-4532-b33f-2cdd68580fec,https://open.spotify.com/track/1YZfONGrZy7ChnfnaGjbHO,GBCFB1600808,0.755,0.417,0.5,0.633,2.0,0.354,-13.069,0.0,0.0341,116.866,0.418
 1ZJ1EQsErJCPmjNUbwNDr7,6354af1c-53a4-45f6-825b-dab5ae4b4f14,https://open.spotify.com/track/1ZJ1EQsErJCPmjNUbwNDr7,DEGR72012081,0.00114,0.773,0.338,0.818,2.0,0.0641,-11.242,1.0,0.0493,120.016,0.0583
 1aBvWiDl37PlNsNAr2pWpc,41198970-6d46-4865-86fe-8e885c029f94,https://open.spotify.com/track/1aBvWiDl37PlNsNAr2pWpc,DEEC32100011,0.00201,0.756,0.527,0.509,8.0,0.112,-11.861,1.0,0.0428,119.996,0.248
 1fgyXs9dffBHKRyaE6cq7F,ad288319-b259-4211-91f8-9079b68e0a80,https://open.spotify.com/track/1fgyXs9dffBHKRyaE6cq7F,DEU672200037,0.503,0.804,0.555,0.903,1.0,0.113,-12.913,1.0,0.103,116.997,0.377
+1hsABkQfAzkRTuXHv5zrPL,db279c6b-3329-49e1-82f7-a94e76f7d64d,https://open.spotify.com/track/1hsABkQfAzkRTuXHv5zrPL,DEEC32100020,0.675,0.599,0.54,0.413,3.0,0.127,-13.02,1.0,0.0411,118.032,0.0752
 1jy7SkRcmBCTcv4ZMtwz29,799b5372-1d05-4f6d-9c16-3a40ac6cd80f,https://open.spotify.com/track/1jy7SkRcmBCTcv4ZMtwz29,UK7MC1500008,0.00462,0.646,0.63,0.27,8.0,0.122,-10.748,0.0,0.0435,109.018,0.164
 1l2K4CLTVdxt3IHxVEYJQQ,3d2be5e5-5978-47de-9160-c7a7f67d98cb,https://open.spotify.com/track/1l2K4CLTVdxt3IHxVEYJQQ,GBV8E1506601,0.46,0.735,0.828,0.927,6.0,0.104,-8.063,1.0,0.038,123.019,0.751
 1lvpyd1lQjutZa6YnAE8aH,8e6994c9-bf41-4eec-bf02-045ef71785e2,https://open.spotify.com/track/1lvpyd1lQjutZa6YnAE8aH,UKA2G1616018,0.0447,0.721,0.838,0.749,8.0,0.0445,-7.579,1.0,0.0428,125.999,0.453
@@ -93,6 +98,7 @@ spotify_id,id,href,isrc,acousticness,danceability,energy,instrumentalness,key,li
 1uTK4zF50iQjvop8L4N2fR,34130b80-e44c-4677-bc61-dcc3b5163508,https://open.spotify.com/track/1uTK4zF50iQjvop8L4N2fR,QM7281453199,0.528,0.839,0.556,0.874,9.0,0.16,-10.164,0.0,0.158,118.033,0.11
 1vApfb0t4KdOFKwbnlQlwa,b8ecf1f8-0227-4d7c-b5ae-835244f884eb,https://open.spotify.com/track/1vApfb0t4KdOFKwbnlQlwa,US2J72201004,0.00111,0.81,0.634,0.928,0.0,0.0584,-10.802,1.0,0.0763,124.004,0.684
 1vQH06LJXlkb8ikAaCYk3z,2a66c683-ca02-447c-812d-58981c9c8505,https://open.spotify.com/track/1vQH06LJXlkb8ikAaCYk3z,BEN581900434,0.133,0.903,0.398,0.00868,7.0,0.133,-9.161,0.0,0.269,110.011,0.58
+1wMcF9neUKRWenqSFDELX9,ed9418b9-c07b-4014-9a8b-15c335525a69,https://open.spotify.com/track/1wMcF9neUKRWenqSFDELX9,QMFME2380103,0.639,0.664,0.622,0.878,2.0,0.0917,-13.518,0.0,0.0329,124.01,0.337
 1y2k6O4zhzYsaTRy3bTpbX,b02454c1-7692-445e-83c1-b1cb415a86e7,https://open.spotify.com/track/1y2k6O4zhzYsaTRy3bTpbX,DEU672200032,0.234,0.8,0.602,0.931,5.0,0.104,-13.483,0.0,0.115,110.997,0.552
 1z3roU3y19kIFTQDCBUeZ8,943dab88-5183-4d44-8002-3acd190547ea,https://open.spotify.com/track/1z3roU3y19kIFTQDCBUeZ8,GBKPL1828926,0.00632,0.793,0.63,0.859,0.0,0.0547,-7.249,1.0,0.0445,123.018,0.42
 1z4wF1YNe3FphOqyD2eRqY,c620fd31-7a27-4f50-9c68-41009c24cd5c,https://open.spotify.com/track/1z4wF1YNe3FphOqyD2eRqY,SEYOK1832281,0.137,0.97,0.516,0.011,0.0,0.073,-9.641,1.0,0.112,110.149,0.964
@@ -104,10 +110,12 @@ spotify_id,id,href,isrc,acousticness,danceability,energy,instrumentalness,key,li
 20gHSNB4R3e5A1eVbNyO2l,4f5a17f7-f36e-4c8a-b80a-ac0fc83be52e,https://open.spotify.com/track/20gHSNB4R3e5A1eVbNyO2l,NLHR21300121,0.235,0.563,0.542,0.896,4.0,0.0984,-11.745,0.0,0.0335,170.053,0.0375
 22qCFSccuoaO2lN6YABM0J,c38ccc72-f795-48ff-8391-770e99143632,https://open.spotify.com/track/22qCFSccuoaO2lN6YABM0J,GBJPB1600645,0.00264,0.645,0.742,0.925,2.0,0.0717,-12.727,1.0,0.0455,117.086,0.472
 27GvArdp4i89DRn9FGavYl,79f76c6f-d322-4ffb-8e93-32b7c53ed989,https://open.spotify.com/track/27GvArdp4i89DRn9FGavYl,GBCPZ1206693,0.787,0.915,0.596,0.000368,1.0,0.0608,-8.838,1.0,0.17,118.962,0.44
+27kxG6am8GnYowF9HQPuzX,af7af9b1-c29e-4252-be12-e8af4da8538a,https://open.spotify.com/track/27kxG6am8GnYowF9HQPuzX,CAUP21500015,0.00432,0.895,0.485,0.283,10.0,0.159,-9.195,0.0,0.091,118.003,0.239
 29kIEcPEs8Qr86ddxbI3Qn,1b289716-d7ce-4207-aae5-f6ddc68866a7,https://open.spotify.com/track/29kIEcPEs8Qr86ddxbI3Qn,DEVY92400017,0.00387,0.613,0.894,0.61,8.0,0.0607,-9.929,0.0,0.0362,130.982,0.662
 29uV44ZOimqls6SGybVRxM,0ee72f34-e256-4470-8ea8-572941e17e86,https://open.spotify.com/track/29uV44ZOimqls6SGybVRxM,DEMM11200027,0.336,0.773,0.436,0.799,9.0,0.153,-10.487,0.0,0.0336,120.011,0.222
 2B6DN44NTCOoSG6SV7TS8N,7b860df8-6ee9-4bcb-a2aa-d51133636f61,https://open.spotify.com/track/2B6DN44NTCOoSG6SV7TS8N,BE6F51601110,0.0135,0.66,0.714,0.377,1.0,0.0676,-7.179,1.0,0.0461,122.947,0.223
 2BKNPdLAy8CECtyVMn7jSX,d9a82118-0781-4bed-9331-f49e03af05fe,https://open.spotify.com/track/2BKNPdLAy8CECtyVMn7jSX,DEUE12427562,0.039,0.704,0.729,0.565,8.0,0.115,-9.78,0.0,0.044,120.976,0.607
+2CH4mc6qWAI3ejAdqpON9B,bc944a13-c17e-4a47-afb8-f66d56a0b5fd,https://open.spotify.com/track/2CH4mc6qWAI3ejAdqpON9B,GBANB9100001,0.000796,0.523,0.706,0.313,0.0,0.112,-9.837,1.0,0.0465,119.693,0.345
 2DKB5n0Nf54tewQaoSzSL3,a7e29272-ea3d-4b71-967a-9c9e6cfaa590,https://open.spotify.com/track/2DKB5n0Nf54tewQaoSzSL3,DECY51368064,0.00821,0.852,0.311,0.732,11.0,0.0863,-12.966,0.0,0.126,115.008,0.748
 2DcJkWo9Bs8Jv5u0JKxI7W,bcf07999-786e-41a5-8597-b7658623b3ed,https://open.spotify.com/track/2DcJkWo9Bs8Jv5u0JKxI7W,BRUM72100964,0.0789,0.648,0.69,0.147,2.0,0.128,-10.21,1.0,0.0327,125.027,0.334
 2IClCJEjI5oQKCPAHKmi2W,86968457-579a-415f-992b-bd5a57afbc28,https://open.spotify.com/track/2IClCJEjI5oQKCPAHKmi2W,GBJX37901003,0.00354,0.861,0.554,0.864,5.0,0.0417,-11.133,0.0,0.0612,117.988,0.604
@@ -116,6 +124,7 @@ spotify_id,id,href,isrc,acousticness,danceability,energy,instrumentalness,key,li
 2JgWmx3VkBR3zPVfipaChc,1e18b435-8bf5-487f-8c4d-fd03a81cb15c,https://open.spotify.com/track/2JgWmx3VkBR3zPVfipaChc,DECY51360093,0.00734,0.685,0.74,0.885,1.0,0.129,-8.999,1.0,0.0492,118.023,0.229
 2KW0QeK7pKJKwr2bcA8tFd,6fcce3be-dc8e-4c07-b105-0499603d8c8a,https://open.spotify.com/track/2KW0QeK7pKJKwr2bcA8tFd,GB7NR1116236,0.00694,0.829,0.786,0.811,1.0,0.0675,-10.997,1.0,0.0715,121.999,0.613
 2LjSzNiGqekZXiXyeCDqSl,66b2ae6d-4304-471f-b7e8-9ed3d7a9767b,https://open.spotify.com/track/2LjSzNiGqekZXiXyeCDqSl,GBZSD2000001,0.00347,0.625,0.834,0.366,7.0,0.0733,-5.993,1.0,0.0732,175.039,0.272
+2Ms9rXvqIqCzn9BYkhVoYA,c6a59834-8ab0-4735-b437-90071214572b,https://open.spotify.com/track/2Ms9rXvqIqCzn9BYkhVoYA,DEXO51914252,0.0508,0.793,0.674,0.856,5.0,0.161,-12.135,0.0,0.0566,110.006,0.0756
 2OT7zTr3OdwgVRIuEXsvkR,4ccdac68-2479-43d6-beb0-df46ae9a527c,https://open.spotify.com/track/2OT7zTr3OdwgVRIuEXsvkR,DEU670500097,0.137,0.807,0.71,0.925,8.0,0.0893,-11.152,0.0,0.0555,125.014,0.366
 2Oo1k6CHjsc8rEQxgW4yhh,8f7af584-3043-4804-b2a5-a05cc2aea543,https://open.spotify.com/track/2Oo1k6CHjsc8rEQxgW4yhh,DEU672200028,0.188,0.704,0.586,0.838,7.0,0.0938,-11.559,0.0,0.0393,115.022,0.091
 2PfQjeHZ8muFh44hxKgoNS,39a9efb7-454e-424d-912e-cdb625d0b948,https://open.spotify.com/track/2PfQjeHZ8muFh44hxKgoNS,GBRSW0900388,0.000788,0.787,0.623,0.735,0.0,0.0486,-9.654,1.0,0.0411,110.976,0.194
@@ -140,6 +149,7 @@ spotify_id,id,href,isrc,acousticness,danceability,energy,instrumentalness,key,li
 2jjXzs4XS9Kcmf9iSUbYuU,ef05f470-d790-4965-8bf0-53586a083d0f,https://open.spotify.com/track/2jjXzs4XS9Kcmf9iSUbYuU,DEVY91700071,7.19e-05,0.72,0.789,0.853,1.0,0.398,-9.699,1.0,0.0456,125.008,0.234
 2jpV3AxjRVaV5FMcD1FBmI,c42be63f-7c51-4821-9bbe-e019b7310e31,https://open.spotify.com/track/2jpV3AxjRVaV5FMcD1FBmI,DECY61100082,0.235,0.808,0.743,0.00119,1.0,0.509,-9.04,1.0,0.0363,116.981,0.527
 2jzdxxtPk8hI5AlVJMI1dh,4ed4095c-98a9-4e24-92a4-70aec2409a16,https://open.spotify.com/track/2jzdxxtPk8hI5AlVJMI1dh,usdy41611449,0.00426,0.776,0.811,0.126,2.0,0.897,-10.465,0.0,0.0494,120.626,0.743
+2nh4i29gr42RvhRzFPibCB,261637f6-69e1-4509-a35b-95557368f9f7,https://open.spotify.com/track/2nh4i29gr42RvhRzFPibCB,SE2WJ2505005,0.204,0.737,0.671,0.908,8.0,0.106,-14.594,1.0,0.0426,125.036,0.256
 2o9fz1ALwGI65oMzueYMUI,69ab8c16-6f5f-44c3-ab6c-cea64710c300,https://open.spotify.com/track/2o9fz1ALwGI65oMzueYMUI,DEEC31500014,0.00212,0.777,0.739,0.868,9.0,0.109,-9.089,1.0,0.039,119.992,0.202
 2oJa7csoKpCNhfUPcCCppK,6ce8b1db-9663-47e0-bbc5-d1bd33d12718,https://open.spotify.com/track/2oJa7csoKpCNhfUPcCCppK,DED621401198,0.103,0.344,0.921,0.619,9.0,0.112,-5.879,0.0,0.0377,136.941,0.407
 2odeBencPKlXKsB1z0ilZF,32aae1d9-88f9-4e24-88e3-bf4d334009bd,https://open.spotify.com/track/2odeBencPKlXKsB1z0ilZF,UK6821801372,0.0443,0.799,0.818,0.92,8.0,0.0976,-11.966,0.0,0.0623,119.006,0.509
@@ -157,6 +167,7 @@ spotify_id,id,href,isrc,acousticness,danceability,energy,instrumentalness,key,li
 35j6qaE7aznhmzNe7Ubcch,2e1d89e3-a6db-4f67-aefa-1cc00142ffc6,https://open.spotify.com/track/35j6qaE7aznhmzNe7Ubcch,UKHL81500003,0.00242,0.786,0.65,0.317,11.0,0.132,-8.83,0.0,0.0567,116.989,0.322
 35p0Z5yZDogaXoWXhMVEv4,434c8bdd-b310-4930-908e-16976b5b95f7,https://open.spotify.com/track/35p0Z5yZDogaXoWXhMVEv4,DED621401192,0.772,0.456,0.404,0.777,0.0,0.78,-9.1,1.0,0.0601,128.028,0.48
 37BzAJBhR9OFjuPpO9Peeq,144318e9-4243-4356-84bf-34d40e1b14a7,https://open.spotify.com/track/37BzAJBhR9OFjuPpO9Peeq,QZTAT2363824,0.0831,0.693,0.447,0.897,1.0,0.135,-15.209,1.0,0.0361,123.992,0.287
+37D9O4De2WL1hA6gyResgl,4068af7a-309e-42ec-95bd-c4af258e426c,https://open.spotify.com/track/37D9O4De2WL1hA6gyResgl,DEZ651359891,0.12,0.761,0.263,0.239,0.0,0.0996,-14.762,0.0,0.0473,107.991,0.315
 38ve0Uv4NVE7R0P73E17hJ,aa900f78-82da-4180-b4e8-2c64b6a4e07e,https://open.spotify.com/track/38ve0Uv4NVE7R0P73E17hJ,DECY51180561,0.00742,0.804,0.399,0.845,9.0,0.1,-15.414,0.0,0.106,124.008,0.0559
 3CaFlvMtboeeNFRKHHdsud,427102c1-f88e-4a02-ad7f-8c39724fdfe6,https://open.spotify.com/track/3CaFlvMtboeeNFRKHHdsud,FRX851700798,0.846,0.633,0.289,0.489,9.0,0.109,-16.518,0.0,0.0302,102.02,0.59
 3Cn6clPw1B4Vgjvy8XfXTB,c75f3eac-5037-49de-986b-2469201518c6,https://open.spotify.com/track/3Cn6clPw1B4Vgjvy8XfXTB,DEMM11800015,0.00318,0.709,0.74,0.801,7.0,0.127,-8.614,0.0,0.04,118.984,0.269
@@ -170,6 +181,7 @@ spotify_id,id,href,isrc,acousticness,danceability,energy,instrumentalness,key,li
 3OjXa0HLoWhbwxyDSNWTGa,db1df108-a4b5-407f-808c-c076fa0efbe7,https://open.spotify.com/track/3OjXa0HLoWhbwxyDSNWTGa,GBCFB1402500,0.0275,0.845,0.564,0.714,9.0,0.0753,-11.955,0.0,0.102,123.979,0.356
 3OlhLIXwqZP9kxTOm3h6XZ,fbb6c68a-58ce-452a-9aed-c444e78b4bad,https://open.spotify.com/track/3OlhLIXwqZP9kxTOm3h6XZ,FXQ892300339,0.0181,0.855,0.628,0.0836,5.0,0.125,-7.07,0.0,0.151,127.995,0.456
 3PpvhYXmJdfoxeXGWJmeas,ad8019cb-7045-466b-a8d8-f4db31e0ae34,https://open.spotify.com/track/3PpvhYXmJdfoxeXGWJmeas,CH7531800007,6.48e-05,0.904,0.727,0.861,7.0,0.0737,-9.992,0.0,0.0591,122.002,0.408
+3QBtKAO8J7xypsg80gv3Bq,764b60ad-87e7-454b-8510-23ea74b510ec,https://open.spotify.com/track/3QBtKAO8J7xypsg80gv3Bq,QMBZ92311083,0.0278,0.802,0.752,0.84,7.0,0.116,-10.975,0.0,0.0367,124.999,0.601
 3QnJYRhqqpEDHf2zkIP7SO,3b052873-0939-4fd3-a24f-f73e66cb25ab,https://open.spotify.com/track/3QnJYRhqqpEDHf2zkIP7SO,DEQI21610295,0.0849,0.798,0.385,0.914,8.0,0.0843,-12.959,0.0,0.103,125.018,0.523
 3SocpdBxeWEwfvXrMrP9is,77231590-687b-4674-9513-8a47e0876446,https://open.spotify.com/track/3SocpdBxeWEwfvXrMrP9is,ITK141301134,0.00351,0.803,0.887,0.00859,2.0,0.134,-5.065,0.0,0.0559,119.942,0.73
 3TdQ37Ij8ktddsuNK59NTI,a764dd93-7098-47e2-a5b8-8768f5c3911d,https://open.spotify.com/track/3TdQ37Ij8ktddsuNK59NTI,DEPI81302435,0.867,0.828,0.268,0.662,9.0,0.114,-14.673,0.0,0.0408,119.977,0.259
@@ -204,6 +216,7 @@ spotify_id,id,href,isrc,acousticness,danceability,energy,instrumentalness,key,li
 4FfEOGH7ux18D5SidVvfqF,03d37a94-0671-45d2-aa68-e236e65f560e,https://open.spotify.com/track/4FfEOGH7ux18D5SidVvfqF,DEEC61200111,0.113,0.905,0.339,0.884,1.0,0.593,-10.441,1.0,0.0855,120.0,0.523
 4FtjMbx5rC3fUqcBJXhu1G,94665eff-7bf9-4d37-8c55-cfafe6e97908,https://open.spotify.com/track/4FtjMbx5rC3fUqcBJXhu1G,DEY471611119,0.000429,0.66,0.798,0.812,7.0,0.0898,-5.549,1.0,0.0394,123.013,0.42
 4H6jI8PTPpZt7YJhbNHmEC,e8a54b2b-baa2-42c2-b157-48e4eb96ad42,https://open.spotify.com/track/4H6jI8PTPpZt7YJhbNHmEC,DEMM11300035,0.112,0.793,0.456,0.000395,5.0,0.311,-10.302,1.0,0.263,96.999,0.601
+4IJ3M8iAOJgvA9grJoCys1,f4c5139c-6d49-4daa-a9fc-b4f969bc4d9e,https://open.spotify.com/track/4IJ3M8iAOJgvA9grJoCys1,NLM971700143,0.114,0.782,0.637,0.187,0.0,0.312,-10.224,1.0,0.0376,117.935,0.913
 4J5q38uaQFUxdCHKuMKixs,255cf076-341b-4139-897f-b5b964df4471,https://open.spotify.com/track/4J5q38uaQFUxdCHKuMKixs,DECY51618271,0.0708,0.79,0.653,0.871,5.0,0.331,-12.42,1.0,0.0513,120.014,0.166
 4JZENNLU8KzfvxVUDDyxNv,726369c6-1687-41fc-b6cc-d88706e3bafd,https://open.spotify.com/track/4JZENNLU8KzfvxVUDDyxNv,DEU672200042,0.286,0.811,0.437,0.936,11.0,0.0954,-13.065,1.0,0.0511,115.022,0.891
 4KjNEsQ4jkqXwCmsn71a9p,5815791f-abd5-4c28-b43b-91d20a1ce855,https://open.spotify.com/track/4KjNEsQ4jkqXwCmsn71a9p,GBXNG1746004,0.83,0.659,0.667,0.896,1.0,0.118,-10.463,0.0,0.0326,132.907,0.637
@@ -261,6 +274,7 @@ spotify_id,id,href,isrc,acousticness,danceability,energy,instrumentalness,key,li
 5H8jHClVFMifcEKr8KasCj,27507985-2db4-4143-bfaa-378bdee7529f,https://open.spotify.com/track/5H8jHClVFMifcEKr8KasCj,DEG931400559,0.0105,0.772,0.778,0.364,7.0,0.109,-8.872,1.0,0.0746,119.998,0.449
 5HWybXhMxw8W8t0sUPysxf,2d4dadc1-9fd0-4664-ad88-e1e80b9babd5,https://open.spotify.com/track/5HWybXhMxw8W8t0sUPysxf,USZXT2250522,0.372,0.692,0.659,0.698,6.0,0.0686,-11.904,0.0,0.0428,128.025,0.276
 5KfORTCsUKxu5A8wUHw1ZP,c05a2dcd-0317-4de6-b86f-b1d52cea391d,https://open.spotify.com/track/5KfORTCsUKxu5A8wUHw1ZP,DECY51180230,5.31e-05,0.801,0.709,0.879,6.0,0.103,-9.833,1.0,0.0384,123.013,0.832
+5Kik6KF5YgtnDLxcRcd6lJ,24e51ab5-1c3c-4780-91bf-821ad9e6d45f,https://open.spotify.com/track/5Kik6KF5YgtnDLxcRcd6lJ,DEG932500116,0.437,0.514,0.479,0.567,5.0,0.361,-15.197,0.0,0.0481,186.013,0.4
 5KkkVYT0HTdnyBsmUvr4uc,c1a819af-5dfc-4283-873d-146aff43d5ab,https://open.spotify.com/track/5KkkVYT0HTdnyBsmUvr4uc,DEPJ12330050,0.00738,0.508,0.808,0.654,0.0,0.148,-8.494,1.0,0.227,128.042,0.312
 5L687R1SDumykLuaXUVb6b,2bb10fe9-8fdb-407d-ac73-d62e857a47f1,https://open.spotify.com/track/5L687R1SDumykLuaXUVb6b,GB8PY2200291,0.059,0.646,0.943,0.912,7.0,0.0904,-8.273,1.0,0.0429,123.996,0.709
 5NHakfV794rjsVZwNDSWLr,8a790831-ac32-4cba-a7ff-5f5530fcb938,https://open.spotify.com/track/5NHakfV794rjsVZwNDSWLr,USA670601755,0.0657,0.799,0.585,0.942,10.0,0.0928,-10.577,0.0,0.0947,126.996,0.146
@@ -268,6 +282,7 @@ spotify_id,id,href,isrc,acousticness,danceability,energy,instrumentalness,key,li
 5OQzRuRk1rntJ1ertv3tBK,d44ef1d3-e2dd-4735-829f-265df6683e84,https://open.spotify.com/track/5OQzRuRk1rntJ1ertv3tBK,GBENT0144032,0.00387,0.881,0.708,0.00384,9.0,0.0367,-6.563,0.0,0.134,126.019,0.899
 5POdVAHO9wsmnvyPIFcrVN,b70a418d-b882-4604-a5c0-db660f208cb2,https://open.spotify.com/track/5POdVAHO9wsmnvyPIFcrVN,DEU672003044,0.0142,0.804,0.711,0.856,11.0,0.103,-11.458,1.0,0.0611,121.008,0.299
 5RmrIFxYDRHmVJq4f6SJJw,d166ff93-485d-4888-b0d0-f742f9419c63,https://open.spotify.com/track/5RmrIFxYDRHmVJq4f6SJJw,FR10S1534770,0.0678,0.815,0.375,0.923,1.0,0.119,-15.504,1.0,0.122,120.008,0.641
+5SlRBjTWAb1fggsFs04KcL,41051bc0-d07e-44f4-a27e-dc9c4f86aa0a,https://open.spotify.com/track/5SlRBjTWAb1fggsFs04KcL,DEU671400107,0.158,0.662,0.398,0.897,7.0,0.074,-13.543,0.0,0.0648,120.008,0.627
 5WRyFW04V9DITFhjxOKt8x,24a2a180-2a25-4dbf-929a-8461effa0a5e,https://open.spotify.com/track/5WRyFW04V9DITFhjxOKt8x,DELG71300525,0.0308,0.674,0.762,0.916,10.0,0.111,-11.095,0.0,0.0456,126.002,0.485
 5WgW9bG91h4zRUnBr97d6c,dad0736d-8f95-461e-981b-8160357ed08e,https://open.spotify.com/track/5WgW9bG91h4zRUnBr97d6c,DEEC31750049,0.00963,0.775,0.474,0.943,7.0,0.108,-15.341,1.0,0.0636,120.01,0.0376
 5XxFY11r0YA6Xoyh1O9WsR,34f640d6-3d8c-4ed2-86e0-570fe02238d7,https://open.spotify.com/track/5XxFY11r0YA6Xoyh1O9WsR,DEEC31400008,0.0122,0.556,0.598,0.905,1.0,0.269,-11.109,1.0,0.0311,117.989,0.142
@@ -293,6 +308,7 @@ spotify_id,id,href,isrc,acousticness,danceability,energy,instrumentalness,key,li
 63cAbJhAitcLm54lu5lOIp,821287a6-0eb8-47c0-ad0e-075d37518e74,https://open.spotify.com/track/63cAbJhAitcLm54lu5lOIp,QZBRF1863934,0.788,0.963,0.488,0.866,11.0,0.123,-10.323,0.0,0.205,120.004,0.189
 64EfSAF5nxhIfUw1GbPPCC,bc017b01-bffe-46bf-af9e-b640dc4d6195,https://open.spotify.com/track/64EfSAF5nxhIfUw1GbPPCC,GBBPW9900021,0.242,0.552,0.353,0.893,8.0,0.147,-11.821,1.0,0.0296,94.655,0.0381
 64TNpXsQO1uX6E1aY4OuWd,2eddefd3-e98a-4eec-b24d-4ac3c78e994a,https://open.spotify.com/track/64TNpXsQO1uX6E1aY4OuWd,DEBW20900054,0.257,0.646,0.523,0.92,9.0,0.0902,-12.051,0.0,0.042,121.004,0.193
+64hw1sK5eUvHQRt5Jne0nR,3f5f8938-b6d6-4bf4-a904-0a1d2d704722,https://open.spotify.com/track/64hw1sK5eUvHQRt5Jne0nR,UKACT2330861,0.264,0.88,0.4,0.831,8.0,0.108,-12.676,0.0,0.0619,123.996,0.637
 66aCsTzxMpkbuGz0VImtUU,13053cee-2229-4d3e-b23c-aff20b89f19d,https://open.spotify.com/track/66aCsTzxMpkbuGz0VImtUU,DEBW60500145,0.472,0.789,0.379,0.862,7.0,0.136,-14.882,1.0,0.0539,121.001,0.403
 67UOlZLz6tDEDuScefmWDd,f4a26d38-b2f9-44de-a8dc-4cabdb465406,https://open.spotify.com/track/67UOlZLz6tDEDuScefmWDd,DEU670100052,0.0645,0.506,0.563,0.593,1.0,0.149,-9.274,1.0,0.0535,119.993,0.0753
 69G0KhgpJxnyoMianEe35V,073b4c95-d40f-49cf-bafd-8e362f8a9dbc,https://open.spotify.com/track/69G0KhgpJxnyoMianEe35V,USLZJ0903926,0.667,0.806,0.485,0.906,6.0,0.102,-12.314,0.0,0.0774,123.007,0.16
@@ -350,6 +366,7 @@ spotify_id,id,href,isrc,acousticness,danceability,energy,instrumentalness,key,li
 7AAYmtwfGsBG8tCYldUFqa,7f79fce3-ff8a-4a00-a005-87bc13e851fa,https://open.spotify.com/track/7AAYmtwfGsBG8tCYldUFqa,NORDX2201070,0.0752,0.658,0.634,0.896,0.0,0.0907,-10.022,1.0,0.0456,129.998,0.452
 7AVLgpaYZMSwyOLXATjET8,fac69727-e766-447f-8bb3-0cf29829c9ee,https://open.spotify.com/track/7AVLgpaYZMSwyOLXATjET8,FRIDO2514020,0.0448,0.734,0.783,0.868,6.0,0.339,-7.176,0.0,0.0429,133.292,0.936
 7BzMNKmiysrPmoer6QuazL,0535f2f6-50c3-410d-94dc-d7429bb80a67,https://open.spotify.com/track/7BzMNKmiysrPmoer6QuazL,DEU672100440,0.021,0.743,0.625,0.843,6.0,0.673,-12.504,1.0,0.0468,93.01,0.175
+7G1RSGqXpfp9ZtAHF9lPXx,678398d0-36df-4a25-985f-b7eb5adc7cec,https://open.spotify.com/track/7G1RSGqXpfp9ZtAHF9lPXx,DEOE81310021,0.13,0.823,0.6,0.881,1.0,0.587,-10.606,1.0,0.0693,115.015,0.189
 7GEXaUD7Rhr2pKB5hkYj94,1cb0bf4e-16ae-44f7-983d-e6e44518add4,https://open.spotify.com/track/7GEXaUD7Rhr2pKB5hkYj94,GBCPZ1004121,0.000201,0.807,0.857,0.846,7.0,0.0658,-6.731,0.0,0.0623,127.012,0.0598
 7KG1tbxAcDMOgnaVJibY6w,8365e308-a67d-4cb0-a941-f85f7b5f8fe7,https://open.spotify.com/track/7KG1tbxAcDMOgnaVJibY6w,DEK601409046,0.14,0.901,0.592,0.633,0.0,0.108,-11.491,1.0,0.0467,119.991,0.675
 7LTjMJYH1qRkcZVwlSRukK,62469614-0689-498c-a552-84219702efad,https://open.spotify.com/track/7LTjMJYH1qRkcZVwlSRukK,DEAF71103905,0.0014,0.851,0.436,0.67,7.0,0.1,-13.006,1.0,0.125,120.003,0.503
