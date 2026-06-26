@@ -42,15 +42,21 @@ def _write_mapping(mapping: dict[str, str]) -> None:
             writer.writerow([amid, sid])
 
 
-def _search_spotify_id(sp, artist: str, name: str) -> str:
+def _search_spotify_track(sp, artist: str, name: str) -> tuple[str, str, str]:
+    """Return (spotify_id, spotify_artist, spotify_name) for the best match.
+
+    On a miss, returns ("-1", "", "").
+    """
     query = f"{artist} {name}".strip()
     if not query:
-        return "-1"
+        return "-1", "", ""
     results = sp.search(query)
     tracks = results.get("tracks", {}).get("items", [])
     if not tracks:
-        return "-1"
-    return tracks[0]["id"]
+        return "-1", "", ""
+    track = tracks[0]
+    spotify_artist = ", ".join(a["name"] for a in track.get("artists", []))
+    return track["id"], spotify_artist, track.get("name", "")
 
 
 def main() -> None:
@@ -87,14 +93,19 @@ def main() -> None:
     added = 0
     misses = 0
     for i, song in enumerate(missing, 1):
-        spotify_id = _search_spotify_id(sp, song.artist, song.name)
+        spotify_id, spotify_artist, spotify_name = _search_spotify_track(
+            sp, song.artist, song.name
+        )
         mapping[song.id] = spotify_id
         if spotify_id == "-1":
             misses += 1
             print(f"  [{i}/{len(missing)}] miss: {song.artist} - {song.name}")
         else:
             added += 1
-            print(f"  [{i}/{len(missing)}] {song.artist} - {song.name} -> {spotify_id}")
+            print(
+                f"  [{i}/{len(missing)}] {song.artist} - {song.name} -> "
+                f"{spotify_artist} - {spotify_name} ({spotify_id})"
+            )
         _write_mapping(mapping)
 
     print(f"Added {added} mapping(s), recorded {misses} miss(es).")
