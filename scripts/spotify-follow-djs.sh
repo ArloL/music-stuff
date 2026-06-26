@@ -23,6 +23,7 @@ JaydaG="id:37i9dQZF1DX0F8FtqyAjxC"
 KellyLeeOwens="id:37i9dQZF1DWYMVjvqDxZQX"
 LaurentGarnier="id:37i9dQZF1DX68l5gg4hq38"
 Logic1000="id:37i9dQZF1DWWbEGrb2ydWx"
+Logic1000SomeFavs="id:1teJhZlTsS1N4KZaIizIaW"
 MaceoPlex="id:37i9dQZF1DWUomyMFpoR0R"
 MarcelDettmann="id:37i9dQZF1DX2MrqV1P93C9"
 MayaJaneColes="id:37i9dQZF1DWZkxJwAfCZA3"
@@ -54,6 +55,7 @@ uv run spotify-browser-add-to-playlist --headless \
     "${KellyLeeOwens}" \
     "${LaurentGarnier}" \
     "${Logic1000}" \
+    "${Logic1000SomeFavs}" \
     "${MaceoPlex}" \
     "${MarcelDettmann}" \
     "${MayaJaneColes}" \
