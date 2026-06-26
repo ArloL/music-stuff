@@ -43,6 +43,9 @@ class AppState:
     bpm_range: float
     genres: set[str] | None
     min_rating: int
+    # Session-only hidden songs (h key). Shared by reference across states so a
+    # hide survives selecting, undoing, and reseeding.
+    hidden_ids: set[str] = field(default_factory=set)
     # computed each time seed changes:
     grouped: list[tuple[str, list[AppleMusicSong]]] = field(default_factory=list)
     flat: list[AppleMusicSong] = field(default_factory=list)
@@ -53,7 +56,12 @@ def compute_candidates(
     state: AppState,
 ) -> tuple[list[tuple[str, list[AppleMusicSong]]], list[AppleMusicSong]]:
     """Return (grouped, flat) candidate lists for the current seed."""
-    exclude = state.played_ids | {s.id for s in state.history} | {state.seed.id}
+    exclude = (
+        state.played_ids
+        | {s.id for s in state.history}
+        | {state.seed.id}
+        | state.hidden_ids
+    )
     grouped: list[tuple[str, list[AppleMusicSong]]] = []
     for ttype in DISPLAY_ORDER:
         keys = ALLOWED_KEY_TRANSITIONS[ttype].get(state.seed.key, set())
@@ -97,6 +105,7 @@ def select_candidate(state: AppState, song: AppleMusicSong) -> AppState:
         bpm_range=state.bpm_range,
         genres=state.genres,
         min_rating=state.min_rating,
+        hidden_ids=state.hidden_ids,
     )
     return recompute(new_state)
 
@@ -118,6 +127,7 @@ def undo(state: AppState, original_played_ids: set[str]) -> AppState:
         bpm_range=state.bpm_range,
         genres=state.genres,
         min_rating=state.min_rating,
+        hidden_ids=state.hidden_ids,
     )
     return recompute(new_state)
 
@@ -161,6 +171,7 @@ def build_initial_state(
     bpm_range: float,
     genres: set[str] | None,
     min_rating: int,
+    hidden_ids: set[str] | None = None,
 ) -> AppState:
     state = AppState(
         candidate_pool=pool,
@@ -170,6 +181,7 @@ def build_initial_state(
         bpm_range=bpm_range,
         genres=genres,
         min_rating=min_rating,
+        hidden_ids=hidden_ids if hidden_ids is not None else set(),
     )
     return recompute(state)
 
@@ -219,6 +231,10 @@ def main() -> None:
 
     from music_stuff.tui_playlist_builder import run_tui
 
+    # One session-only hidden set, shared by reference with every AppState so a
+    # hide (h key) survives selecting, undoing, and reseeding.
+    hidden_ids: set[str] = set()
+
     if args.seed:
         seed = find_song_by_id(args.seed)
         if seed is None:
@@ -231,6 +247,7 @@ def main() -> None:
             bpm_range=args.bpm_range,
             genres=genres,
             min_rating=args.min_rating,
+            hidden_ids=hidden_ids,
         )
         run_tui(
             initial_state=state,
@@ -241,6 +258,7 @@ def main() -> None:
             genres=genres,
             min_rating=args.min_rating,
             djay_index=djay_index,
+            hidden_ids=hidden_ids,
         )
     else:
         run_tui(
@@ -252,4 +270,5 @@ def main() -> None:
             genres=genres,
             min_rating=args.min_rating,
             djay_index=djay_index,
+            hidden_ids=hidden_ids,
         )

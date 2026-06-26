@@ -8,6 +8,7 @@ from unittest.mock import patch
 from music_stuff.playlist_builder import (
     AppState,
     _song_dict,
+    build_initial_state,
     compute_candidates,
     save_apple_music,
     select_candidate,
@@ -38,7 +39,13 @@ class _Song:
 
 
 def _make_state(
-    seed, pool, played_ids=None, bpm_range=12.0, genres=None, min_rating=80
+    seed,
+    pool,
+    played_ids=None,
+    bpm_range=12.0,
+    genres=None,
+    min_rating=80,
+    hidden_ids=None,
 ):
     s = AppState(
         candidate_pool=pool,
@@ -48,6 +55,7 @@ def _make_state(
         bpm_range=bpm_range,
         genres=genres,
         min_rating=min_rating,
+        hidden_ids=hidden_ids if hidden_ids is not None else set(),
     )
     from music_stuff.playlist_builder import recompute
 
@@ -256,3 +264,71 @@ def test_save_apple_music_passes_name_and_history_ids_in_order():
         result = save_apple_music(state3, "My Set")
     mock_create.assert_called_once_with("My Set", ["seed", "p1", "p2"])
     assert result["trackCount"] == 3
+
+
+# ---------------------------------------------------------------------------
+# hidden_ids (h key — hide for the session)
+# ---------------------------------------------------------------------------
+
+
+def test_compute_candidates_excludes_hidden_ids():
+    seed = _Song("seed", 128.0, "6d")
+    hidden = _Song("h1", 128.0, "6d")  # would be "matching"
+    visible = _Song("v1", 128.0, "6d")
+    state = _make_state(seed, [hidden, visible], hidden_ids={"h1"})
+    _, flat = compute_candidates(state)
+    assert hidden not in flat
+    assert visible in flat
+
+
+def test_select_candidate_preserves_hidden_ids():
+    seed = _Song("seed", 128.0, "6d")
+    pick = _Song("p1", 128.0, "7d")  # boost; becomes new seed
+    hidden = _Song("h1", 128.0, "7d")  # matching against new seed p1
+    state = _make_state(seed, [pick, hidden], hidden_ids={"h1"})
+    new_state = select_candidate(state, pick)
+    assert "h1" in new_state.hidden_ids
+    assert hidden not in new_state.flat
+
+
+def test_undo_preserves_hidden_ids():
+    seed = _Song("seed", 128.0, "6d")
+    pick = _Song("p1", 128.0, "7d")
+    hidden = _Song("h1", 128.0, "6d")  # matching against seed
+    state = _make_state(seed, [pick, hidden], hidden_ids={"h1"})
+    state2 = select_candidate(state, pick)
+    undone = undo(state2, {seed.id})
+    assert "h1" in undone.hidden_ids
+    assert hidden not in undone.flat
+
+
+def test_hidden_ids_shared_by_reference_across_states():
+    # A hide added to the session set after building a state must affect that
+    # state's recomputed candidates (the TUI relies on this shared-object hide).
+    seed = _Song("seed", 128.0, "6d")
+    later_hidden = _Song("h1", 128.0, "6d")
+    session_hidden: set[str] = set()
+    state = _make_state(seed, [later_hidden], hidden_ids=session_hidden)
+    assert later_hidden in state.flat
+    session_hidden.add("h1")
+    from music_stuff.playlist_builder import recompute
+
+    recompute(state)
+    assert later_hidden not in state.flat
+
+
+def test_build_initial_state_carries_hidden_ids():
+    seed = _Song("seed", 128.0, "6d")
+    hidden = _Song("h1", 128.0, "6d")
+    visible = _Song("v1", 128.0, "6d")
+    state = build_initial_state(
+        seed=seed,
+        pool=[hidden, visible],
+        exclude_ids=set(),
+        bpm_range=12.0,
+        genres=None,
+        min_rating=80,
+        hidden_ids={"h1"},
+    )
+    assert hidden not in state.flat
+    assert visible in state.flat
