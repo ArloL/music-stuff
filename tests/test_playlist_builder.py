@@ -10,6 +10,7 @@ from music_stuff.playlist_builder import (
     _song_dict,
     build_initial_state,
     compute_candidates,
+    hide_candidate,
     save_apple_music,
     select_candidate,
     undo,
@@ -315,6 +316,49 @@ def test_hidden_ids_shared_by_reference_across_states():
 
     recompute(state)
     assert later_hidden not in state.flat
+
+
+def test_hide_candidate_removes_song_from_flat():
+    seed = _Song("seed", 128.0, "6d")
+    a = _Song("a", 128.0, "6d")
+    b = _Song("b", 128.0, "6d")
+    state = _make_state(seed, [a, b])
+    target = state.flat[0]
+    hide_candidate(state, target)
+    assert "a" in state.hidden_ids or target.id in state.hidden_ids
+    assert target not in state.flat
+
+
+def test_hide_candidate_keeps_cursor_in_place():
+    # Hiding the focused candidate should leave the cursor at the same index so
+    # the song that followed slides under it, instead of jumping back to 0.
+    seed = _Song("seed", 128.0, "6d")
+    pool = [_Song(f"c{i}", 128.0, "6d") for i in range(5)]
+    state = _make_state(seed, pool)
+    state.cursor = 3
+    following = state.flat[4]
+    target = state.flat[3]
+    hide_candidate(state, target)
+    assert state.cursor == 3
+    assert state.flat[3] is following
+
+
+def test_hide_candidate_clamps_cursor_at_end():
+    seed = _Song("seed", 128.0, "6d")
+    pool = [_Song(f"c{i}", 128.0, "6d") for i in range(3)]
+    state = _make_state(seed, pool)
+    state.cursor = len(state.flat) - 1
+    hide_candidate(state, state.flat[state.cursor])
+    assert state.cursor == len(state.flat) - 1
+
+
+def test_hide_candidate_empty_flat_resets_cursor():
+    seed = _Song("seed", 128.0, "6d")
+    only = _Song("a", 128.0, "6d")
+    state = _make_state(seed, [only])
+    hide_candidate(state, state.flat[0])
+    assert state.flat == []
+    assert state.cursor == 0
 
 
 def test_build_initial_state_carries_hidden_ids():

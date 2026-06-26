@@ -93,6 +93,22 @@ def recompute(state: AppState) -> AppState:
     return state
 
 
+def hide_candidate(state: AppState, song: AppleMusicSong) -> AppState:
+    """Hide *song* for the session and recompute, keeping the cursor in place.
+
+    The hidden song drops out of the candidate list. ``recompute`` normally
+    resets the cursor to 0; here we restore it (clamped) so the selection stays
+    where it was — the candidate that followed the hidden one slides under the
+    cursor instead of the list jumping back to the top.
+    """
+    prev_cursor = state.cursor
+    state.hidden_ids.add(song.id)
+    recompute(state)
+    if state.flat:
+        state.cursor = min(prev_cursor, len(state.flat) - 1)
+    return state
+
+
 def select_candidate(state: AppState, song: AppleMusicSong) -> AppState:
     """Return a new AppState after selecting *song* as the next track."""
     new_history = state.history + [song]

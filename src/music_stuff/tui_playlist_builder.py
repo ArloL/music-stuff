@@ -37,6 +37,7 @@ from music_stuff.playlist_builder import (
     AppState,
     _song_dict,
     build_initial_state,
+    hide_candidate,
     playlist_duration,
     recompute,
     save_apple_music,
@@ -843,18 +844,23 @@ def run_tui(
         song = confirm_target_ref[0]
         _exit_confirm_mode()
         if song is not None:
-            hidden_ids_ref[0].add(song.id)
             state = state_ref[0]
             if state is not None:
                 # state.hidden_ids is the same object as hidden_ids_ref[0], so
-                # the song now drops out of the recomputed candidates.
-                recompute(state)
-                cand_scroll_ref[0] = 0
+                # the song drops out of the recomputed candidates. Keep the
+                # cursor in place (recompute would reset it to 0) so the
+                # selection stays near where it was; _render_slice re-derives
+                # the scroll to keep the cursor visible.
+                hide_candidate(state, song)
             else:
                 # Seed-selection mode: the visible list shrank by one.
+                hidden_ids_ref[0].add(song.id)
                 visible = _visible_seed_pool()
                 seed_cursor_ref[0] = min(seed_cursor_ref[0], max(len(visible) - 1, 0))
             status_override[0] = f"Hidden {song.artist} – {song.name}"
+            # The focused song changed (the hidden one is gone), so move the
+            # preview to whatever now sits under the cursor.
+            _maybe_switch_preview()
         app.invalidate()
 
     @confirm_kb.add("n")
