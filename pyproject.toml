@@ -9,7 +9,7 @@ description = "A dashboard to visualize song relations"
 readme = "README.md"
 requires-python = "==3.14.6"
 dependencies = [
-    "dash==4.2.0",
+    "dash==4.3.0",
     "matplotlib==3.11.0",
     "networkx==3.6.1",
     "numpy==2.4.6",
