@@ -23,7 +23,7 @@ dependencies = [
     "prompt-toolkit==3.0.52",
     "miniaudio==1.71",
     "djay-tsaf-parser",
-    "playwright==1.60.0",
+    "playwright==1.61.0",
     "greenlet==3.5.3",
     "pyee==13.0.1",
 ]
