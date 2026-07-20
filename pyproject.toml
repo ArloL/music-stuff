@@ -12,7 +12,7 @@ dependencies = [
     "dash==4.4.0",
     "matplotlib==3.11.0",
     "networkx==3.6.1",
-    "numpy==2.5.0",
+    "numpy==2.5.1",
     "pandas==3.0.3",
     "plotly==6.8.0",
     "pulp==3.3.2",
