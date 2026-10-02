@@ -24,7 +24,7 @@ dependencies = [
     "miniaudio==1.71",
     "djay-tsaf-parser",
     "playwright==1.63.0",
-    "greenlet==3.5.5",
+    "greenlet==3.5.6",
     "pyee==13.0.1",
 ]
 
