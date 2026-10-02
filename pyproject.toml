@@ -14,7 +14,7 @@ dependencies = [
     "networkx==3.7",
     "numpy==2.5.3",
     "pandas==3.0.6",
-    "plotly==7.0.0",
+    "plotly==7.1.0",
     "pulp==3.3.2",
     "pyvis==0.3.2",
     "scikit-learn==1.9.1",
