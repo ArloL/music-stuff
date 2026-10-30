@@ -42,6 +42,7 @@ from music_stuff.playlist_builder import (
     recompute,
     save_apple_music,
     select_candidate,
+    sound_distance,
     undo,
 )
 
@@ -112,6 +113,7 @@ def run_tui(
     min_rating: int,
     djay_index: dict | None = None,
     hidden_ids: set[str] | None = None,
+    embeddings: dict | None = None,
 ) -> None:
     state_ref: list[AppState | None] = [initial_state]
     original_played_ids_ref: list[set[str]] = [original_played_ids]
@@ -377,6 +379,8 @@ def run_tui(
                 score = round(
                     calculate_transition_score(_song_dict(state.seed), _song_dict(song))
                 )
+                dist = sound_distance(state, song)
+                alike = "  -" if dist is None else f"{round(100 * (1 - dist)):>3}"
                 if flat_idx == state.cursor:
                     style = (
                         "class:cursor"
@@ -390,7 +394,7 @@ def run_tui(
                 lines.append(
                     (
                         style,
-                        f"{prefix}{artist}  {name}  {key} {bpm}  {delta}  {score:>3}",
+                        f"{prefix}{artist}  {name}  {key} {bpm}  {delta}  {score:>3}  {alike}",
                     )
                 )
                 flat_idx += 1
@@ -674,6 +678,7 @@ def run_tui(
                 genres=genres,
                 min_rating=min_rating,
                 hidden_ids=hidden_ids_ref[0],
+                embeddings=embeddings,
             )
             state_ref[0] = new_state
             original_played_ids_ref[0] = exclude_ids | {seed.id}

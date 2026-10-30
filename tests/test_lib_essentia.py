@@ -1,11 +1,15 @@
 from pathlib import Path
 from unittest.mock import patch
 
+import numpy as np
+
 from music_stuff.lib.lib_essentia import (
     _coerce,
+    _load_embeddings_cache,
     _load_essentia_cache,
     _location_to_path,
     _normalise_bpm,
+    _write_embeddings_cache,
     _write_essentia_cache,
     consensus_bpm,
 )
@@ -129,3 +133,24 @@ def test_load_cache_returns_empty_for_missing_file(tmp_path):
         "music_stuff.lib.lib_essentia.ESSENTIA_CACHE_PATH", tmp_path / "nonexistent.csv"
     ):
         assert _load_essentia_cache() == {}
+
+
+# --- embeddings cache ---
+
+
+def test_embeddings_cache_round_trip(tmp_path):
+    cache = {"BBB": np.array([0.6, 0.8]), "AAA": np.array([1.0, 0.0])}
+    with patch(
+        "music_stuff.lib.lib_essentia.EMBEDDINGS_CACHE_PATH", tmp_path / "e.npz"
+    ):
+        _write_embeddings_cache(cache)
+        loaded = _load_embeddings_cache()
+    assert loaded.keys() == cache.keys()
+    np.testing.assert_allclose(loaded["BBB"], cache["BBB"], atol=1e-3)
+
+
+def test_load_embeddings_cache_returns_empty_for_missing_file(tmp_path):
+    with patch(
+        "music_stuff.lib.lib_essentia.EMBEDDINGS_CACHE_PATH", tmp_path / "missing.npz"
+    ):
+        assert _load_embeddings_cache() == {}
