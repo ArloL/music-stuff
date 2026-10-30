@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from unittest.mock import patch
 
+import numpy as np
+
 from music_stuff.playlist_builder import (
     AppState,
     _song_dict,
@@ -47,6 +49,7 @@ def _make_state(
     genres=None,
     min_rating=80,
     hidden_ids=None,
+    embeddings=None,
 ):
     s = AppState(
         candidate_pool=pool,
@@ -57,6 +60,7 @@ def _make_state(
         genres=genres,
         min_rating=min_rating,
         hidden_ids=hidden_ids if hidden_ids is not None else set(),
+        embeddings=embeddings or {},
     )
     from music_stuff.playlist_builder import recompute
 
@@ -133,6 +137,59 @@ def test_compute_candidates_sorted_by_score_within_group():
     group_dict = {label: songs for label, songs in grouped}
     songs = group_dict["matching"]
     assert songs.index(best) < songs.index(worse)
+
+
+def _unit(*xs):
+    v = np.array(xs, dtype=np.float32)
+    return v / np.linalg.norm(v)
+
+
+def _matching(state):
+    return dict(compute_candidates(state)[0])["matching"]
+
+
+def test_compute_candidates_sums_score_and_sound_ranks():
+    seed = _Song("seed", 128.0, "6d")
+    # (score rank, sound rank): exact (0, 2), near (1, 0), far (2, 1)
+    exact = _Song("exact", 128.0, "6d")
+    near = _Song("near", 129.0, "6d")
+    far = _Song("far", 131.0, "6d")
+    emb = {
+        "seed": _unit(1, 0),
+        "exact": _unit(0, 1),
+        "near": _unit(1, 0.1),
+        "far": _unit(1, 1),
+    }
+    state = _make_state(seed, [far, exact, near], embeddings=emb)
+    assert _matching(state) == [near, exact, far]
+
+
+def test_compute_candidates_unembedded_after_embedded():
+    seed = _Song("seed", 128.0, "6d")
+    embedded = _Song("embedded", 120.0, "6d")
+    bare = _Song("bare", 128.0, "6d")
+    emb = {"seed": _unit(1, 0), "embedded": _unit(0, 1)}
+    state = _make_state(seed, [bare, embedded], embeddings=emb)
+    assert _matching(state) == [embedded, bare]
+
+
+def test_compute_candidates_falls_back_to_score_without_seed_embedding():
+    seed = _Song("seed", 128.0, "6d")
+    best = _Song("best", 128.0, "6d")
+    worse = _Song("worse", 120.0, "6d")
+    emb = {"best": _unit(0, 1), "worse": _unit(1, 0)}
+    state = _make_state(seed, [worse, best], embeddings=emb)
+    assert _matching(state) == [best, worse]
+
+
+def test_embeddings_carried_through_select_and_undo():
+    seed = _Song("seed", 128.0, "6d")
+    pick = _Song("p1", 128.0, "7d")
+    emb = {"seed": _unit(1, 0)}
+    state = _make_state(seed, [pick], embeddings=emb)
+    picked = select_candidate(state, pick)
+    assert picked.embeddings is emb
+    assert undo(picked, {seed.id}).embeddings is emb
 
 
 def test_compute_candidates_empty_pool():

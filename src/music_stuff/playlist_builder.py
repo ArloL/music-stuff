@@ -34,6 +34,35 @@ def _song_dict(s: AppleMusicSong) -> dict:
     return {"key": s.key, "bpm": s.bpm}
 
 
+def sound_distance(state: AppState, song: AppleMusicSong) -> float | None:
+    """Cosine distance between the seed's and the song's sound embeddings."""
+    seed, cand = state.embeddings.get(state.seed.id), state.embeddings.get(song.id)
+    if seed is None or cand is None:
+        return None
+    return 1.0 - float(seed @ cand)
+
+
+def _rank(state: AppState, songs: list[AppleMusicSong]) -> list[AppleMusicSong]:
+    """Order by transition-score rank + sound-distance rank; unembedded songs last.
+
+    Summing ranks beat either ordering alone on transitions from past sets.
+    """
+    by_score = sorted(
+        songs,
+        key=lambda c: calculate_transition_score(_song_dict(state.seed), _song_dict(c)),
+        reverse=True,
+    )
+    dist = {c.id: d for c in songs if (d := sound_distance(state, c)) is not None}
+    embedded = [c for c in by_score if c.id in dist]
+    score_rank = {c.id: r for r, c in enumerate(embedded)}
+    sound_rank = {
+        c.id: r for r, c in enumerate(sorted(embedded, key=lambda c: dist[c.id]))
+    }
+    # Stable sort: ties keep transition-score order.
+    embedded.sort(key=lambda c: score_rank[c.id] + sound_rank[c.id])
+    return embedded + [c for c in by_score if c.id not in dist]
+
+
 @dataclass
 class AppState:
     candidate_pool: list[AppleMusicSong]
@@ -46,6 +75,8 @@ class AppState:
     # Session-only hidden songs (h key). Shared by reference across states so a
     # hide survives selecting, undoing, and reseeding.
     hidden_ids: set[str] = field(default_factory=set)
+    # Unit-length sound embeddings by song id; shared by reference like hidden_ids.
+    embeddings: dict = field(default_factory=dict)
     # computed each time seed changes:
     grouped: list[tuple[str, list[AppleMusicSong]]] = field(default_factory=list)
     flat: list[AppleMusicSong] = field(default_factory=list)
@@ -74,13 +105,7 @@ def compute_candidates(
             state.genres,
             state.min_rating,
         )
-        matches.sort(
-            key=lambda c: calculate_transition_score(
-                _song_dict(state.seed), _song_dict(c)
-            ),
-            reverse=True,
-        )
-        grouped.append((ttype, matches))
+        grouped.append((ttype, _rank(state, matches)))
     flat = [s for _, songs in grouped for s in songs]
     return grouped, flat
 
@@ -122,6 +147,7 @@ def select_candidate(state: AppState, song: AppleMusicSong) -> AppState:
         genres=state.genres,
         min_rating=state.min_rating,
         hidden_ids=state.hidden_ids,
+        embeddings=state.embeddings,
     )
     return recompute(new_state)
 
@@ -144,6 +170,7 @@ def undo(state: AppState, original_played_ids: set[str]) -> AppState:
         genres=state.genres,
         min_rating=state.min_rating,
         hidden_ids=state.hidden_ids,
+        embeddings=state.embeddings,
     )
     return recompute(new_state)
 
@@ -188,6 +215,7 @@ def build_initial_state(
     genres: set[str] | None,
     min_rating: int,
     hidden_ids: set[str] | None = None,
+    embeddings: dict | None = None,
 ) -> AppState:
     state = AppState(
         candidate_pool=pool,
@@ -198,6 +226,7 @@ def build_initial_state(
         genres=genres,
         min_rating=min_rating,
         hidden_ids=hidden_ids if hidden_ids is not None else set(),
+        embeddings=embeddings if embeddings is not None else {},
     )
     return recompute(state)
 
@@ -243,6 +272,15 @@ def main() -> None:
     # Pre-filter: drop songs with empty key
     pool = [s for s in pool if s.key]
 
+    print("Loading sound embeddings…")
+    embeddings: dict = {}
+    try:
+        from music_stuff.lib.lib_essentia import analyse_embeddings
+
+        embeddings = analyse_embeddings(pool)
+    except Exception as e:
+        print(f"Warning: no sound embeddings ({e}); ranking by transition score")
+
     genres = set(args.genres) if args.genres else None
 
     from music_stuff.tui_playlist_builder import run_tui
@@ -264,6 +302,7 @@ def main() -> None:
             genres=genres,
             min_rating=args.min_rating,
             hidden_ids=hidden_ids,
+            embeddings=embeddings,
         )
         run_tui(
             initial_state=state,
@@ -275,6 +314,7 @@ def main() -> None:
             min_rating=args.min_rating,
             djay_index=djay_index,
             hidden_ids=hidden_ids,
+            embeddings=embeddings,
         )
     else:
         run_tui(
@@ -287,4 +327,5 @@ def main() -> None:
             min_rating=args.min_rating,
             djay_index=djay_index,
             hidden_ids=hidden_ids,
+            embeddings=embeddings,
         )

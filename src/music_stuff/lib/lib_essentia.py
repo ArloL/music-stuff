@@ -3,13 +3,26 @@ import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from urllib.parse import urlparse
-from urllib.request import url2pathname
+from urllib.request import url2pathname, urlretrieve
 
+import essentia
 import essentia.standard as es
+import numpy as np
 
-ESSENTIA_CACHE_PATH = (
-    Path(__file__).parent.parent.parent.parent / "data" / "lib_essentia_cache.csv"
+_DATA = Path(__file__).parent.parent.parent.parent / "data"
+ESSENTIA_CACHE_PATH = _DATA / "lib_essentia_cache.csv"
+EMBEDDINGS_CACHE_PATH = _DATA / "lib_essentia_embeddings.npz"
+
+# Licence CC BY-NC-SA 4.0: https://essentia.upf.edu/models.html
+# Discogs style backbone; it ranked set transitions better than the track/multi
+# similarity heads and MusiCNN.
+EMBEDDING_MODEL = "discogs-effnet-bs64-1.pb"
+EMBEDDING_MODEL_OUTPUT = "PartitionedCall:1"
+EMBEDDING_MODEL_URL = (
+    "https://essentia.upf.edu/models/feature-extractors/discogs-effnet/"
+    + EMBEDDING_MODEL
 )
+EMBEDDING_MODEL_PATH = _DATA / "bin" / "essentia-models" / EMBEDDING_MODEL
 
 ESSENTIA_PROFILES = ["edma", "edmm", "bgate", "braw", "shaath", "temperley", "noland"]
 
@@ -212,3 +225,69 @@ def consensus_bpm(entry: dict) -> float:
     if p_in and not r_in:
         return round(p, 2)
     return round(rn, 2)  # both needed folding — prefer rhythm after normalisation
+
+
+def _load_embeddings_cache() -> dict[str, np.ndarray]:
+    if not EMBEDDINGS_CACHE_PATH.exists():
+        return {}
+    with np.load(EMBEDDINGS_CACHE_PATH) as z:
+        return {str(i): v.astype(np.float32) for i, v in zip(z["ids"], z["vectors"])}
+
+
+def _write_embeddings_cache(cache: dict[str, np.ndarray]) -> None:
+    ids = sorted(cache)
+    np.savez_compressed(
+        EMBEDDINGS_CACHE_PATH,
+        ids=np.array(ids),
+        vectors=np.stack([cache[i] for i in ids]).astype(np.float16),
+    )
+
+
+_embedding_model = None
+
+
+def _init_embedding_worker(model_path: str) -> None:
+    global _embedding_model
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+    essentia.log.infoActive = essentia.log.warningActive = False
+    _embedding_model = es.TensorflowPredictEffnetDiscogs(
+        graphFilename=model_path, output=EMBEDDING_MODEL_OUTPUT
+    )
+
+
+def _detect_embedding(location: str) -> np.ndarray:
+    """Unit-length mean of the per-patch embeddings."""
+    path = _location_to_path(location)
+    if path is None or not path.exists():
+        raise FileNotFoundError(f"Audio file not found: {location!r}")
+    audio = es.MonoLoader(filename=str(path), sampleRate=16000, resampleQuality=4)()
+    v = np.asarray(_embedding_model(audio)).mean(axis=0)
+    return (v / np.linalg.norm(v)).astype(np.float32)
+
+
+def analyse_embeddings(songs: list) -> dict[str, np.ndarray]:
+    """Load the embeddings cache, embed missing songs, save and return."""
+    cache = _load_embeddings_cache()
+    missing = [s for s in songs if s.id not in cache and s.location]
+    if not missing:
+        return cache
+    if not EMBEDDING_MODEL_PATH.exists():
+        print(f"  Downloading {EMBEDDING_MODEL}")
+        EMBEDDING_MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+        urlretrieve(EMBEDDING_MODEL_URL, EMBEDDING_MODEL_PATH)
+    with ProcessPoolExecutor(
+        max_workers=os.cpu_count(),
+        initializer=_init_embedding_worker,
+        initargs=(str(EMBEDDING_MODEL_PATH),),
+    ) as executor:
+        futures = {executor.submit(_detect_embedding, s.location): s for s in missing}
+        for done, future in enumerate(as_completed(futures), 1):
+            song = futures[future]
+            try:
+                cache[song.id] = future.result()
+            except Exception as e:
+                print(f"\n  Skipping {song.artist} – {song.name}: {e}")
+            print(f"  Embedding [{done}/{len(futures)}]", end="\r")
+        print()
+    _write_embeddings_cache(cache)
+    return cache

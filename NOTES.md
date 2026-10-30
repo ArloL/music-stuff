@@ -138,3 +138,18 @@ The XOR of the two values is exactly 0x8000000000000000 (2^63). The operation is
 * 22 == 11m
 * 23 == 12d
 * 24 == 12m
+
+## Sound embeddings (playlist builder ranking)
+
+`lib_essentia.analyse_embeddings` caches one 1280-d Discogs-EffNet vector per song in `data/lib_essentia_embeddings.npz` (model downloaded to `data/bin/essentia-models/`, CC BY-NC-SA 4.0). It needs `essentia-tensorflow`, a drop-in replacement for `essentia`; the two share files, so a sync that swaps one for the other breaks the import until `uv sync --reinstall-package essentia-tensorflow`.
+
+Candidates within a transition group are ordered by transition-score rank + sound-distance rank. Evaluated (2026-10-30) on consecutive tracks in `songs-critical-mass-20*.csv`, measuring where the track actually played next ranks among its group (±6 BPM):
+
+| ordering | mean percentile rank vs transition score alone |
+|---|---|
+| rank sum, style backbone (`discogs-effnet-bs64-1`, `PartitionedCall:1`) | −0.036 ± 0.019 (−0.062 on pre-TUI sets) |
+| rank sum, `discogs_multi_embeddings` head | −0.023 |
+| distance only, any model | worse |
+| 0.7·d(current) + 0.3·d(first track) (AudioMuse-AI radius walk) | worse than distance only |
+
+MusiCNN (AudioMuse-AI's model) ranked last of the four models tried.

@@ -223,7 +223,7 @@ version = "0.1.0"
 source = { git = "https://github.com/ArloL/tsaf-parser.git#ed365e55c8b298e99c5d29104aa5584408909b33" }
 
 [[package]]
-name = "essentia"
+name = "essentia-tensorflow"
 version = "2.1b6.dev1438"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
@@ -232,9 +232,9 @@ dependencies = [
     { name = "six" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5c/b3/26c54a8fd03b0378574767e4e9fda3ad41f68dba95649e346e9895d236bd/essentia-2.1b6.dev1438-cp314-cp314-macosx_15_0_arm64.whl", hash = "sha256:3a4a51f7b59d76b9beb9a1aacdaa9b9c0de89f14b02ab45050f86230241044c5", size = 20494034, upload-time = "2026-05-19T16:25:49.379Z" },
-    { url = "https://files.pythonhosted.org/packages/af/eb/e823082c6e9a048597c4dfc4aecc8dde4becf99050c78cdbe117e500ec33/essentia-2.1b6.dev1438-cp314-cp314-macosx_15_0_x86_64.whl", hash = "sha256:b387e374008ab3e8f72fbc93d0c91c7fde97da71d26598f19a84750ff870582b", size = 22552441, upload-time = "2026-05-19T16:25:53.489Z" },
-    { url = "https://files.pythonhosted.org/packages/d9/dc/feafca6d0989e40a324b5e977054ec1eb7a7d93260e023b4e5c5071202c7/essentia-2.1b6.dev1438-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:1ee6107fe63fb3b50f8aa68466951f6ca1e162a700d8deffd46ab0506dab9acb", size = 14104978, upload-time = "2026-05-19T16:25:56.314Z" },
+    { url = "https://files.pythonhosted.org/packages/5b/27/23fdcd5408ea65af81460cf6811c8f60fd2170d0598687d38608fe226c59/essentia_tensorflow-2.1b6.dev1438-cp314-cp314-macosx_15_0_arm64.whl", hash = "sha256:c50c41f3d4cbc6e981dbdd3e32465dcf4a765b38d835ceb26c0206f12108d192", size = 98786744, upload-time = "2026-05-19T16:26:01.685Z" },
+    { url = "https://files.pythonhosted.org/packages/63/56/410d1d5170a0ca064381fdf2aaef280186075ba1389a380a63ecdd5f8bc8/essentia_tensorflow-2.1b6.dev1438-cp314-cp314-macosx_15_0_x86_64.whl", hash = "sha256:5b94689d9ef5bf69af826b06f2f70e33e950d74e68d0d8a069d7173fbd1560e2", size = 122087735, upload-time = "2026-05-19T16:26:09.625Z" },
+    { url = "https://files.pythonhosted.org/packages/e1/64/a105f342b01776aafde9f17c6d9011c4f27c6d1b3c9abe4820e2339d7b0f/essentia_tensorflow-2.1b6.dev1438-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:429959a1b0ef1af3dc40d56aac8ad5d8999af43c8159a10662d64baab602831f", size = 291874340, upload-time = "2026-05-19T16:26:23.128Z" },
 ]
 
 [[package]]
@@ -571,7 +571,7 @@ source = { editable = "." }
 dependencies = [
     { name = "dash" },
     { name = "djay-tsaf-parser" },
-    { name = "essentia" },
+    { name = "essentia-tensorflow" },
     { name = "greenlet" },
     { name = "matplotlib" },
     { name = "miniaudio" },
@@ -598,7 +598,7 @@ dev = [
 requires-dist = [
     { name = "dash", specifier = "==4.4.1" },
     { name = "djay-tsaf-parser", git = "https://github.com/ArloL/tsaf-parser.git" },
-    { name = "essentia", specifier = "==2.1b6.dev1438" },
+    { name = "essentia-tensorflow", specifier = "==2.1b6.dev1438" },
     { name = "greenlet", specifier = "==3.5.6" },
     { name = "matplotlib", specifier = "==3.11.2" },
     { name = "miniaudio", specifier = "==1.71" },
@@ -609,7 +609,7 @@ requires-dist = [
     { name = "plotly", specifier = "==7.1.0" },
     { name = "prompt-toolkit", specifier = "==3.0.53" },
     { name = "pulp", specifier = "==4.0.1" },
-    { name = "pyee", specifier = "==13.0.1" },
+    { name = "pyee", specifier = "==14.0.0" },
     { name = "pyvis", specifier = "==0.3.2" },
     { name = "scikit-learn", specifier = "==1.9.1" },
     { name = "spotipy", specifier = "==2.26.0" },
@@ -950,14 +950,14 @@ wheels = [
 
 [[package]]
 name = "pyee"
-version = "13.0.1"
+version = "14.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8b/04/e7c1fe4dc78a6fdbfd6c337b1c3732ff543b8a397683ab38378447baa331/pyee-13.0.1.tar.gz", hash = "sha256:0b931f7c14535667ed4c7e0d531716368715e860b988770fc7eb8578d1f67fc8", size = 31655, upload-time = "2026-02-14T21:12:28.044Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1d/f1/fdedc2c75c3e31a330659c85e5793bb18b3397981fbf0844c6dee5b18926/pyee-14.0.0.tar.gz", hash = "sha256:76dd0f4314ecd27f02dc73589dea7fd3853f9b6176d8ef9b122860657e3602de", size = 98760, upload-time = "2026-08-13T04:26:11.021Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a0/c4/b4d4827c93ef43c01f599ef31453ccc1c132b353284fc6c87d535c233129/pyee-13.0.1-py3-none-any.whl", hash = "sha256:af2f8fede4171ef667dfded53f96e2ed0d6e6bd7ee3bb46437f77e3b57689228", size = 15659, upload-time = "2026-02-14T21:12:26.263Z" },
+    { url = "https://files.pythonhosted.org/packages/81/12/5347938b1f9a6453f0dbdfcc3e2388a1320ef9b9ec17fbefbc4ab647ea98/pyee-14.0.0-py3-none-any.whl", hash = "sha256:3ac2d3229a9677f7de2c33d7f52fe25b638a46b19c413fea2edc8c6d0a644e4d", size = 15553, upload-time = "2026-08-13T04:26:09.916Z" },
 ]
 
 [[package]]
