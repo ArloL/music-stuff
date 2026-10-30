@@ -65,7 +65,8 @@ def _clone_db() -> Path:
 
 def _run_sql(sql: str, db_path: Path) -> list[dict]:
     """Run SQL against the cloned H2 database via the H2 Shell tool."""
-    # JDBC URL omits the .h2.db extension (H2 convention)
+    # JDBC URL omits the .h2.db extension (H2 convention). Not read-only: a clone
+    # taken while beaTunes is writing needs H2 to replay its log on open.
     jdbc_path = str(db_path).replace(".h2.db", "")
     result = subprocess.run(
         [
@@ -74,7 +75,7 @@ def _run_sql(sql: str, db_path: Path) -> list[dict]:
             str(_find_h2_jar()),
             "org.h2.tools.Shell",
             "-url",
-            f"jdbc:h2:{jdbc_path};ACCESS_MODE_DATA=r",
+            f"jdbc:h2:{jdbc_path}",
             "-user",
             "sa",
             "-password",
