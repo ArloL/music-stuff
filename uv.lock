@@ -625,7 +625,7 @@ requires-dist = [
     { name = "plotly", specifier = "==7.1.0" },
     { name = "prompt-toolkit", specifier = "==3.0.53" },
     { name = "pulp", specifier = "==4.2.0" },
-    { name = "pyee", specifier = "==14.0.0" },
+    { name = "pyee", specifier = "==16.0.2" },
     { name = "pyvis", specifier = "==0.3.2" },
     { name = "scikit-learn", specifier = "==1.9.1" },
     { name = "spotipy", specifier = "==2.26.0" },
@@ -966,14 +966,14 @@ wheels = [
 
 [[package]]
 name = "pyee"
-version = "14.0.0"
+version = "16.0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1d/f1/fdedc2c75c3e31a330659c85e5793bb18b3397981fbf0844c6dee5b18926/pyee-14.0.0.tar.gz", hash = "sha256:76dd0f4314ecd27f02dc73589dea7fd3853f9b6176d8ef9b122860657e3602de", size = 98760, upload-time = "2026-08-13T04:26:11.021Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/50/34/69e6daeca6b9f7417c3d67bd419215aa76cae56f317e479df7cbff8de882/pyee-16.0.2.tar.gz", hash = "sha256:31cb31131df7757f2a54fbd98ea5d37e736dc8a9f41ec4bdce40892a32474ec8", size = 144274, upload-time = "2026-11-11T19:54:53.934Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/81/12/5347938b1f9a6453f0dbdfcc3e2388a1320ef9b9ec17fbefbc4ab647ea98/pyee-14.0.0-py3-none-any.whl", hash = "sha256:3ac2d3229a9677f7de2c33d7f52fe25b638a46b19c413fea2edc8c6d0a644e4d", size = 15553, upload-time = "2026-08-13T04:26:09.916Z" },
+    { url = "https://files.pythonhosted.org/packages/32/6e/0d01bf187ea2abc1659d2d4c4049b722fbfe25e2ba5bac37aacc427c4791/pyee-16.0.2-py3-none-any.whl", hash = "sha256:b3221f531a85818fbcf4d5ba7d8620680036381e79ca312334a512077870ba60", size = 17694, upload-time = "2026-11-11T19:54:52.399Z" },
 ]
 
 [[package]]

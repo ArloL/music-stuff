@@ -25,7 +25,7 @@ dependencies = [
     "djay-tsaf-parser",
     "playwright==1.65.1",
     "greenlet==3.5.6",
-    "pyee==16.0.0",
+    "pyee==16.0.2",
 ]
 
 [project.scripts]
