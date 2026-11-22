@@ -11,6 +11,22 @@
         "dependencies",
     ],
     "minimumReleaseAge": "7 days",
+    "packageRules": [
+        {
+            // essentia-tensorflow ships wheels for one CPython minor
+            // only, so a minor bump fails to resolve until it catches
+            // up. Approve from the dashboard once PyPI lists a wheel
+            // for the new minor.
+            "matchDepNames": [
+                "python",
+            ],
+            "matchUpdateTypes": [
+                "minor",
+                "major",
+            ],
+            "dependencyDashboardApproval": true,
+        },
+    ],
     "prConcurrentLimit": 10,
     "prHourlyLimit": 5,
     "schedule": [
