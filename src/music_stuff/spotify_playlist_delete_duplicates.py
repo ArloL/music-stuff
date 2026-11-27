@@ -1,6 +1,7 @@
 from music_stuff.lib.lib_spotify import (
     all_playlist_items,
     get_sp,
+    replace_playlist_items,
     user_playlist_by_name,
 )
 
@@ -43,13 +44,7 @@ def main():
         f"Found {removed} duplicates. Replacing playlist with {len(deduped_uris)} tracks..."
     )
 
-    # Replace the playlist in batches (100 per call)
-    # First call replaces the entire playlist contents
-    sp.playlist_replace_items(playlist["id"], deduped_uris[:100])
-    for i in range(100, len(deduped_uris), 100):
-        chunk = deduped_uris[i : i + 100]
-        sp.playlist_add_items(playlist["id"], chunk)
-        print(f"Added tracks {i + 1}–{i + len(chunk)}")
+    replace_playlist_items(sp, playlist["id"], deduped_uris)
 
     print("Done")
 
