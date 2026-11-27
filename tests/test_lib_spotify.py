@@ -5,6 +5,7 @@ import pytest
 from music_stuff.lib.lib_spotify import (
     all_items,
     all_playlist_items,
+    replace_playlist_items,
     user_playlist_by_name,
 )
 
@@ -95,3 +96,24 @@ def test_all_playlist_items_uses_limit_100():
     sp.playlist_items.return_value = {"items": [{"item": {"id": "a"}}], "next": None}
     all_playlist_items(sp, "playlist123")
     sp.playlist_items.assert_called_once_with("playlist123", limit=100)
+
+
+# --- replace_playlist_items ---
+
+
+def test_replace_playlist_items_batches_by_100():
+    sp = MagicMock()
+    uris = [f"spotify:track:{i}" for i in range(250)]
+    replace_playlist_items(sp, "p", uris)
+    sp.playlist_replace_items.assert_called_once_with("p", uris[:100])
+    assert [c.args for c in sp.playlist_add_items.call_args_list] == [
+        ("p", uris[100:200]),
+        ("p", uris[200:]),
+    ]
+
+
+def test_replace_playlist_items_empty_clears():
+    sp = MagicMock()
+    replace_playlist_items(sp, "p", [])
+    sp.playlist_replace_items.assert_called_once_with("p", [])
+    sp.playlist_add_items.assert_not_called()

@@ -36,6 +36,12 @@ def all_playlist_items(sp, playlist_id):
     return all_items(sp, sp.playlist_items(playlist_id, limit=100))
 
 
+def replace_playlist_items(sp, playlist_id, uris):
+    sp.playlist_replace_items(playlist_id, uris[:100])
+    for i in range(100, len(uris), 100):
+        sp.playlist_add_items(playlist_id, uris[i : i + 100])
+
+
 def get_playlist_id(sp, playlist_name_or_id_with_prefix):
     if playlist_name_or_id_with_prefix.startswith("id:"):
         return playlist_name_or_id_with_prefix[3:]
